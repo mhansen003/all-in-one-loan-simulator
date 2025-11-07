@@ -634,6 +634,43 @@
   }
 }
 
+/* Yearly Table Styles */
+.yearly-table {
+  font-size: 0.95rem;
+}
+
+.yearly-table thead th {
+  background: linear-gradient(135deg, #9bc53d 0%, #7da62e 100%);
+  color: white;
+  padding: 1rem;
+}
+
+.yearly-table tbody tr {
+  transition: background 0.2s ease;
+}
+
+.yearly-table tbody tr:hover:not(.total-row) {
+  background: #f7fafc;
+}
+
+.yearly-table td {
+  padding: 0.875rem 1rem;
+}
+
+.yearly-table .total-row td {
+  padding: 1.25rem 1rem;
+  font-size: 1.05rem;
+}
+
+.btn-toggle {
+  transition: all 0.2s ease;
+}
+
+.btn-toggle:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
 /* Visualize Tab - Charts */
 .visualize-tab {
   padding: 1rem 0;

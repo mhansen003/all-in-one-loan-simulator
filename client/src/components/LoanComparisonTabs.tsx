@@ -459,20 +459,130 @@ function FormulasTab({
 // Breakdown Tab Component
 function BreakdownTab({ comparison, weeklyBreakdown }: any) {
   const [showFullBreakdown, setShowFullBreakdown] = useState(false);
+  const [showYearlySummary, setShowYearlySummary] = useState(true);
   const displayedBreakdown = showFullBreakdown ? weeklyBreakdown : weeklyBreakdown.slice(0, 52); // Show first year
+
+  // Calculate yearly summaries
+  const yearlySummaries = [];
+  const weeksPerYear = 52;
+  const numYears = Math.ceil(weeklyBreakdown.length / weeksPerYear);
+
+  for (let year = 0; year < numYears; year++) {
+    const startWeek = year * weeksPerYear;
+    const endWeek = Math.min((year + 1) * weeksPerYear, weeklyBreakdown.length);
+    const yearData = weeklyBreakdown.slice(startWeek, endWeek);
+
+    if (yearData.length === 0) continue;
+
+    const totalInterest = yearData.reduce((sum: number, entry: WeeklyBreakdownEntry) => sum + entry.interest, 0);
+    const totalPrincipalReduced = yearData.reduce((sum: number, entry: WeeklyBreakdownEntry) => sum + entry.principalReduced, 0);
+    const startBalance = startWeek === 0 ? comparison.aio.effectivePrincipal : weeklyBreakdown[startWeek].balance;
+    const endBalance = yearData[yearData.length - 1].balance;
+    const balanceReduction = startBalance - endBalance;
+
+    yearlySummaries.push({
+      year: year + 1,
+      weeks: yearData.length,
+      startBalance,
+      endBalance,
+      totalInterest,
+      totalPrincipalReduced,
+      balanceReduction,
+    });
+  }
 
   return (
     <div className="math-tab">
-      <h2>📅 Week-by-Week Payment Breakdown</h2>
+      <h2>📅 Payment Breakdown</h2>
+
+      {/* Toggle between yearly and weekly */}
+      <div className="breakdown-toggle" style={{ display: 'flex', gap: '1rem', marginBottom: '2rem', justifyContent: 'center' }}>
+        <button
+          className={`btn-toggle ${showYearlySummary ? 'active' : ''}`}
+          onClick={() => setShowYearlySummary(true)}
+          style={{
+            padding: '0.75rem 1.5rem',
+            borderRadius: '8px',
+            border: showYearlySummary ? '2px solid #9bc53d' : '2px solid #e2e8f0',
+            background: showYearlySummary ? '#9bc53d' : 'white',
+            color: showYearlySummary ? 'white' : '#718096',
+            fontWeight: '600',
+            cursor: 'pointer',
+          }}
+        >
+          📊 Yearly Summary
+        </button>
+        <button
+          className={`btn-toggle ${!showYearlySummary ? 'active' : ''}`}
+          onClick={() => setShowYearlySummary(false)}
+          style={{
+            padding: '0.75rem 1.5rem',
+            borderRadius: '8px',
+            border: !showYearlySummary ? '2px solid #9bc53d' : '2px solid #e2e8f0',
+            background: !showYearlySummary ? '#9bc53d' : 'white',
+            color: !showYearlySummary ? 'white' : '#718096',
+            fontWeight: '600',
+            cursor: 'pointer',
+          }}
+        >
+          📅 Weekly Details
+        </button>
+      </div>
+
+      {/* Yearly Summary Table */}
+      {showYearlySummary && (
+        <div className="breakdown-section">
+          <h3>Year-by-Year Summary</h3>
+          <div className="breakdown-table-container">
+            <table className="breakdown-table yearly-table">
+              <thead>
+                <tr>
+                  <th>Year</th>
+                  <th>Starting Balance</th>
+                  <th>Ending Balance</th>
+                  <th>Total Interest</th>
+                  <th>Total Principal Reduced</th>
+                  <th>Balance Reduction</th>
+                </tr>
+              </thead>
+              <tbody>
+                {yearlySummaries.map((summary) => (
+                  <tr key={summary.year}>
+                    <td><strong>Year {summary.year}</strong></td>
+                    <td>{formatCurrency(summary.startBalance)}</td>
+                    <td>{formatCurrency(summary.endBalance)}</td>
+                    <td className="interest-col">{formatCurrency(summary.totalInterest)}</td>
+                    <td className="principal-col">{formatCurrency(summary.totalPrincipalReduced)}</td>
+                    <td><strong>{formatCurrency(summary.balanceReduction)}</strong></td>
+                  </tr>
+                ))}
+                <tr className="total-row" style={{
+                  borderTop: '3px solid #9bc53d',
+                  background: 'linear-gradient(135deg, rgba(155, 197, 61, 0.1) 0%, white 100%)',
+                  fontWeight: '700'
+                }}>
+                  <td><strong>TOTALS</strong></td>
+                  <td>{formatCurrency(comparison.aio.effectivePrincipal || 0)}</td>
+                  <td>$0</td>
+                  <td className="interest-col">{formatCurrency(comparison.aio.totalInterestPaid)}</td>
+                  <td className="principal-col">{formatCurrency(yearlySummaries.reduce((sum, s) => sum + s.totalPrincipalReduced, 0))}</td>
+                  <td><strong>{formatCurrency(comparison.aio.effectivePrincipal || 0)}</strong></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* Weekly Breakdown Table */}
-      <div className="breakdown-section">
-        <h3>
-          AIO Loan Progress
-          {!showFullBreakdown && (
-            <span className="showing-note"> (Showing first year - {displayedBreakdown.length} weeks)</span>
-          )}
-        </h3>
+      {!showYearlySummary && (
+        <div className="breakdown-section">
+          <h3>
+            AIO Loan Progress (Weekly)
+            {!showFullBreakdown && (
+              <span className="showing-note"> (Showing first year - {displayedBreakdown.length} weeks)</span>
+            )}
+          </h3>
 
         <div className="breakdown-table-container">
           <table className="breakdown-table">
@@ -517,19 +627,36 @@ function BreakdownTab({ comparison, weeklyBreakdown }: any) {
           )}
         </div>
 
-        <div className="breakdown-summary">
-          <div className="summary-stat">
-            <div className="stat-label">Total Weeks</div>
-            <div className="stat-value">{weeklyBreakdown.length}</div>
+          <div className="breakdown-summary">
+            <div className="summary-stat">
+              <div className="stat-label">Total Weeks</div>
+              <div className="stat-value">{weeklyBreakdown.length}</div>
+            </div>
+            <div className="summary-stat">
+              <div className="stat-label">Time to Payoff</div>
+              <div className="stat-value">{formatMonthsToYears(comparison.aio.monthsToPayoff)}</div>
+            </div>
+            <div className="summary-stat">
+              <div className="stat-label">Total Interest</div>
+              <div className="stat-value">{formatCurrency(comparison.aio.totalInterestPaid)}</div>
+            </div>
           </div>
-          <div className="summary-stat">
-            <div className="stat-label">Time to Payoff</div>
-            <div className="stat-value">{formatMonthsToYears(comparison.aio.monthsToPayoff)}</div>
-          </div>
-          <div className="summary-stat">
-            <div className="stat-label">Total Interest</div>
-            <div className="stat-value">{formatCurrency(comparison.aio.totalInterestPaid)}</div>
-          </div>
+        </div>
+      )}
+
+      {/* Overall Summary Stats (shown for both views) */}
+      <div className="breakdown-summary" style={{ marginTop: '2rem' }}>
+        <div className="summary-stat">
+          <div className="stat-label">Total {showYearlySummary ? 'Years' : 'Weeks'}</div>
+          <div className="stat-value">{showYearlySummary ? Math.ceil(weeklyBreakdown.length / 52) : weeklyBreakdown.length}</div>
+        </div>
+        <div className="summary-stat">
+          <div className="stat-label">Time to Payoff</div>
+          <div className="stat-value">{formatMonthsToYears(comparison.aio.monthsToPayoff)}</div>
+        </div>
+        <div className="summary-stat">
+          <div className="stat-label">Total Interest</div>
+          <div className="stat-value">{formatCurrency(comparison.aio.totalInterestPaid)}</div>
         </div>
       </div>
     </div>
