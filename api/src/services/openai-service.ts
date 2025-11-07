@@ -2,29 +2,65 @@ import OpenAI from 'openai';
 import fs from 'fs/promises';
 import path from 'path';
 import xlsx from 'xlsx';
+import { pdf } from 'pdf-to-img';
 import type { CashFlowAnalysis, Transaction, OpenAIAnalysisResult } from '../types.js';
-
-// pdf-parse is CommonJS, need to import dynamically
-let pdfParse: any;
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
 /**
- * Extract text from PDF file
+ * Extract text from PDF file by converting to images and using GPT-4 Vision
+ * (pdf-parse has issues in serverless environments due to canvas dependencies)
  */
 async function extractTextFromPDF(filePath: string): Promise<string> {
   try {
-    // Dynamically import pdf-parse (CommonJS module)
-    if (!pdfParse) {
-      const module = await import('pdf-parse');
-      pdfParse = (module as any).default || module;
+    console.log('Converting PDF to images...');
+    const pdfBuffer = await fs.readFile(filePath);
+
+    // Convert PDF pages to images
+    const document = await pdf(pdfBuffer, { scale: 2 });
+
+    let allText = '';
+    let pageNum = 0;
+
+    // Process each page
+    for await (const image of document) {
+      pageNum++;
+      console.log(`Processing page ${pageNum}...`);
+
+      // Convert image to base64
+      const base64Image = image.toString('base64');
+
+      // Use GPT-4 Vision to extract text from this page
+      const response = await openai.chat.completions.create({
+        model: 'gpt-4o',
+        messages: [
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'text',
+                text: `Extract all transaction data from this bank statement page ${pageNum}. Return the transactions with date, description, and amount. Include all deposits (income) and withdrawals (expenses). Format as plain text with one transaction per line.`,
+              },
+              {
+                type: 'image_url',
+                image_url: {
+                  url: `data:image/png;base64,${base64Image}`,
+                },
+              },
+            ],
+          },
+        ],
+        max_tokens: 4096,
+      });
+
+      const pageText = response.choices[0]?.message?.content || '';
+      allText += pageText + '\n\n';
     }
 
-    const dataBuffer = await fs.readFile(filePath);
-    const data = await pdfParse(dataBuffer);
-    return data.text;
+    console.log(`Extracted text from ${pageNum} pages`);
+    return allText;
   } catch (error) {
     console.error('Error extracting PDF text:', error);
     throw new Error('Failed to extract text from PDF');
