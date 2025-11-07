@@ -1,0 +1,26 @@
+{
+  "name": "all-in-one-loan-simulator",
+  "version": "1.0.0",
+  "description": "All-In-One Loan Simulator - Calculate savings and payoff projections with intelligent bank statement analysis",
+  "scripts": {
+    "install:all": "cd server && npm install && cd ../client && npm install",
+    "dev:server": "cd server && npm run dev",
+    "dev:client": "cd client && npm run dev",
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
+    "build:server": "cd server && npm run build",
+    "build:client": "cd client && npm run build",
+    "build": "npm run build:server && npm run build:client"
+  },
+  "keywords": [
+    "cmg",
+    "all-in-one",
+    "loan-simulator",
+    "mortgage",
+    "calculator"
+  ],
+  "author": "CMG Financial",
+  "license": "ISC",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
