@@ -1,83 +1,24 @@
 import OpenAI from 'openai';
-import Anthropic from '@anthropic-ai/sdk';
 import fs from 'fs/promises';
 import path from 'path';
 import xlsx from 'xlsx';
 import type { CashFlowAnalysis, Transaction, OpenAIAnalysisResult } from '../types.js';
 
+// Configure OpenAI client to use OpenRouter
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
+  apiKey: process.env.OPENROUTER_API_KEY,
+  baseURL: 'https://openrouter.ai/api/v1',
+  defaultHeaders: {
+    'HTTP-Referer': process.env.YOUR_SITE_URL || 'https://aio-simulator.cmgfinancial.ai',
+    'X-Title': 'All-In-One Loan Simulator',
+  },
 });
 
 /**
- * Extract text from PDF using Claude's native PDF support
- * Claude (Anthropic) has native PDF support - no conversion needed!
- * This is the most reliable method for serverless environments
+ * Note: PDFs are now converted to images CLIENT-SIDE using pdf.js in the browser.
+ * This eliminates server-side native dependency issues in serverless environments.
+ * The analyzeImage function below handles the converted PDF images.
  */
-async function extractTextFromPDF(filePath: string): Promise<string> {
-  try {
-    console.log('Extracting text from PDF using Claude (native PDF support)...');
-
-    // Read the PDF file
-    const pdfBuffer = await fs.readFile(filePath);
-    const base64Pdf = pdfBuffer.toString('base64');
-
-    // Use Claude with native PDF support
-    const message = await anthropic.messages.create({
-      model: 'claude-3-5-sonnet-20241022',
-      max_tokens: 4096,
-      messages: [
-        {
-          role: 'user',
-          content: [
-            {
-              type: 'document',
-              source: {
-                type: 'base64',
-                media_type: 'application/pdf',
-                data: base64Pdf,
-              },
-            },
-            {
-              type: 'text',
-              text: `Extract ALL transaction data from this bank statement PDF.
-
-For each transaction, provide:
-- Date (YYYY-MM-DD format)
-- Description
-- Amount (positive for deposits, negative for withdrawals)
-
-Include:
-- All deposits (income, paychecks, transfers in)
-- All withdrawals (purchases, payments, transfers out)
-- Account balance information if visible
-- Opening and closing balances
-
-Format each transaction on a new line like:
-2024-08-15 | Paycheck Deposit | +3500.00
-2024-08-16 | Grocery Store | -125.50
-2024-08-16 | ATM Withdrawal | -100.00
-
-Be thorough and extract EVERY transaction from ALL pages of the PDF.
-If the PDF has multiple pages, process all of them.`,
-            },
-          ],
-        },
-      ],
-    });
-
-    const extractedText = message.content[0]?.type === 'text' ? message.content[0].text : '';
-    console.log(`Successfully extracted transaction data from PDF using Claude`);
-    return extractedText;
-  } catch (error) {
-    console.error('Error extracting PDF text:', error);
-    throw new Error('Failed to extract text from PDF');
-  }
-}
 
 /**
  * Extract data from Excel/CSV file
@@ -96,24 +37,42 @@ async function extractDataFromSpreadsheet(filePath: string): Promise<string> {
 }
 
 /**
- * Analyze image file using GPT-4 Vision
+ * Analyze image file using vision model via OpenRouter
+ * Supports images from various sources including client-side PDF conversions
  */
 async function analyzeImage(filePath: string): Promise<string> {
   try {
+    console.log('Analyzing image with vision model via OpenRouter...');
     const imageBuffer = await fs.readFile(filePath);
     const base64Image = imageBuffer.toString('base64');
     const ext = path.extname(filePath).toLowerCase();
     const mimeType = ext === '.png' ? 'image/png' : 'image/jpeg';
 
     const response = await openai.chat.completions.create({
-      model: 'gpt-4o',
+      model: 'openai/gpt-4o', // OpenRouter model format
       messages: [
         {
           role: 'user',
           content: [
             {
               type: 'text',
-              text: 'Extract all transaction data from this bank statement image. Return the transactions in a structured format with date, description, and amount.',
+              text: `Extract ALL transaction data from this bank statement image.
+
+For each transaction, provide:
+- Date (YYYY-MM-DD format)
+- Description
+- Amount (positive for deposits, negative for withdrawals)
+
+Include:
+- All deposits (income, paychecks, transfers in)
+- All withdrawals (purchases, payments, transfers out)
+- Account balance information if visible
+
+Format each transaction on a new line like:
+2024-08-15 | Paycheck Deposit | +3500.00
+2024-08-16 | Grocery Store | -125.50
+
+Be thorough and extract EVERY transaction visible in the image.`,
             },
             {
               type: 'image_url',
@@ -127,27 +86,27 @@ async function analyzeImage(filePath: string): Promise<string> {
       max_tokens: 4096,
     });
 
+    console.log('Successfully extracted transaction data from image');
     return response.choices[0]?.message?.content || '';
   } catch (error) {
     console.error('Error analyzing image:', error);
-    throw new Error('Failed to analyze image with GPT-4 Vision');
+    throw new Error('Failed to analyze image with vision model');
   }
 }
 
 /**
  * Process a single bank statement file
+ * Note: PDFs are converted to images client-side before upload
  */
 async function processFile(file: Express.Multer.File): Promise<string> {
   const ext = path.extname(file.originalname).toLowerCase();
 
-  if (ext === '.pdf') {
-    return await extractTextFromPDF(file.path);
-  } else if (ext === '.csv' || ext === '.xlsx' || ext === '.xls') {
+  if (ext === '.csv' || ext === '.xlsx' || ext === '.xls') {
     return await extractDataFromSpreadsheet(file.path);
   } else if (['.jpg', '.jpeg', '.png', '.gif', '.webp'].includes(ext)) {
     return await analyzeImage(file.path);
   } else {
-    throw new Error(`Unsupported file type: ${ext}`);
+    throw new Error(`Unsupported file type: ${ext}. PDFs should be converted to images client-side.`);
   }
 }
 
@@ -215,7 +174,7 @@ Return your response in the following JSON format:
 }`;
 
     const response = await openai.chat.completions.create({
-      model: 'gpt-4o',
+      model: 'openai/gpt-4o', // OpenRouter model format
       messages: [
         {
           role: 'system',

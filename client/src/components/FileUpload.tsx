@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
+import { processFilesWithPdfConversion } from '../utils/pdfConverter';
 import './FileUpload.css';
 
 interface FileUploadProps {
@@ -18,12 +19,25 @@ export default function FileUpload({
   isAnalyzing = false,
 }: FileUploadProps) {
   const [selectedFiles, setSelectedFiles] = useState<File[]>(files);
+  const [isProcessingPdf, setIsProcessingPdf] = useState(false);
 
   const onDrop = useCallback(
-    (acceptedFiles: File[]) => {
-      const newFiles = [...selectedFiles, ...acceptedFiles];
-      setSelectedFiles(newFiles);
-      onFilesSelected(newFiles);
+    async (acceptedFiles: File[]) => {
+      try {
+        setIsProcessingPdf(true);
+
+        // Convert any PDFs to images client-side
+        const processedFiles = await processFilesWithPdfConversion(acceptedFiles);
+
+        const newFiles = [...selectedFiles, ...processedFiles];
+        setSelectedFiles(newFiles);
+        onFilesSelected(newFiles);
+      } catch (error) {
+        console.error('Error processing files:', error);
+        alert(`Error processing files: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      } finally {
+        setIsProcessingPdf(false);
+      }
     },
     [selectedFiles, onFilesSelected]
   );
@@ -83,26 +97,38 @@ export default function FileUpload({
         <h2>Upload Bank Statements</h2>
         <p>
           Upload 12 months of bank statements for accurate cash flow analysis.
-          We accept PDF, images, and Excel/CSV files.
+          PDFs are automatically converted to images for processing.
         </p>
       </div>
 
       <div
         {...getRootProps()}
-        className={`dropzone ${isDragActive ? 'active' : ''} ${isAnalyzing ? 'disabled' : ''}`}
+        className={`dropzone ${isDragActive ? 'active' : ''} ${isAnalyzing || isProcessingPdf ? 'disabled' : ''}`}
       >
-        <input {...getInputProps()} disabled={isAnalyzing} />
+        <input {...getInputProps()} disabled={isAnalyzing || isProcessingPdf} />
         <div className="dropzone-content">
           <div className="upload-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-            </svg>
+            {isProcessingPdf ? (
+              <div className="spinner-small"></div>
+            ) : (
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+              </svg>
+            )}
           </div>
           <p className="dropzone-text">
-            {isDragActive ? 'Drop files here...' : 'Drag & drop bank statements here'}
+            {isProcessingPdf
+              ? 'Converting PDF pages to images...'
+              : isDragActive
+              ? 'Drop files here...'
+              : 'Drag & drop bank statements here'}
           </p>
-          <p className="dropzone-subtext">or click to browse</p>
-          <p className="dropzone-formats">PDF, JPG, PNG, CSV, XLSX (max 10MB each)</p>
+          {!isProcessingPdf && (
+            <>
+              <p className="dropzone-subtext">or click to browse</p>
+              <p className="dropzone-formats">PDF, JPG, PNG, CSV, XLSX (max 10MB each)</p>
+            </>
+          )}
         </div>
       </div>
 
@@ -157,7 +183,7 @@ export default function FileUpload({
 
       <div className="form-actions">
         {onBack && (
-          <button type="button" className="btn-secondary" onClick={onBack} disabled={isAnalyzing}>
+          <button type="button" className="btn-secondary" onClick={onBack} disabled={isAnalyzing || isProcessingPdf}>
             <svg className="btn-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
@@ -168,12 +194,17 @@ export default function FileUpload({
           type="button"
           className="btn-primary"
           onClick={onSubmit}
-          disabled={selectedFiles.length === 0 || isAnalyzing}
+          disabled={selectedFiles.length === 0 || isAnalyzing || isProcessingPdf}
         >
           {isAnalyzing ? (
             <>
               <div className="spinner-small"></div>
               Analyzing Statements...
+            </>
+          ) : isProcessingPdf ? (
+            <>
+              <div className="spinner-small"></div>
+              Processing PDFs...
             </>
           ) : (
             <>
