@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { SimulationResult, MortgageDetails, CashFlowAnalysis } from '../types';
 import CashFlowReview from './CashFlowReview';
+import ProposalBuilder from './ProposalBuilder';
 import './SimulationResults.css';
 
 interface SimulationResultsProps {
@@ -14,11 +15,11 @@ interface SimulationResultsProps {
   onCashFlowUpdate?: (cashFlow: CashFlowAnalysis) => void;
 }
 
-type TabView = 'results' | 'cashflow';
+type TabView = 'results' | 'cashflow' | 'charts' | 'proposal';
 
 export default function SimulationResults({
   simulation,
-  mortgageDetails: _mortgageDetails,
+  mortgageDetails,
   cashFlow,
   depositFrequency = 'monthly',
   onReset,
@@ -81,6 +82,24 @@ export default function SimulationResults({
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             Cash Flow Analysis
+          </button>
+          <button
+            className={`results-tab ${activeTab === 'charts' ? 'active' : ''}`}
+            onClick={() => setActiveTab('charts')}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
+            </svg>
+            Charts
+          </button>
+          <button
+            className={`results-tab ${activeTab === 'proposal' ? 'active' : ''}`}
+            onClick={() => setActiveTab('proposal')}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            Create Proposal
           </button>
         </div>
       )}
@@ -272,6 +291,217 @@ export default function SimulationResults({
             onContinue={() => setActiveTab('results')}
             onBack={() => setActiveTab('results')}
             onCashFlowUpdate={onCashFlowUpdate}
+          />
+        </div>
+      )}
+
+      {/* Charts Tab */}
+      {activeTab === 'charts' && (
+        <div className="charts-tab-content">
+          <h2 style={{ textAlign: 'center', marginBottom: '2rem', color: '#1e293b' }}>📈 Visual Analysis</h2>
+
+          {/* Balance Over Time Chart */}
+          <div className="chart-section" style={{ marginBottom: '3rem', padding: '2rem', background: 'white', borderRadius: '12px', border: '2px solid #e2e8f0' }}>
+            <h3 style={{ marginBottom: '1.5rem', color: '#334155' }}>Loan Balance Over Time</h3>
+            <div style={{ padding: '2rem', background: '#f8fafc', borderRadius: '8px', textAlign: 'center' }}>
+              <svg width="800" height="400" style={{ maxWidth: '100%', height: 'auto' }}>
+                {(() => {
+                  const traditionalMonths = simulation.traditionalLoan.payoffMonths;
+                  const aioMonths = simulation.allInOneLoan.payoffMonths;
+                  const maxMonths = Math.max(traditionalMonths, aioMonths);
+                  const loanAmount = mortgageDetails.currentBalance || 0;
+
+                  const padding = { top: 40, right: 40, bottom: 60, left: 80 };
+                  const width = 800;
+                  const height = 400;
+                  const plotWidth = width - padding.left - padding.right;
+                  const plotHeight = height - padding.top - padding.bottom;
+
+                  const xScale = (month: number) => padding.left + (month / maxMonths) * plotWidth;
+                  const yScale = (balance: number) => padding.top + plotHeight - (balance / (loanAmount * 1.1)) * plotHeight;
+
+                  return (
+                    <>
+                      {/* Grid lines */}
+                      {[0, 0.25, 0.5, 0.75, 1].map((fraction) => {
+                        const y = yScale((loanAmount * 1.1) * fraction);
+                        return (
+                          <g key={fraction}>
+                            <line x1={padding.left} y1={y} x2={width - padding.right} y2={y} stroke="#e2e8f0" strokeWidth="1" />
+                            <text x={padding.left - 10} y={y + 4} textAnchor="end" fontSize="12" fill="#718096">
+                              {formatCurrency((loanAmount * 1.1) * fraction)}
+                            </text>
+                          </g>
+                        );
+                      })}
+
+                      {/* Traditional loan line */}
+                      <line x1={xScale(0)} y1={yScale(loanAmount)} x2={xScale(traditionalMonths)} y2={yScale(0)} stroke="#4299e1" strokeWidth="3" />
+
+                      {/* AIO loan line */}
+                      <line x1={xScale(0)} y1={yScale(loanAmount)} x2={xScale(aioMonths)} y2={yScale(0)} stroke="#9bc53d" strokeWidth="3" />
+
+                      {/* Legend */}
+                      <g transform={`translate(${padding.left}, 20)`}>
+                        <line x1="0" y1="0" x2="30" y2="0" stroke="#4299e1" strokeWidth="3" />
+                        <text x="35" y="4" fontSize="14" fill="#2d3748">Traditional ({yearsMonthsFromMonths(traditionalMonths)})</text>
+
+                        <line x1="260" y1="0" x2="290" y2="0" stroke="#9bc53d" strokeWidth="3" />
+                        <text x="295" y="4" fontSize="14" fill="#2d3748">All-In-One ({yearsMonthsFromMonths(aioMonths)})</text>
+                      </g>
+
+                      {/* X-axis labels */}
+                      {[0, 0.25, 0.5, 0.75, 1].map((fraction) => {
+                        const month = Math.round(maxMonths * fraction);
+                        return (
+                          <text key={fraction} x={xScale(month)} y={height - 30} textAnchor="middle" fontSize="12" fill="#718096">
+                            {month}mo
+                          </text>
+                        );
+                      })}
+
+                      <text x={width / 2} y={height - 5} textAnchor="middle" fontSize="14" fill="#2d3748" fontWeight="600">
+                        Time (Months)
+                      </text>
+                    </>
+                  );
+                })()}
+              </svg>
+            </div>
+          </div>
+
+          {/* Interest Comparison Bar Chart */}
+          <div className="chart-section" style={{ marginBottom: '3rem', padding: '2rem', background: 'white', borderRadius: '12px', border: '2px solid #e2e8f0' }}>
+            <h3 style={{ marginBottom: '1.5rem', color: '#334155' }}>Total Interest Comparison</h3>
+            <div style={{ display: 'flex', gap: '2rem', alignItems: 'flex-end', padding: '2rem', background: '#f8fafc', borderRadius: '8px' }}>
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <div style={{
+                  width: '100%',
+                  height: `${(simulation.traditionalLoan.totalInterestPaid / Math.max(simulation.traditionalLoan.totalInterestPaid, simulation.allInOneLoan.totalInterestPaid)) * 300}px`,
+                  background: 'linear-gradient(180deg, #4299e1 0%, #3182ce 100%)',
+                  borderRadius: '8px 8px 0 0',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'white',
+                  fontWeight: '700',
+                  fontSize: '1.25rem',
+                  minHeight: '60px',
+                }}>
+                  {formatCurrency(simulation.traditionalLoan.totalInterestPaid)}
+                </div>
+                <div style={{ marginTop: '1rem', fontWeight: '600', color: '#2d3748' }}>Traditional Loan</div>
+              </div>
+
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <div style={{
+                  width: '100%',
+                  height: `${(simulation.allInOneLoan.totalInterestPaid / Math.max(simulation.traditionalLoan.totalInterestPaid, simulation.allInOneLoan.totalInterestPaid)) * 300}px`,
+                  background: 'linear-gradient(180deg, #9bc53d 0%, #7da62e 100%)',
+                  borderRadius: '8px 8px 0 0',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'white',
+                  fontWeight: '700',
+                  fontSize: '1.25rem',
+                  minHeight: '60px',
+                }}>
+                  {formatCurrency(simulation.allInOneLoan.totalInterestPaid)}
+                </div>
+                <div style={{ marginTop: '1rem', fontWeight: '600', color: '#2d3748' }}>All-In-One Loan</div>
+              </div>
+            </div>
+
+            {simulation.comparison.interestSavings > 0 && (
+              <div style={{
+                margin: '2rem auto 0',
+                maxWidth: '600px',
+                padding: '1.5rem',
+                background: 'linear-gradient(135deg, #e8f5e9 0%, #f1f8e9 100%)',
+                border: '2px solid #9bc53d',
+                borderRadius: '12px',
+                textAlign: 'center',
+              }}>
+                <div style={{ fontSize: '0.9rem', color: '#558b2f', fontWeight: '600', marginBottom: '0.5rem' }}>
+                  💰 Total Interest Savings
+                </div>
+                <div style={{ fontSize: '2rem', fontWeight: '700', color: '#2d3748' }}>
+                  {formatCurrency(simulation.comparison.interestSavings)}
+                </div>
+                <div style={{ fontSize: '0.9rem', color: '#7da62e', marginTop: '0.5rem' }}>
+                  Save {yearsMonthsFromMonths(simulation.comparison.timeSavedMonths)} by choosing All-In-One!
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Timeline Comparison */}
+          <div className="chart-section" style={{ padding: '2rem', background: 'white', borderRadius: '12px', border: '2px solid #e2e8f0' }}>
+            <h3 style={{ marginBottom: '1.5rem', color: '#334155' }}>Payoff Timeline</h3>
+            <div style={{ padding: '2rem', background: '#f8fafc', borderRadius: '8px' }}>
+              <div style={{ marginBottom: '2rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', marginBottom: '0.5rem' }}>
+                  <span style={{ fontWeight: '600', color: '#2d3748', minWidth: '160px' }}>Traditional Loan:</span>
+                  <div style={{
+                    flex: `0 0 ${(simulation.traditionalLoan.payoffMonths / Math.max(simulation.traditionalLoan.payoffMonths, simulation.allInOneLoan.payoffMonths)) * 100}%`,
+                    height: '40px',
+                    background: 'linear-gradient(90deg, #4299e1 0%, #3182ce 100%)',
+                    borderRadius: '8px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'white',
+                    fontWeight: '600',
+                  }}>
+                    {yearsMonthsFromMonths(simulation.traditionalLoan.payoffMonths)}
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', marginBottom: '0.5rem' }}>
+                  <span style={{ fontWeight: '600', color: '#2d3748', minWidth: '160px' }}>All-In-One Loan:</span>
+                  <div style={{
+                    flex: `0 0 ${(simulation.allInOneLoan.payoffMonths / Math.max(simulation.traditionalLoan.payoffMonths, simulation.allInOneLoan.payoffMonths)) * 100}%`,
+                    height: '40px',
+                    background: 'linear-gradient(90deg, #9bc53d 0%, #7da62e 100%)',
+                    borderRadius: '8px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'white',
+                    fontWeight: '600',
+                  }}>
+                    {yearsMonthsFromMonths(simulation.allInOneLoan.payoffMonths)}
+                  </div>
+                  {simulation.comparison.timeSavedMonths > 0 && (
+                    <span style={{
+                      marginLeft: '1rem',
+                      padding: '0.5rem 1rem',
+                      background: '#e8f5e9',
+                      color: '#558b2f',
+                      borderRadius: '6px',
+                      fontWeight: '600',
+                      fontSize: '0.9rem',
+                    }}>
+                      ⚡ {yearsMonthsFromMonths(simulation.comparison.timeSavedMonths)} faster!
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Proposal Builder Tab */}
+      {activeTab === 'proposal' && (
+        <div className="proposal-tab-content">
+          <ProposalBuilder
+            simulation={simulation}
+            mortgageDetails={mortgageDetails}
+            onBack={() => setActiveTab('results')}
           />
         </div>
       )}
