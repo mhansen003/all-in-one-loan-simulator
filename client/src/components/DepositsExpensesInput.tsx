@@ -24,7 +24,6 @@ export default function DepositsExpensesInput({ onSubmit, onBack, mortgageDetail
 
   // Manual mode state
   const [monthlyDeposits, setMonthlyDeposits] = useState<string>('');
-  const [depositFrequency, setDepositFrequency] = useState<'monthly' | 'biweekly' | 'weekly'>('monthly');
   const [expenseMode, setExpenseMode] = useState<'percentage' | 'itemized'>('percentage');
   const [percentageLeftover, setPercentageLeftover] = useState<string>('40');
 
@@ -104,7 +103,7 @@ export default function DepositsExpensesInput({ onSubmit, onBack, mortgageDetail
       monthlyDeposits: deposits,
       monthlyExpenses: monthlyExpensesAmount,
       monthlyLeftover: monthlyLeftoverAmount,
-      depositFrequency,
+      depositFrequency: 'monthly', // Default for manual entry; AI will detect actual frequency from statements
     });
   };
 
@@ -303,44 +302,28 @@ export default function DepositsExpensesInput({ onSubmit, onBack, mortgageDetail
         {/* Manual Mode */}
         {mode === 'manual' && (
           <div className="manual-input-section">
-            {/* Step 1: Monthly Deposits with Frequency */}
+            {/* Step 1: Monthly Deposits */}
             <div className="input-card">
               <label htmlFor="monthlyDeposits" className="input-label">
                 <span className="label-text">Monthly Deposits (Income)</span>
                 <span className="label-hint">Total amount deposited into your account each month</span>
               </label>
 
-              <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
-                <div className="input-wrapper" style={{ flex: 1 }}>
-                  <span className="input-prefix">$</span>
-                  <input
-                    type="text"
-                    id="monthlyDeposits"
-                    value={formatCurrency(monthlyDeposits)}
-                    onChange={(e) => {
-                      const value = e.target.value.replace(/[^0-9.]/g, '');
-                      setMonthlyDeposits(value);
-                      setError(null);
-                    }}
-                    placeholder="12,000"
-                    className="cash-flow-input"
-                    autoFocus
-                  />
-                </div>
-
-                {/* Deposit Frequency Dropdown */}
-                <div style={{ minWidth: '140px' }}>
-                  <select
-                    value={depositFrequency}
-                    onChange={(e) => setDepositFrequency(e.target.value as 'monthly' | 'biweekly' | 'weekly')}
-                    className="cash-flow-input"
-                    style={{ paddingLeft: '0.75rem', paddingRight: '0.75rem' }}
-                  >
-                    <option value="monthly">Monthly</option>
-                    <option value="biweekly">Bi-Weekly</option>
-                    <option value="weekly">Weekly</option>
-                  </select>
-                </div>
+              <div className="input-wrapper">
+                <span className="input-prefix">$</span>
+                <input
+                  type="text"
+                  id="monthlyDeposits"
+                  value={formatCurrency(monthlyDeposits)}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/[^0-9.]/g, '');
+                    setMonthlyDeposits(value);
+                    setError(null);
+                  }}
+                  placeholder="12,000"
+                  className="cash-flow-input"
+                  autoFocus
+                />
               </div>
             </div>
 
