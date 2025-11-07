@@ -726,6 +726,63 @@
   line-height: 1.6;
 }
 
+/* Analyze Button at Top */
+.analyze-button-container {
+  margin: 1.5rem 0;
+  padding: 1rem;
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  border: 2px solid #3b82f6;
+  border-radius: 12px;
+  animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.btn-analyze-top {
+  width: 100%;
+  padding: 1.25rem 2rem;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.btn-analyze-top:hover:not(:disabled) {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+}
+
+.btn-analyze-top:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-analyze-top .btn-icon {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
 /* Manual Entry Button */
 .btn-manual-entry {
   background: none;
@@ -904,5 +961,14 @@
   .modal-actions .btn-primary {
     width: 100%;
     justify-content: center;
+  }
+
+  .btn-analyze-top {
+    font-size: 1rem;
+    padding: 1rem 1.5rem;
+  }
+
+  .analyze-button-container {
+    padding: 0.75rem;
   }
 }

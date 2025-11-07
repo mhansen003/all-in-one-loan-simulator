@@ -133,11 +133,45 @@ export default function FileUpload({
         </div>
       </div>
 
+      {/* Analyze Button - Stays at top when files are uploaded */}
+      {selectedFiles.length > 0 && (
+        <div className="analyze-button-container">
+          <button
+            type="button"
+            className="btn-analyze-top"
+            onClick={onSubmit}
+            disabled={isAnalyzing || isProcessingPdf}
+          >
+            {isAnalyzing ? (
+              <>
+                <div className="spinner-small"></div>
+                Analyzing Statements...
+              </>
+            ) : isProcessingPdf ? (
+              <>
+                <div className="spinner-small"></div>
+                Processing PDFs...
+              </>
+            ) : (
+              <>
+                <svg className="btn-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+                Analyze {selectedFiles.length} {selectedFiles.length === 1 ? 'File' : 'Files'} with AI
+                <svg className="btn-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </>
+            )}
+          </button>
+        </div>
+      )}
+
       {selectedFiles.length > 0 && (
         <div className="file-list">
           <div className="file-list-header">
             <h3>Uploaded Files ({selectedFiles.length})</h3>
-            <p className="file-list-subtext">Review files before analyzing</p>
+            <p className="file-list-subtext">Review and remove any unwanted files</p>
           </div>
 
           <div className="file-cards">
@@ -182,41 +216,16 @@ export default function FileUpload({
         </div>
       </div>
 
-      <div className="form-actions">
-        {onBack && (
+      {onBack && (
+        <div className="form-actions">
           <button type="button" className="btn-secondary" onClick={onBack} disabled={isAnalyzing || isProcessingPdf}>
             <svg className="btn-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
             Back
           </button>
-        )}
-        <button
-          type="button"
-          className="btn-primary"
-          onClick={onSubmit}
-          disabled={selectedFiles.length === 0 || isAnalyzing || isProcessingPdf}
-        >
-          {isAnalyzing ? (
-            <>
-              <div className="spinner-small"></div>
-              Analyzing Statements...
-            </>
-          ) : isProcessingPdf ? (
-            <>
-              <div className="spinner-small"></div>
-              Processing PDFs...
-            </>
-          ) : (
-            <>
-              Analyze with AI
-              <svg className="btn-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-              </svg>
-            </>
-          )}
-        </button>
-      </div>
+        </div>
+      )}
 
       {/* Manual Entry Redirect Button */}
       <div style={{ textAlign: 'center', marginTop: '1.5rem' }}>
