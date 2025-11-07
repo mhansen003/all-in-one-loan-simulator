@@ -1,0 +1,349 @@
+.simulation-results {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.results-header {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.header-icon {
+  width: 80px;
+  height: 80px;
+  background: linear-gradient(135deg, #9bc53d 0%, #8ab62f 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1.5rem;
+  color: white;
+  box-shadow: 0 10px 25px rgba(155, 197, 61, 0.3);
+}
+
+.header-icon svg {
+  width: 44px;
+  height: 44px;
+}
+
+.results-header h1 {
+  color: #2d3748;
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+  font-weight: 700;
+}
+
+.results-header p {
+  color: #718096;
+  font-size: 1.1rem;
+}
+
+/* Savings Highlight */
+.savings-highlight {
+  background: linear-gradient(135deg, #9bc53d 0%, #8ab62f 100%);
+  border-radius: 16px;
+  padding: 2.5rem;
+  margin-bottom: 3rem;
+  color: white;
+  box-shadow: 0 10px 30px rgba(155, 197, 61, 0.3);
+}
+
+.highlight-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
+}
+
+.highlight-main {
+  text-align: center;
+}
+
+.highlight-label {
+  font-size: 1.1rem;
+  font-weight: 600;
+  opacity: 0.9;
+  margin-bottom: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.highlight-value {
+  font-size: 4rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.highlight-stats {
+  display: flex;
+  gap: 3rem;
+  align-items: center;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.stat-label {
+  font-size: 0.9rem;
+  opacity: 0.9;
+  font-weight: 500;
+}
+
+.stat-value {
+  font-size: 1.75rem;
+  font-weight: 700;
+}
+
+.stat-divider {
+  width: 2px;
+  height: 60px;
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Comparison Section */
+.comparison-section {
+  margin-bottom: 3rem;
+}
+
+.comparison-section h2 {
+  color: #2d3748;
+  font-size: 2rem;
+  margin-bottom: 2rem;
+  text-align: center;
+  font-weight: 600;
+}
+
+.comparison-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 2rem;
+}
+
+.loan-card {
+  background: white;
+  border-radius: 12px;
+  border: 2px solid #e2e8f0;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.loan-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
+}
+
+.allinone-card {
+  border-color: #9bc53d;
+  border-width: 3px;
+}
+
+.card-header {
+  padding: 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #f7fafc;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.allinone-card .card-header {
+  background: linear-gradient(135deg, #9bc53d 0%, #8ab62f 100%);
+  color: white;
+  border-bottom-color: #9bc53d;
+}
+
+.card-header h3 {
+  font-size: 1.4rem;
+  margin: 0;
+  font-weight: 600;
+  color: #2d3748;
+}
+
+.allinone-card .card-header h3 {
+  color: white;
+}
+
+.card-badge {
+  padding: 0.4rem 0.875rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  background: #e2e8f0;
+  color: #718096;
+}
+
+.card-badge.recommended {
+  background: rgba(255, 255, 255, 0.25);
+  color: white;
+  border: 2px solid white;
+}
+
+.card-body {
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.metric-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 0;
+  border-bottom: 1px solid #f7fafc;
+}
+
+.metric-row:last-child {
+  border-bottom: none;
+}
+
+.metric-row.highlight {
+  background: #f0f8e9;
+  margin: 0 -2rem;
+  padding: 1rem 2rem;
+  border-bottom: none;
+}
+
+.metric-label {
+  color: #718096;
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.metric-value {
+  color: #2d3748;
+  font-size: 1.1rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.metric-value.savings {
+  color: #48bb78;
+}
+
+.savings-badge {
+  background: #c6f6d5;
+  color: #2f855a;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+/* Details Section */
+.details-section {
+  margin-bottom: 3rem;
+}
+
+.details-section h2 {
+  color: #2d3748;
+  font-size: 2rem;
+  margin-bottom: 2rem;
+  text-align: center;
+  font-weight: 600;
+}
+
+.detail-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 2rem;
+}
+
+.detail-card {
+  background: white;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 2rem;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.detail-card:hover {
+  border-color: #9bc53d;
+  transform: translateY(-4px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+}
+
+.detail-icon {
+  width: 64px;
+  height: 64px;
+  background: #e8f5e9;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1.5rem;
+  color: #9bc53d;
+}
+
+.detail-icon svg {
+  width: 32px;
+  height: 32px;
+}
+
+.detail-card h3 {
+  color: #2d3748;
+  font-size: 1.25rem;
+  margin-bottom: 0.75rem;
+  font-weight: 600;
+}
+
+.detail-card p {
+  color: #718096;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* Results Actions */
+.results-actions {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  padding-top: 2rem;
+  border-top: 2px solid #e2e8f0;
+}
+
+@media (max-width: 1024px) {
+  .comparison-cards {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .results-header h1 {
+    font-size: 2rem;
+  }
+
+  .highlight-value {
+    font-size: 2.5rem;
+  }
+
+  .highlight-stats {
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .stat-divider {
+    width: 80px;
+    height: 2px;
+  }
+
+  .detail-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .results-actions {
+    flex-direction: column;
+  }
+
+  .results-actions button {
+    width: 100%;
+  }
+}

@@ -1,5 +1,10 @@
 import { useState } from 'react';
 import type { AppStep, MortgageDetails, CashFlowAnalysis, EligibilityResult, SimulationResult } from './types';
+import MortgageDetailsForm from './components/MortgageDetailsForm';
+import FileUpload from './components/FileUpload';
+import CashFlowReview from './components/CashFlowReview';
+import SimulationResults from './components/SimulationResults';
+import { analyzeStatements, checkEligibility, simulateLoan } from './api';
 import './App.css';
 
 function App() {
@@ -10,6 +15,7 @@ function App() {
   const [eligibilityResult, setEligibilityResult] = useState<EligibilityResult | null>(null);
   const [simulationResult, setSimulationResult] = useState<SimulationResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   const handleReset = () => {
     setStep('mortgage-details');
@@ -19,6 +25,75 @@ function App() {
     setEligibilityResult(null);
     setSimulationResult(null);
     setError(null);
+    setIsAnalyzing(false);
+  };
+
+  const handleMortgageSubmit = (data: MortgageDetails) => {
+    setMortgageDetails(data);
+    setStep('upload-statements');
+  };
+
+  const handleFilesSelected = (files: File[]) => {
+    setBankStatements(files);
+  };
+
+  const handleAnalyzeStatements = async () => {
+    if (bankStatements.length === 0) {
+      setError('Please upload at least one bank statement');
+      return;
+    }
+
+    setError(null);
+    setIsAnalyzing(true);
+    setStep('analyzing');
+
+    try {
+      const cashFlow = await analyzeStatements(
+        bankStatements,
+        mortgageDetails.currentHousingPayment || 0
+      );
+
+      setCashFlowAnalysis(cashFlow);
+      setStep('cash-flow-review');
+    } catch (error: any) {
+      console.error('Error analyzing statements:', error);
+      setError(error.response?.data?.message || error.message || 'Failed to analyze bank statements');
+      setStep('upload-statements');
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  const handleContinueToSimulation = async () => {
+    if (!cashFlowAnalysis || !mortgageDetails) {
+      setError('Missing required data');
+      return;
+    }
+
+    setError(null);
+    setStep('simulation');
+
+    try {
+      // Check eligibility
+      const eligibility = await checkEligibility(
+        mortgageDetails as MortgageDetails,
+        cashFlowAnalysis
+      );
+      setEligibilityResult(eligibility);
+
+      // Run simulation
+      const simulation = await simulateLoan(
+        mortgageDetails as MortgageDetails,
+        cashFlowAnalysis
+      );
+      setSimulationResult(simulation);
+
+      setStep('results');
+    } catch (error: any) {
+      console.error('Error running simulation:', error);
+      setError(error.response?.data?.message || error.message || 'Failed to run simulation');
+      setStep('cash-flow-review');
+    }
   };
 
   return (
@@ -68,56 +143,66 @@ function App() {
         )}
 
         <div className="main-content">
-          <div className="section-card">
-            <div className="section-header">
-              <h2>Welcome to the All-In-One Loan Simulator</h2>
-              <p>
-                Discover how the All-In-One mortgage can help your borrowers pay off their home faster
-                and save thousands in interest using their everyday cash flow.
-              </p>
+          {step === 'mortgage-details' && (
+            <div className="section-card">
+              <MortgageDetailsForm
+                initialData={mortgageDetails}
+                onSubmit={handleMortgageSubmit}
+              />
             </div>
+          )}
 
-            <div className="info-cards">
-              <div className="info-card">
-                <div className="info-icon">
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-                <h3>Calculate Savings</h3>
-                <p>See exactly how much interest your borrowers can save with the All-In-One loan</p>
-              </div>
+          {step === 'upload-statements' && (
+            <div className="section-card">
+              <FileUpload
+                files={bankStatements}
+                onFilesSelected={handleFilesSelected}
+                onSubmit={handleAnalyzeStatements}
+                onBack={() => setStep('mortgage-details')}
+                isAnalyzing={isAnalyzing}
+              />
+            </div>
+          )}
 
-              <div className="info-card">
-                <div className="info-icon">
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                  </svg>
-                </div>
-                <h3>AI-Powered Analysis</h3>
-                <p>Upload bank statements and let AI automatically analyze cash flow patterns</p>
-              </div>
-
-              <div className="info-card">
-                <div className="info-icon">
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                  </svg>
-                </div>
-                <h3>Compare Timelines</h3>
-                <p>View side-by-side comparison of traditional vs All-In-One payoff projections</p>
+          {step === 'analyzing' && (
+            <div className="section-card">
+              <div className="processing-section">
+                <div className="spinner"></div>
+                <h2>Analyzing Bank Statements...</h2>
+                <p>Our AI is reading and categorizing your transactions. This may take a few moments.</p>
               </div>
             </div>
+          )}
 
-            <div className="action-container">
-              <button className="btn-primary" onClick={() => setStep('mortgage-details')}>
-                <svg className="btn-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
-                Start Simulation
-              </button>
+          {step === 'cash-flow-review' && cashFlowAnalysis && (
+            <div className="section-card">
+              <CashFlowReview
+                cashFlow={cashFlowAnalysis}
+                onContinue={handleContinueToSimulation}
+                onBack={() => setStep('upload-statements')}
+              />
             </div>
-          </div>
+          )}
+
+          {step === 'simulation' && (
+            <div className="section-card">
+              <div className="processing-section">
+                <div className="spinner"></div>
+                <h2>Running Loan Simulation...</h2>
+                <p>Calculating traditional vs All-In-One loan projections.</p>
+              </div>
+            </div>
+          )}
+
+          {step === 'results' && simulationResult && (
+            <div className="section-card">
+              <SimulationResults
+                simulation={simulationResult}
+                mortgageDetails={mortgageDetails as MortgageDetails}
+                onReset={handleReset}
+              />
+            </div>
+          )}
         </div>
       </main>
 
