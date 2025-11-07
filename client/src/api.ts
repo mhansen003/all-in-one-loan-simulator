@@ -13,6 +13,7 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  timeout: 600000, // 10 minutes default timeout for all API calls
 });
 
 // Health check
@@ -36,6 +37,7 @@ export const analyzeStatements = async (
     headers: {
       'Content-Type': 'multipart/form-data',
     },
+    timeout: 900000, // 15 minutes for statement analysis (processing multiple images)
   });
 
   return response.data.cashFlow;

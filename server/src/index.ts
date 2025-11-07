@@ -25,7 +25,7 @@ app.use('/api', apiRouter);
 app.get('/health', (req, res) => {
   res.json({
     status: 'ok',
-    message: 'All-In-One Loan Simulator API is running',
+    message: 'All-In-One Look Back Simulator API is running',
     timestamp: new Date().toISOString(),
   });
 });

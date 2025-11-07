@@ -27,9 +27,16 @@
 
 .form-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 1.5rem;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
   margin-bottom: 2rem;
+}
+
+/* Make each column a flex container so items stack independently */
+.form-column {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
 }
 
 .form-group {
@@ -73,6 +80,17 @@
 .input-wrapper .form-input {
   padding-left: 2.5rem;
   padding-right: 2.5rem;
+}
+
+/* Special padding for number inputs with suffixes to prevent arrow overlap */
+.input-wrapper input[type="number"].form-input {
+  padding-right: 4.5rem;
+}
+
+/* Make placeholder text more obviously grey */
+.form-input::placeholder {
+  color: #cbd5e0;
+  opacity: 1;
 }
 
 .form-input:focus {

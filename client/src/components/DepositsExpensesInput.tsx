@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { CashFlowAnalysis } from '../types';
 import CashFlowReviewModal from './CashFlowReviewModal';
+import AnalyzingModal from './AnalyzingModal';
 import { convertPdfToImages } from '../utils/pdfConverter';
 import './FileUpload.css';
 
@@ -19,7 +20,7 @@ interface DepositsExpensesInputProps {
 }
 
 export default function DepositsExpensesInput({ onSubmit, onBack, mortgageDetails }: DepositsExpensesInputProps) {
-  const [mode, setMode] = useState<'manual' | 'upload'>('manual');
+  const [mode, setMode] = useState<'manual' | 'upload'>('upload');
 
   // Manual mode state
   const [monthlyDeposits, setMonthlyDeposits] = useState<string>('');
@@ -189,21 +190,42 @@ export default function DepositsExpensesInput({ onSubmit, onBack, mortgageDetail
       });
       formData.append('currentHousingPayment', (mortgageDetails?.currentHousingPayment || 0).toString());
 
+      // Set a timeout for the fetch request (2 minutes)
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 120000);
+
       const response = await fetch('/api/analyze-statements', {
         method: 'POST',
         body: formData,
+        signal: controller.signal,
       });
 
+      clearTimeout(timeoutId);
+
       if (!response.ok) {
-        throw new Error('Failed to analyze bank statements');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Failed to analyze bank statements');
       }
 
       const result = await response.json();
+
+      if (!result.cashFlow) {
+        throw new Error('Invalid response from server');
+      }
+
       setAnalysis(result.cashFlow);
       setShowReviewModal(true);
     } catch (err: any) {
       console.error('Error analyzing statements:', err);
-      setError(err.message || 'Failed to analyze bank statements');
+
+      let errorMessage = 'Failed to analyze bank statements';
+      if (err.name === 'AbortError') {
+        errorMessage = 'Analysis timed out. Please try with fewer files or contact support.';
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+
+      setError(errorMessage);
     } finally {
       setIsAnalyzing(false);
     }
@@ -238,26 +260,6 @@ export default function DepositsExpensesInput({ onSubmit, onBack, mortgageDetail
         <div className="mode-toggle">
           <button
             type="button"
-            className={`mode-btn ${mode === 'manual' ? 'active' : ''}`}
-            onClick={() => setMode('manual')}
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-              />
-            </svg>
-            Manual Entry
-          </button>
-          <button
-            type="button"
             className={`mode-btn ${mode === 'upload' ? 'active' : ''}`}
             onClick={() => setMode('upload')}
           >
@@ -276,53 +278,68 @@ export default function DepositsExpensesInput({ onSubmit, onBack, mortgageDetail
             </svg>
             Upload Bank Statements
           </button>
+          <button
+            type="button"
+            className={`mode-btn ${mode === 'manual' ? 'active' : ''}`}
+            onClick={() => setMode('manual')}
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+              />
+            </svg>
+            Manual Entry
+          </button>
         </div>
 
         {/* Manual Mode */}
         {mode === 'manual' && (
           <div className="manual-input-section">
-            {/* Step 1: Monthly Deposits */}
+            {/* Step 1: Monthly Deposits with Frequency */}
             <div className="input-card">
               <label htmlFor="monthlyDeposits" className="input-label">
                 <span className="label-text">Monthly Deposits (Income)</span>
                 <span className="label-hint">Total amount deposited into your account each month</span>
               </label>
 
-              <div className="input-wrapper">
-                <span className="input-prefix">$</span>
-                <input
-                  type="text"
-                  id="monthlyDeposits"
-                  value={formatCurrency(monthlyDeposits)}
-                  onChange={(e) => {
-                    const value = e.target.value.replace(/[^0-9.]/g, '');
-                    setMonthlyDeposits(value);
-                    setError(null);
-                  }}
-                  placeholder="12,000"
-                  className="cash-flow-input"
-                  autoFocus
-                />
-              </div>
+              <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
+                <div className="input-wrapper" style={{ flex: 1 }}>
+                  <span className="input-prefix">$</span>
+                  <input
+                    type="text"
+                    id="monthlyDeposits"
+                    value={formatCurrency(monthlyDeposits)}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/[^0-9.]/g, '');
+                      setMonthlyDeposits(value);
+                      setError(null);
+                    }}
+                    placeholder="12,000"
+                    className="cash-flow-input"
+                    autoFocus
+                  />
+                </div>
 
-              {/* Deposit Frequency */}
-              <div style={{ marginTop: '1rem' }}>
-                <label className="input-label">
-                  <span className="label-text">Deposit Frequency</span>
-                </label>
-                <div className="frequency-options">
-                  {(['monthly', 'biweekly', 'weekly'] as const).map((freq) => (
-                    <button
-                      key={freq}
-                      type="button"
-                      className={`frequency-btn ${depositFrequency === freq ? 'active' : ''}`}
-                      onClick={() => setDepositFrequency(freq)}
-                    >
-                      {freq === 'monthly' && '📅 Monthly'}
-                      {freq === 'biweekly' && '📆 Bi-Weekly'}
-                      {freq === 'weekly' && '🗓️ Weekly'}
-                    </button>
-                  ))}
+                {/* Deposit Frequency Dropdown */}
+                <div style={{ minWidth: '140px' }}>
+                  <select
+                    value={depositFrequency}
+                    onChange={(e) => setDepositFrequency(e.target.value as 'monthly' | 'biweekly' | 'weekly')}
+                    className="cash-flow-input"
+                    style={{ paddingLeft: '0.75rem', paddingRight: '0.75rem' }}
+                  >
+                    <option value="monthly">Monthly</option>
+                    <option value="biweekly">Bi-Weekly</option>
+                    <option value="weekly">Weekly</option>
+                  </select>
                 </div>
               </div>
             </div>
@@ -580,7 +597,59 @@ export default function DepositsExpensesInput({ onSubmit, onBack, mortgageDetail
 
             {files.length > 0 && (
               <div className="files-list">
-                <h3>Uploaded Files ({files.length})</h3>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                  <h3 style={{ margin: 0 }}>Uploaded Files ({files.length})</h3>
+
+                  {/* Analyze Button - Top Position */}
+                  <button
+                    type="button"
+                    onClick={handleAnalyzeStatements}
+                    disabled={isAnalyzing}
+                    style={{
+                      background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '12px',
+                      padding: '0.75rem 1.5rem',
+                      fontSize: '1rem',
+                      fontWeight: 600,
+                      cursor: isAnalyzing ? 'not-allowed' : 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      boxShadow: '0 4px 6px -1px rgba(59, 130, 246, 0.3), 0 2px 4px -2px rgba(59, 130, 246, 0.2)',
+                      transition: 'all 0.2s ease',
+                      opacity: isAnalyzing ? 0.6 : 1,
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isAnalyzing) {
+                        e.currentTarget.style.transform = 'translateY(-2px)';
+                        e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(59, 130, 246, 0.4), 0 4px 6px -4px rgba(59, 130, 246, 0.3)';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(59, 130, 246, 0.3), 0 2px 4px -2px rgba(59, 130, 246, 0.2)';
+                    }}
+                  >
+                    <svg
+                      style={{ width: '20px', height: '20px' }}
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+                      />
+                    </svg>
+                    Analyze {files.length} {files.length === 1 ? 'Page' : 'Pages'} with AI
+                  </button>
+                </div>
+
                 {files.map((file, index) => (
                   <div key={index} className="file-item">
                     <svg
@@ -613,44 +682,37 @@ export default function DepositsExpensesInput({ onSubmit, onBack, mortgageDetail
             )}
 
             {error && (
-              <div className="alert alert-error">
-                <strong>Error:</strong> {error}
+              <div className="alert alert-error" style={{
+                padding: '1rem',
+                background: '#fef2f2',
+                border: '2px solid #fecaca',
+                borderRadius: '12px',
+                marginBottom: '1rem',
+                animation: 'fadeIn 0.3s ease'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
+                  <svg
+                    style={{ width: '24px', height: '24px', color: '#dc2626', flexShrink: 0 }}
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                    />
+                  </svg>
+                  <div>
+                    <strong style={{ color: '#dc2626', display: 'block', marginBottom: '0.25rem' }}>
+                      Analysis Error
+                    </strong>
+                    <span style={{ color: '#991b1b' }}>{error}</span>
+                  </div>
+                </div>
               </div>
-            )}
-
-            {files.length > 0 && (
-              <button
-                type="button"
-                className="btn-primary"
-                onClick={handleAnalyzeStatements}
-                disabled={isAnalyzing}
-                style={{ width: '100%', marginTop: '1rem' }}
-              >
-                {isAnalyzing ? (
-                  <>
-                    <div className="spinner-small"></div>
-                    Analyzing Statements...
-                  </>
-                ) : (
-                  <>
-                    <svg
-                      className="btn-icon"
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
-                      />
-                    </svg>
-                    Analyze with AI
-                  </>
-                )}
-              </button>
             )}
 
             <div className="upload-info-box">
@@ -713,6 +775,9 @@ export default function DepositsExpensesInput({ onSubmit, onBack, mortgageDetail
           )}
         </div>
       </div>
+
+      {/* Analyzing Modal */}
+      {isAnalyzing && <AnalyzingModal fileCount={files.length} />}
 
       {/* Review Modal */}
       {showReviewModal && analysis && (

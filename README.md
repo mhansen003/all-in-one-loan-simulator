@@ -1,6 +1,6 @@
-# All-In-One Loan Simulator
+# All-In-One Look Back Simulator
 
-An intelligent loan simulation tool that helps loan officers demonstrate the power of CMG's All-In-One mortgage product by analyzing bank statements and projecting accelerated payoff timelines.
+An intelligent look back simulation tool that helps loan officers demonstrate the power of CMG's All-In-One mortgage product by analyzing bank statements and projecting accelerated payoff timelines.
 
 ## 🚀 Features
 

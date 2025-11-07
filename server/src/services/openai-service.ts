@@ -145,7 +145,7 @@ export async function analyzeStatements(
     const combinedData = extractedData.join('\n\n---NEW DOCUMENT---\n\n');
 
     // Use GPT-4 to analyze the transactions
-    const prompt = `You are a financial analysis expert. Analyze the following bank statement data covering 12 months of transactions.
+    const prompt = `You are a financial analysis expert. Analyze the following bank statement data covering multiple months of transactions.
 
 Current housing payment (to exclude): $${currentHousingPayment}
 
@@ -160,18 +160,36 @@ Please analyze these transactions and provide:
    - "housing": Current rent or mortgage payments (around $${currentHousingPayment})
    - "one-time": One-time large expenses (vacations, large purchases, etc.)
 
-2. **Cash Flow Summary**:
-   - Total monthly income (average)
-   - Total monthly expenses (average, EXCLUDING housing and one-time)
+2. **Transaction Flagging**: For each irregular/one-time transaction, provide:
+   - "flagged": true/false
+   - "flagReason": Why it was flagged (e.g., "Unusually large amount", "One-time purchase", "Irregular timing")
+
+3. **Monthly Breakdown**: Group transactions by month and provide:
+   - month: "YYYY-MM"
+   - income: Total income for that month
+   - expenses: Total expenses for that month
+   - netCashFlow: Net for that month
+   - transactionCount: Number of transactions
+
+4. **Deposit Frequency Detection**: Analyze income deposits to determine:
+   - "monthly": Deposits once per month
+   - "biweekly": Deposits every 2 weeks (26 times/year)
+   - "weekly": Deposits every week (52 times/year)
+
+5. **Cash Flow Summary**:
+   - Average monthly deposits/income
+   - Average monthly expenses (EXCLUDING housing and flagged one-time)
+   - Average monthly leftover (deposits - expenses)
    - Net monthly cash flow
 
-3. **Confidence Score**: Your confidence in the analysis (0-1 scale)
+6. **Confidence Score**: Your confidence in the analysis (0-1 scale)
 
 IMPORTANT RULES:
 - Exclude current housing payments (rent/mortgage around $${currentHousingPayment}) from recurring expenses
-- Flag one-time expenses separately (vacations, major purchases)
+- Flag one-time expenses with specific reasons
 - Only include recurring, predictable expenses in the total
-- Calculate averages across the full 12-month period
+- Calculate averages across the full period analyzed
+- Detect deposit frequency by analyzing timing of income deposits
 
 Return your response in the following JSON format:
 {
@@ -180,14 +198,33 @@ Return your response in the following JSON format:
       "date": "YYYY-MM-DD",
       "description": "Transaction description",
       "amount": 1234.56,
-      "category": "income" | "expense" | "housing" | "one-time"
+      "category": "income" | "expense" | "housing" | "one-time",
+      "flagged": true,
+      "flagReason": "One-time vacation expense",
+      "excluded": false
     }
   ],
+  "monthlyBreakdown": [
+    {
+      "month": "2024-01",
+      "income": 5000.00,
+      "expenses": 3000.00,
+      "netCashFlow": 2000.00,
+      "transactionCount": 45
+    }
+  ],
+  "depositFrequency": "biweekly",
+  "monthlyDeposits": 5000.00,
+  "monthlyExpenses": 3000.00,
+  "monthlyLeftover": 2000.00,
   "totalIncome": 5000.00,
   "totalExpenses": 3000.00,
   "netCashFlow": 2000.00,
   "confidence": 0.85
 }`;
+
+    console.log('Analyzing combined transaction data with AI...');
+    console.log(`Combined data length: ${combinedData.length} characters`);
 
     const response = await openai.chat.completions.create({
       model: 'gpt-4o',
@@ -203,9 +240,18 @@ Return your response in the following JSON format:
       ],
       response_format: { type: 'json_object' },
       temperature: 0.1,
+      max_tokens: 4096, // Limit response size
+    }, {
+      timeout: 90000, // 90 second timeout
     });
 
+    console.log('AI analysis completed successfully');
+
     const result = JSON.parse(response.choices[0]?.message?.content || '{}');
+    console.log(`Parsed ${result.transactions?.length || 0} transactions`);
+    console.log(`Monthly deposits: $${result.monthlyDeposits || 0}`);
+    console.log(`Monthly expenses: $${result.monthlyExpenses || 0}`);
+    console.log(`Confidence score: ${result.confidence || 0}`);
 
     // Clean up uploaded files after processing
     for (const file of files) {
@@ -219,12 +265,21 @@ Return your response in the following JSON format:
     // Calculate average monthly balance (net cash flow that can offset principal)
     const averageMonthlyBalance = Math.max(0, result.netCashFlow);
 
+    // Extract flagged transactions
+    const flaggedTransactions = (result.transactions || []).filter((t: any) => t.flagged);
+
     return {
       totalIncome: result.totalIncome || 0,
       totalExpenses: result.totalExpenses || 0,
       netCashFlow: result.netCashFlow || 0,
       averageMonthlyBalance,
       transactions: result.transactions || [],
+      flaggedTransactions,
+      monthlyBreakdown: result.monthlyBreakdown || [],
+      depositFrequency: result.depositFrequency || 'monthly',
+      monthlyDeposits: result.monthlyDeposits || result.totalIncome || 0,
+      monthlyExpenses: result.monthlyExpenses || result.totalExpenses || 0,
+      monthlyLeftover: result.monthlyLeftover || result.netCashFlow || 0,
       confidence: result.confidence || 0.7,
     };
   } catch (error) {

@@ -14,6 +14,16 @@ export interface Transaction {
   amount: number;
   category: 'income' | 'expense' | 'housing' | 'one-time' | 'recurring';
   excluded?: boolean;
+  flagged?: boolean;
+  flagReason?: string;
+}
+
+export interface MonthlyBreakdown {
+  month: string;
+  income: number;
+  expenses: number;
+  netCashFlow: number;
+  transactionCount: number;
 }
 
 export interface CashFlowAnalysis {
@@ -22,6 +32,12 @@ export interface CashFlowAnalysis {
   netCashFlow: number;
   averageMonthlyBalance: number;
   transactions: Transaction[];
+  flaggedTransactions?: Transaction[];
+  monthlyBreakdown?: MonthlyBreakdown[];
+  depositFrequency?: 'monthly' | 'biweekly' | 'weekly';
+  monthlyDeposits?: number;
+  monthlyExpenses?: number;
+  monthlyLeftover?: number;
   confidence: number;
 }
 

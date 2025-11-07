@@ -30,18 +30,56 @@ export default function MortgageDetailsForm({
     initialData.remainingTermMonths ? initialData.remainingTermMonths % 12 : 0
   );
 
+  // State for raw input values (to preserve decimal points while typing)
+  const [interestRateInput, setInterestRateInput] = useState<string>(
+    initialData.interestRate !== undefined ? String(initialData.interestRate) : ''
+  );
+  const [currentBalanceInput, setCurrentBalanceInput] = useState<string>(
+    initialData.currentBalance !== undefined ? String(initialData.currentBalance) : ''
+  );
+  const [monthlyPaymentInput, setMonthlyPaymentInput] = useState<string>(
+    initialData.monthlyPayment !== undefined ? String(initialData.monthlyPayment) : ''
+  );
+  const [propertyValueInput, setPropertyValueInput] = useState<string>(
+    initialData.propertyValue !== undefined ? String(initialData.propertyValue) : ''
+  );
+
+  // Additional housing expenses (separate from P&I)
+  const [additionalExpensesInput, setAdditionalExpensesInput] = useState<string>(() => {
+    if (initialData.currentHousingPayment && initialData.monthlyPayment) {
+      const additional = initialData.currentHousingPayment - initialData.monthlyPayment;
+      return additional > 0 ? String(additional) : '';
+    }
+    return '';
+  });
+  const [additionalExpenses, setAdditionalExpenses] = useState<number>(() => {
+    if (initialData.currentHousingPayment && initialData.monthlyPayment) {
+      return Math.max(0, initialData.currentHousingPayment - initialData.monthlyPayment);
+    }
+    return 0;
+  });
+
   const [errors, setErrors] = useState<Partial<Record<keyof MortgageDetails, string>>>({});
 
   // Debug function to pre-populate form with test data
   const fillTestData = () => {
+    const testMonthlyPayment = 2200;
+    const testAdditionalExpenses = 600; // taxes, insurance, HOA
+
     setFormData({
       currentBalance: 350000,
       interestRate: 6.5,
-      monthlyPayment: 2200,
+      monthlyPayment: testMonthlyPayment,
       remainingTermMonths: 300,
       propertyValue: 500000,
-      currentHousingPayment: 2800,
+      currentHousingPayment: testMonthlyPayment + testAdditionalExpenses, // 2800
     });
+    setCurrentBalanceInput('350000');
+    setInterestRateInput('6.5');
+    setMonthlyPaymentInput('2200');
+    setPropertyValueInput('500000');
+    setAdditionalExpensesInput('600');
+    setAdditionalExpenses(600);
     setTermYears(25);
     setTermMonths(0);
     setErrors({});
@@ -62,8 +100,8 @@ export default function MortgageDetailsForm({
       newErrors.monthlyPayment = 'Please enter a valid monthly payment';
     }
 
-    if (!formData.remainingTermMonths || formData.remainingTermMonths <= 0 || formData.remainingTermMonths > 360) {
-      newErrors.remainingTermMonths = 'Please enter a valid term (1-360 months)';
+    if (!formData.remainingTermMonths || formData.remainingTermMonths <= 0) {
+      newErrors.remainingTermMonths = 'Please enter a valid term (at least 1 month)';
     }
 
     if (!formData.propertyValue || formData.propertyValue <= 0) {
@@ -74,8 +112,8 @@ export default function MortgageDetailsForm({
       newErrors.propertyValue = 'Property value must be greater than loan balance';
     }
 
-    if (!formData.currentHousingPayment || formData.currentHousingPayment < 0) {
-      newErrors.currentHousingPayment = 'Please enter your current housing payment (or 0 if none)';
+    if (additionalExpenses < 0) {
+      newErrors.currentHousingPayment = 'Additional expenses cannot be negative';
     }
 
     setErrors(newErrors);
@@ -85,24 +123,16 @@ export default function MortgageDetailsForm({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Calculate total housing payment before submitting
+    const totalHousingPayment = (formData.monthlyPayment || 0) + additionalExpenses;
+    const submissionData = {
+      ...formData,
+      currentHousingPayment: totalHousingPayment,
+    };
+
     if (validateForm()) {
-      onSubmit(formData as MortgageDetails);
+      onSubmit(submissionData as MortgageDetails);
     }
-  };
-
-  const handleChange = (field: keyof MortgageDetails, value: string) => {
-    const numValue = parseFloat(value) || undefined;
-    setFormData((prev) => ({ ...prev, [field]: numValue }));
-    // Clear error for this field
-    if (errors[field]) {
-      setErrors((prev) => ({ ...prev, [field]: undefined }));
-    }
-  };
-
-  // Format currency on blur
-  const formatCurrency = (value: number | undefined): string => {
-    if (!value) return '';
-    return new Intl.NumberFormat('en-US').format(value);
   };
 
   // Handle term changes
@@ -152,8 +182,10 @@ export default function MortgageDetailsForm({
 
       <form onSubmit={handleSubmit} className="mortgage-form">
         <div className="form-grid">
-          {/* Current Balance */}
-          <div className="form-group">
+          {/* LEFT COLUMN: Loan Details */}
+          <div className="form-column">
+            {/* Current Balance */}
+            <div className="form-group">
             <label htmlFor="currentBalance" className="form-label required">
               Current Loan Balance
             </label>
@@ -161,19 +193,39 @@ export default function MortgageDetailsForm({
               <span className="input-prefix">$</span>
               <input
                 type="text"
-                inputMode="numeric"
+                inputMode="decimal"
                 id="currentBalance"
                 className={`form-input ${errors.currentBalance ? 'input-error' : ''}`}
-                placeholder="350,000"
-                value={formData.currentBalance ? formatCurrency(formData.currentBalance) : ''}
+                placeholder="350,000.00"
+                value={currentBalanceInput}
                 onChange={(e) => {
                   const value = e.target.value.replace(/[^0-9.]/g, '');
-                  handleChange('currentBalance', value);
+                  // Allow only one decimal point
+                  const parts = value.split('.');
+                  const sanitized = parts.length > 2
+                    ? parts[0] + '.' + parts.slice(1).join('')
+                    : value;
+                  setCurrentBalanceInput(sanitized);
+
+                  // Update form data if we have a valid number
+                  const numValue = parseFloat(sanitized);
+                  if (!isNaN(numValue)) {
+                    setFormData((prev) => ({ ...prev, currentBalance: numValue }));
+                  }
+
+                  // Clear error for this field
+                  if (errors.currentBalance) {
+                    setErrors((prev) => ({ ...prev, currentBalance: undefined }));
+                  }
                 }}
                 onBlur={(e) => {
                   const value = e.target.value.replace(/[^0-9.]/g, '');
                   if (value) {
-                    setFormData((prev) => ({ ...prev, currentBalance: parseFloat(value) }));
+                    const num = parseFloat(value);
+                    if (!isNaN(num)) {
+                      setFormData((prev) => ({ ...prev, currentBalance: num }));
+                      setCurrentBalanceInput(String(num));
+                    }
                   }
                 }}
               />
@@ -181,6 +233,61 @@ export default function MortgageDetailsForm({
             {errors.currentBalance && <span className="error-text">{errors.currentBalance}</span>}
           </div>
 
+          {/* Property Value */}
+          <div className="form-group">
+            <label htmlFor="propertyValue" className="form-label required">
+              Property Value
+            </label>
+            <div className="input-wrapper">
+              <span className="input-prefix">$</span>
+              <input
+                type="text"
+                inputMode="decimal"
+                id="propertyValue"
+                className={`form-input ${errors.propertyValue ? 'input-error' : ''}`}
+                placeholder="500,000.00"
+                value={propertyValueInput}
+                onChange={(e) => {
+                  const value = e.target.value.replace(/[^0-9.]/g, '');
+                  // Allow only one decimal point
+                  const parts = value.split('.');
+                  const sanitized = parts.length > 2
+                    ? parts[0] + '.' + parts.slice(1).join('')
+                    : value;
+                  setPropertyValueInput(sanitized);
+
+                  // Update form data if we have a valid number
+                  const numValue = parseFloat(sanitized);
+                  if (!isNaN(numValue)) {
+                    setFormData((prev) => ({ ...prev, propertyValue: numValue }));
+                  }
+
+                  // Clear error for this field
+                  if (errors.propertyValue) {
+                    setErrors((prev) => ({ ...prev, propertyValue: undefined }));
+                  }
+                }}
+                onBlur={(e) => {
+                  const value = e.target.value.replace(/[^0-9.]/g, '');
+                  if (value) {
+                    const num = parseFloat(value);
+                    if (!isNaN(num)) {
+                      setFormData((prev) => ({ ...prev, propertyValue: num }));
+                      setPropertyValueInput(String(num));
+                    }
+                  }
+                }}
+              />
+            </div>
+            {errors.propertyValue && <span className="error-text">{errors.propertyValue}</span>}
+            {formData.propertyValue && formData.currentBalance && (
+              <span className="form-help-text">
+                LTV: {((formData.currentBalance / formData.propertyValue) * 100).toFixed(1)}%
+              </span>
+            )}
+          </div>
+
+          {/* SECTION 2: Loan Terms */}
           {/* Interest Rate */}
           <div className="form-group">
             <label htmlFor="interestRate" className="form-label required">
@@ -193,52 +300,41 @@ export default function MortgageDetailsForm({
                 id="interestRate"
                 className={`form-input ${errors.interestRate ? 'input-error' : ''}`}
                 placeholder="6.500"
-                value={formData.interestRate !== undefined ? String(formData.interestRate) : ''}
+                value={interestRateInput}
                 onChange={(e) => {
                   const value = e.target.value.replace(/[^0-9.]/g, '');
-                  handleChange('interestRate', value);
+                  // Allow only one decimal point
+                  const parts = value.split('.');
+                  const sanitized = parts.length > 2
+                    ? parts[0] + '.' + parts.slice(1).join('')
+                    : value;
+                  setInterestRateInput(sanitized);
+
+                  // Update form data if we have a valid number
+                  const numValue = parseFloat(sanitized);
+                  if (!isNaN(numValue)) {
+                    setFormData((prev) => ({ ...prev, interestRate: numValue }));
+                  }
+
+                  // Clear error for this field
+                  if (errors.interestRate) {
+                    setErrors((prev) => ({ ...prev, interestRate: undefined }));
+                  }
                 }}
                 onBlur={(e) => {
                   const value = e.target.value.replace(/[^0-9.]/g, '');
                   if (value) {
                     const num = parseFloat(value);
-                    setFormData((prev) => ({ ...prev, interestRate: num }));
+                    if (!isNaN(num)) {
+                      setFormData((prev) => ({ ...prev, interestRate: num }));
+                      setInterestRateInput(String(num));
+                    }
                   }
                 }}
               />
               <span className="input-suffix">%</span>
             </div>
             {errors.interestRate && <span className="error-text">{errors.interestRate}</span>}
-          </div>
-
-          {/* Monthly Payment */}
-          <div className="form-group">
-            <label htmlFor="monthlyPayment" className="form-label required">
-              Monthly Mortgage Payment (P&I)
-            </label>
-            <div className="input-wrapper">
-              <span className="input-prefix">$</span>
-              <input
-                type="text"
-                inputMode="numeric"
-                id="monthlyPayment"
-                className={`form-input ${errors.monthlyPayment ? 'input-error' : ''}`}
-                placeholder="2,200"
-                value={formData.monthlyPayment ? formatCurrency(formData.monthlyPayment) : ''}
-                onChange={(e) => {
-                  const value = e.target.value.replace(/[^0-9.]/g, '');
-                  handleChange('monthlyPayment', value);
-                }}
-                onBlur={(e) => {
-                  const value = e.target.value.replace(/[^0-9.]/g, '');
-                  if (value) {
-                    setFormData((prev) => ({ ...prev, monthlyPayment: parseFloat(value) }));
-                  }
-                }}
-              />
-            </div>
-            {errors.monthlyPayment && <span className="error-text">{errors.monthlyPayment}</span>}
-            <span className="form-help-text">Principal & Interest only (exclude taxes, insurance, HOA)</span>
           </div>
 
           {/* Remaining Term - Years/Months */}
@@ -256,7 +352,6 @@ export default function MortgageDetailsForm({
                   value={termYears || ''}
                   onChange={(e) => handleTermYearsChange(e.target.value)}
                   min="0"
-                  max="30"
                 />
                 <span className="input-suffix">years</span>
               </div>
@@ -269,7 +364,6 @@ export default function MortgageDetailsForm({
                   value={termMonths || ''}
                   onChange={(e) => handleTermMonthsChange(e.target.value)}
                   min="0"
-                  max="11"
                 />
                 <span className="input-suffix">months</span>
               </div>
@@ -277,75 +371,158 @@ export default function MortgageDetailsForm({
             {errors.remainingTermMonths && <span className="error-text">{errors.remainingTermMonths}</span>}
             <span className="form-help-text">
               {formData.remainingTermMonths
-                ? `Total: ${formData.remainingTermMonths} months`
-                : 'Enter years and months remaining on the loan'}
+                ? `Total: ${formData.remainingTermMonths} months${formData.remainingTermMonths >= 12 ? ` (${Math.floor(formData.remainingTermMonths / 12)} years, ${formData.remainingTermMonths % 12} months)` : ''}`
+                : 'Enter years and/or months (e.g., 25 years + 6 months, or just 345 months)'}
             </span>
+            </div>
           </div>
 
-          {/* Property Value */}
-          <div className="form-group">
-            <label htmlFor="propertyValue" className="form-label required">
-              Property Value
+          {/* RIGHT COLUMN: Payment Information */}
+          <div className="form-column">
+            {/* Monthly Payment */}
+            <div className="form-group">
+            <label htmlFor="monthlyPayment" className="form-label required">
+              Monthly Mortgage Payment (P&I)
             </label>
             <div className="input-wrapper">
               <span className="input-prefix">$</span>
               <input
                 type="text"
-                inputMode="numeric"
-                id="propertyValue"
-                className={`form-input ${errors.propertyValue ? 'input-error' : ''}`}
-                placeholder="500,000"
-                value={formData.propertyValue ? formatCurrency(formData.propertyValue) : ''}
+                inputMode="decimal"
+                id="monthlyPayment"
+                className={`form-input ${errors.monthlyPayment ? 'input-error' : ''}`}
+                placeholder="2,200.00"
+                value={monthlyPaymentInput}
                 onChange={(e) => {
                   const value = e.target.value.replace(/[^0-9.]/g, '');
-                  handleChange('propertyValue', value);
+                  // Allow only one decimal point
+                  const parts = value.split('.');
+                  const sanitized = parts.length > 2
+                    ? parts[0] + '.' + parts.slice(1).join('')
+                    : value;
+                  setMonthlyPaymentInput(sanitized);
+
+                  // Update form data if we have a valid number
+                  const numValue = parseFloat(sanitized);
+                  if (!isNaN(numValue)) {
+                    setFormData((prev) => ({ ...prev, monthlyPayment: numValue }));
+                  }
+
+                  // Clear error for this field
+                  if (errors.monthlyPayment) {
+                    setErrors((prev) => ({ ...prev, monthlyPayment: undefined }));
+                  }
                 }}
                 onBlur={(e) => {
                   const value = e.target.value.replace(/[^0-9.]/g, '');
                   if (value) {
-                    setFormData((prev) => ({ ...prev, propertyValue: parseFloat(value) }));
+                    const num = parseFloat(value);
+                    if (!isNaN(num)) {
+                      setFormData((prev) => ({ ...prev, monthlyPayment: num }));
+                      setMonthlyPaymentInput(String(num));
+                    }
                   }
                 }}
               />
             </div>
-            {errors.propertyValue && <span className="error-text">{errors.propertyValue}</span>}
-            {formData.propertyValue && formData.currentBalance && (
-              <span className="form-help-text">
-                LTV: {((formData.currentBalance / formData.propertyValue) * 100).toFixed(1)}%
-              </span>
-            )}
+            {errors.monthlyPayment && <span className="error-text">{errors.monthlyPayment}</span>}
+            <span className="form-help-text">Principal & Interest only (exclude taxes, insurance, HOA)</span>
           </div>
 
-          {/* Current Housing Payment */}
+          {/* Total Housing Payment Breakdown */}
           <div className="form-group">
-            <label htmlFor="currentHousingPayment" className="form-label required">
+            <label className="form-label required">
               Total Monthly Housing Expense
             </label>
-            <div className="input-wrapper">
+
+            {/* P&I Display (from monthly payment field) */}
+            <div style={{
+              padding: '0.75rem',
+              backgroundColor: '#f8f9fa',
+              borderRadius: '0.375rem',
+              marginBottom: '0.75rem',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center'
+            }}>
+              <span style={{ color: '#6c757d', fontSize: '0.9rem' }}>Monthly Mortgage (P&amp;I)</span>
+              <span style={{ fontWeight: '600', fontSize: '1rem' }}>
+                ${formData.monthlyPayment ? formData.monthlyPayment.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00'}
+              </span>
+            </div>
+
+            {/* Additional Expenses Input */}
+            <label htmlFor="additionalExpenses" style={{ fontSize: '0.9rem', color: '#6c757d', marginBottom: '0.5rem', display: 'block' }}>
+              + Additional Expenses (taxes, insurance, HOA, etc.)
+            </label>
+            <div className="input-wrapper" style={{ marginBottom: '0.75rem' }}>
               <span className="input-prefix">$</span>
               <input
                 type="text"
-                inputMode="numeric"
-                id="currentHousingPayment"
+                inputMode="decimal"
+                id="additionalExpenses"
                 className={`form-input ${errors.currentHousingPayment ? 'input-error' : ''}`}
-                placeholder="2,500"
-                value={formData.currentHousingPayment ? formatCurrency(formData.currentHousingPayment) : ''}
+                placeholder="0.00"
+                value={additionalExpensesInput}
                 onChange={(e) => {
                   const value = e.target.value.replace(/[^0-9.]/g, '');
-                  handleChange('currentHousingPayment', value);
+                  // Allow only one decimal point
+                  const parts = value.split('.');
+                  const sanitized = parts.length > 2
+                    ? parts[0] + '.' + parts.slice(1).join('')
+                    : value;
+                  setAdditionalExpensesInput(sanitized);
+
+                  // Update additional expenses if we have a valid number
+                  const numValue = parseFloat(sanitized);
+                  if (!isNaN(numValue)) {
+                    setAdditionalExpenses(numValue);
+                  } else {
+                    setAdditionalExpenses(0);
+                  }
+
+                  // Clear error for this field
+                  if (errors.currentHousingPayment) {
+                    setErrors((prev) => ({ ...prev, currentHousingPayment: undefined }));
+                  }
                 }}
                 onBlur={(e) => {
                   const value = e.target.value.replace(/[^0-9.]/g, '');
                   if (value) {
-                    setFormData((prev) => ({ ...prev, currentHousingPayment: parseFloat(value) }));
+                    const num = parseFloat(value);
+                    if (!isNaN(num)) {
+                      setAdditionalExpenses(num);
+                      setAdditionalExpensesInput(String(num));
+                    }
+                  } else {
+                    setAdditionalExpenses(0);
+                    setAdditionalExpensesInput('');
                   }
                 }}
               />
             </div>
+
+            {/* Total Display */}
+            <div style={{
+              padding: '0.75rem',
+              backgroundColor: '#e7f3ff',
+              borderRadius: '0.375rem',
+              border: '2px solid #0066cc',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center'
+            }}>
+              <span style={{ fontWeight: '600', color: '#0066cc', fontSize: '1rem' }}>= Total Monthly Housing Expense</span>
+              <span style={{ fontWeight: '700', fontSize: '1.1rem', color: '#0066cc' }}>
+                ${((formData.monthlyPayment || 0) + additionalExpenses).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </span>
+            </div>
+
             {errors.currentHousingPayment && <span className="error-text">{errors.currentHousingPayment}</span>}
-            <span className="form-help-text">
-              Include P&I + taxes + insurance + HOA (used to exclude housing costs from cash flow)
+            <span className="form-help-text" style={{ marginTop: '0.5rem' }}>
+              This total is used to exclude all housing costs from your cash flow analysis
             </span>
+            </div>
           </div>
         </div>
 

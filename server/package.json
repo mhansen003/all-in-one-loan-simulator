@@ -1,7 +1,7 @@
 {
   "name": "server",
   "version": "1.0.0",
-  "description": "All-In-One Loan Simulator API Server",
+  "description": "All-In-One Look Back Simulator API Server",
   "main": "dist/index.js",
   "type": "module",
   "scripts": {

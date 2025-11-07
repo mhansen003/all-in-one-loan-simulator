@@ -14,6 +14,24 @@ import type { MortgageDetails, CashFlowAnalysis, SimulationResult, LoanProjectio
  *
  * This daily calculation creates significant interest savings compared to
  * traditional mortgages where interest is calculated monthly on full balance.
+ *
+ * ⚠️ IMPORTANT - CALCULATION VALIDATION REQUIRED ⚠️
+ * ====================================================
+ * These calculations MUST match the existing CMG All-In-One simulator EXACTLY.
+ *
+ * TODO: Obtain C# source code from existing production simulator to ensure:
+ * 1. Traditional loan amortization formula matches exactly
+ * 2. All-In-One daily interest calculation matches exactly
+ * 3. Cash flow offset logic matches exactly
+ * 4. Payoff projections match exactly
+ * 5. Interest savings calculations match exactly
+ *
+ * Per Paul's requirement: "What I don't wanna have happen Mark, is that on the
+ * simulator you get a different response than in here, so it needs to be the
+ * exact calculation."
+ *
+ * Contact: Paul Akinmade or CMG Dev Team for C# source code
+ * ====================================================
  */
 
 interface DailyBalance {

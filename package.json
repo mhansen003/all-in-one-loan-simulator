@@ -1,7 +1,7 @@
 {
   "name": "all-in-one-loan-simulator",
   "version": "1.0.0",
-  "description": "All-In-One Loan Simulator - Calculate savings and payoff projections with intelligent bank statement analysis",
+  "description": "All-In-One Look Back Simulator - Calculate savings and payoff projections with intelligent bank statement analysis",
   "scripts": {
     "install:all": "cd server && npm install && cd ../client && npm install",
     "dev:server": "cd server && npm run dev",

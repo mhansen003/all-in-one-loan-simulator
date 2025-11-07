@@ -4,15 +4,30 @@ import path from 'path';
 import xlsx from 'xlsx';
 import type { CashFlowAnalysis, Transaction, OpenAIAnalysisResult } from '../types.js';
 
-// Configure OpenAI client to use OpenRouter
-const openai = new OpenAI({
-  apiKey: process.env.OPENROUTER_API_KEY,
-  baseURL: 'https://openrouter.ai/api/v1',
-  defaultHeaders: {
-    'HTTP-Referer': process.env.YOUR_SITE_URL || 'https://aio-simulator.cmgfinancial.ai',
-    'X-Title': 'All-In-One Loan Simulator',
-  },
-});
+// Configure OpenAI client
+// Set USE_OPENROUTER=true to use OpenRouter, otherwise uses OpenAI directly
+const USE_OPENROUTER = process.env.USE_OPENROUTER === 'true';
+
+const openai = USE_OPENROUTER
+  ? new OpenAI({
+      apiKey: process.env.OPENROUTER_API_KEY,
+      baseURL: 'https://openrouter.ai/api/v1',
+      defaultHeaders: {
+        'HTTP-Referer': process.env.YOUR_SITE_URL || 'https://aio-simulator.cmgfinancial.ai',
+        'X-Title': 'All-In-One Look Back Simulator',
+      },
+    })
+  : new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY, // Direct OpenAI API key
+    });
+
+// Model selection based on provider
+const VISION_MODEL = USE_OPENROUTER
+  ? 'anthropic/claude-sonnet-4.5' // Claude via OpenRouter
+  : 'gpt-4o'; // GPT-4o via OpenAI Direct - proven vision + PDF support, no 8k limit
+
+console.log(`🔧 AI Provider: ${USE_OPENROUTER ? 'OpenRouter' : 'OpenAI Direct'}`);
+console.log(`🤖 Vision Model: ${VISION_MODEL}`);
 
 /**
  * Note: PDFs are now converted to images CLIENT-SIDE using pdf.js in the browser.
@@ -41,15 +56,42 @@ async function extractDataFromSpreadsheet(filePath: string): Promise<string> {
  * Supports images from various sources including client-side PDF conversions
  */
 async function analyzeImage(filePath: string): Promise<string> {
+  const TIMEOUT_MS = 60000; // 60 seconds
+
   try {
-    console.log('Analyzing image with vision model via OpenRouter...');
+    console.log('🔍 [1/5] Starting image analysis...');
+    console.log(`   📁 File: ${filePath}`);
+
+    console.log('📖 [2/5] Reading image file...');
     const imageBuffer = await fs.readFile(filePath);
+    console.log(`   ✓ File read successfully (${imageBuffer.length} bytes)`);
+
+    console.log('🔄 [3/5] Converting to base64...');
     const base64Image = imageBuffer.toString('base64');
     const ext = path.extname(filePath).toLowerCase();
     const mimeType = ext === '.png' ? 'image/png' : 'image/jpeg';
+    console.log(`   ✓ Converted to base64 (${base64Image.length} chars, type: ${mimeType})`);
 
-    const response = await openai.chat.completions.create({
-      model: 'openai/gpt-4o', // OpenRouter model format
+    console.log('🌐 [4/5] Calling AI API...');
+    console.log(`   📡 Endpoint: ${openai.baseURL || 'https://api.openai.com/v1'}`);
+    console.log(`   🤖 Model: ${VISION_MODEL}`);
+    console.log(`   ⏱️  Timeout: ${TIMEOUT_MS / 1000}s`);
+
+    // Create a timeout promise that rejects after TIMEOUT_MS
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => {
+        console.error(`⏱️  ❌ TIMEOUT FIRED - No response after ${TIMEOUT_MS / 1000}s`);
+        reject(new Error(`Image analysis timed out after ${TIMEOUT_MS / 1000} seconds`));
+      }, TIMEOUT_MS);
+    });
+
+    console.log('   🚀 Sending API request NOW...');
+    const startTime = Date.now();
+
+    // Create the API call promise using configured model
+    // GPT-5 has native PDF support, Claude has excellent vision capabilities
+    const apiCallPromise = openai.chat.completions.create({
+      model: VISION_MODEL,
       messages: [
         {
           role: 'user',
@@ -83,30 +125,175 @@ Be thorough and extract EVERY transaction visible in the image.`,
           ],
         },
       ],
-      max_tokens: 4096,
+      max_tokens: 4096, // GPT-4o uses max_tokens
+    }, {
+      timeout: TIMEOUT_MS, // SDK timeout as backup
     });
 
-    console.log('Successfully extracted transaction data from image');
+    console.log('   ⏳ Waiting for response...');
+    // Race the API call against the timeout
+    const response = await Promise.race([apiCallPromise, timeoutPromise]);
+
+    const elapsedTime = Date.now() - startTime;
+    console.log(`✅ [5/5] API response received in ${(elapsedTime / 1000).toFixed(2)}s`);
+    console.log(`   📝 Response length: ${response.choices[0]?.message?.content?.length || 0} chars`);
+
     return response.choices[0]?.message?.content || '';
   } catch (error) {
-    console.error('Error analyzing image:', error);
+    console.error('❌ Error analyzing image:', error);
+
+    // Provide more specific error messages
+    if (error instanceof Error) {
+      if (error.message.includes('timeout') || error.message.includes('timed out')) {
+        throw new Error(`Image analysis timed out after ${TIMEOUT_MS / 1000} seconds. Please try again or use a smaller image.`);
+      }
+      throw new Error(`Failed to analyze image: ${error.message}`);
+    }
     throw new Error('Failed to analyze image with vision model');
   }
 }
 
 /**
- * Process a single bank statement file
- * Note: PDFs are converted to images client-side before upload
+ * Analyze PDF file using vision model via OpenAI
+ * TESTING: Native PDF support (no conversion to images)
  */
-async function processFile(file: Express.Multer.File): Promise<string> {
+async function analyzePdf(filePath: string): Promise<string> {
+  const TIMEOUT_MS = 120000; // 120 seconds for PDFs (can be multi-page)
+
+  try {
+    console.log('📄 [1/4] Starting PDF analysis...');
+    console.log(`   📁 File: ${filePath}`);
+
+    console.log('📖 [2/4] Reading PDF file...');
+    const pdfBuffer = await fs.readFile(filePath);
+    console.log(`   ✓ File read successfully (${pdfBuffer.length} bytes)`);
+
+    console.log('🔄 [3/4] Converting to base64...');
+    const base64Pdf = pdfBuffer.toString('base64');
+    console.log(`   ✓ Converted to base64 (${base64Pdf.length} chars)`);
+
+    console.log('🌐 [4/4] Calling AI API with native PDF...');
+    console.log(`   📡 Endpoint: ${openai.baseURL || 'https://api.openai.com/v1'}`);
+    console.log(`   🤖 Model: ${VISION_MODEL}`);
+    console.log(`   ⏱️  Timeout: ${TIMEOUT_MS / 1000}s`);
+
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => {
+        console.error(`⏱️  ❌ TIMEOUT FIRED - No response after ${TIMEOUT_MS / 1000}s`);
+        reject(new Error(`PDF analysis timed out after ${TIMEOUT_MS / 1000} seconds`));
+      }, TIMEOUT_MS);
+    });
+
+    console.log('   🚀 Sending API request NOW with native PDF...');
+    const startTime = Date.now();
+
+    // Send PDF directly to OpenAI using file input format
+    const apiCallPromise = openai.chat.completions.create({
+      model: VISION_MODEL,
+      messages: [
+        {
+          role: 'user',
+          content: [
+            {
+              type: 'text',
+              text: `Extract ALL transaction data from this bank statement PDF.
+
+For each transaction, provide:
+- Date (YYYY-MM-DD format)
+- Description
+- Amount (positive for deposits, negative for withdrawals)
+
+Include:
+- All deposits (income, paychecks, transfers in)
+- All withdrawals (purchases, payments, transfers out)
+- Account balance information if visible
+
+Format each transaction on a new line like:
+2024-08-15 | Paycheck Deposit | +3500.00
+2024-08-16 | Grocery Store | -125.50
+
+Be thorough and extract EVERY transaction visible in the PDF.`,
+            },
+            {
+              type: 'image_url',
+              image_url: {
+                url: `data:application/pdf;base64,${base64Pdf}`,
+              },
+            },
+          ],
+        },
+      ],
+      max_tokens: 16000, // Higher limit for multi-page PDFs
+    }, {
+      timeout: TIMEOUT_MS,
+    });
+
+    console.log('   ⏳ Waiting for response...');
+    const response = await Promise.race([apiCallPromise, timeoutPromise]);
+
+    const elapsedTime = Date.now() - startTime;
+    console.log(`✅ [4/4] API response received in ${(elapsedTime / 1000).toFixed(2)}s`);
+    console.log(`   📝 Response length: ${response.choices[0]?.message?.content?.length || 0} chars`);
+
+    return response.choices[0]?.message?.content || '';
+  } catch (error) {
+    console.error('❌ Error analyzing PDF:', error);
+
+    if (error instanceof Error) {
+      if (error.message.includes('timeout') || error.message.includes('timed out')) {
+        throw new Error(`PDF analysis timed out after ${TIMEOUT_MS / 1000} seconds. Please try again.`);
+      }
+      throw new Error(`Failed to analyze PDF: ${error.message}`);
+    }
+    throw new Error('Failed to analyze PDF with vision model');
+  }
+}
+
+/**
+ * Process a single bank statement file with retry logic
+ * TESTING: Now supports native PDF processing
+ */
+async function processFile(file: Express.Multer.File, retries = 2): Promise<string> {
   const ext = path.extname(file.originalname).toLowerCase();
 
   if (ext === '.csv' || ext === '.xlsx' || ext === '.xls') {
     return await extractDataFromSpreadsheet(file.path);
+  } else if (ext === '.pdf') {
+    // TESTING: Try native PDF processing
+    let lastError: Error | null = null;
+    for (let attempt = 1; attempt <= retries; attempt++) {
+      try {
+        console.log(`Attempt ${attempt}/${retries} for PDF: ${file.originalname}`);
+        return await analyzePdf(file.path);
+      } catch (error) {
+        lastError = error as Error;
+        console.error(`Attempt ${attempt}/${retries} failed:`, error instanceof Error ? error.message : error);
+        if (attempt < retries) {
+          console.log(`Retrying in 2 seconds...`);
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        }
+      }
+    }
+    throw lastError || new Error('Failed to process PDF after retries');
   } else if (['.jpg', '.jpeg', '.png', '.gif', '.webp'].includes(ext)) {
-    return await analyzeImage(file.path);
+    // Retry logic for image analysis
+    let lastError: Error | null = null;
+    for (let attempt = 1; attempt <= retries; attempt++) {
+      try {
+        console.log(`Attempt ${attempt}/${retries} for ${file.originalname}`);
+        return await analyzeImage(file.path);
+      } catch (error) {
+        lastError = error as Error;
+        console.error(`Attempt ${attempt}/${retries} failed:`, error instanceof Error ? error.message : error);
+        if (attempt < retries) {
+          console.log(`Retrying in 2 seconds...`);
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        }
+      }
+    }
+    throw lastError || new Error('Failed to process image after retries');
   } else {
-    throw new Error(`Unsupported file type: ${ext}. PDFs should be converted to images client-side.`);
+    throw new Error(`Unsupported file type: ${ext}`);
   }
 }
 
@@ -118,15 +305,38 @@ export async function analyzeStatements(
   currentHousingPayment: number
 ): Promise<CashFlowAnalysis> {
   try {
-    // Extract text/data from all files
+    console.log(`Processing ${files.length} files...`);
+
+    // Extract text/data from all files, with error handling for individual files
     const extractedData: string[] = [];
+    const failedFiles: string[] = [];
+
     for (const file of files) {
       console.log(`Processing file: ${file.originalname}`);
-      const content = await processFile(file);
-      extractedData.push(content);
+      try {
+        const content = await processFile(file);
+        extractedData.push(content);
+        console.log(`✓ Successfully processed ${file.originalname}`);
+      } catch (error) {
+        console.error(`✗ Failed to process ${file.originalname}:`, error instanceof Error ? error.message : error);
+        failedFiles.push(file.originalname);
+        // Continue processing other files instead of failing completely
+      }
+    }
+
+    if (extractedData.length === 0) {
+      throw new Error(`Failed to process any files. ${failedFiles.length} file(s) failed: ${failedFiles.join(', ')}`);
+    }
+
+    if (failedFiles.length > 0) {
+      console.log(`⚠️  Warning: ${failedFiles.length} file(s) failed to process: ${failedFiles.join(', ')}`);
+      console.log(`✓ Successfully processed ${extractedData.length} file(s), continuing with analysis...`);
     }
 
     const combinedData = extractedData.join('\n\n---NEW DOCUMENT---\n\n');
+
+    console.log('🔍 Analyzing combined transaction data with AI...');
+    console.log(`📊 Combined data length: ${combinedData.length} characters`);
 
     // Use GPT-4 to analyze the transactions with enhanced anomaly detection
     const prompt = `You are a financial analysis expert. Analyze the following bank statement data covering multiple months of transactions.
@@ -203,8 +413,18 @@ Return your response in the following JSON format:
   "confidence": 0.85
 }`;
 
-    const response = await openai.chat.completions.create({
-      model: 'openai/gpt-4o', // OpenRouter model format
+    // Create a timeout promise for the main analysis call
+    const ANALYSIS_TIMEOUT_MS = 120000; // 120 seconds
+    const analysisTimeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => {
+        console.error(`⏱️  Timeout reached for main analysis (${ANALYSIS_TIMEOUT_MS / 1000}s)`);
+        reject(new Error(`Transaction analysis timed out after ${ANALYSIS_TIMEOUT_MS / 1000} seconds`));
+      }, ANALYSIS_TIMEOUT_MS);
+    });
+
+    // Create the main analysis API call promise using configured model
+    const analysisApiCallPromise = openai.chat.completions.create({
+      model: VISION_MODEL,
       messages: [
         {
           role: 'system',
@@ -217,7 +437,15 @@ Return your response in the following JSON format:
       ],
       response_format: { type: 'json_object' },
       temperature: 0.1,
+      max_tokens: 8000, // GPT-4o uses max_tokens
+    }, {
+      timeout: ANALYSIS_TIMEOUT_MS, // SDK timeout as backup
     });
+
+    console.log(`🏁 Racing main analysis against ${ANALYSIS_TIMEOUT_MS / 1000}s timeout...`);
+    // Race the API call against the timeout
+    const response = await Promise.race([analysisApiCallPromise, analysisTimeoutPromise]);
+    console.log('✅ AI analysis completed successfully');
 
     const result = JSON.parse(response.choices[0]?.message?.content || '{}');
 
@@ -236,7 +464,13 @@ Return your response in the following JSON format:
     // Extract flagged transactions for review
     const flaggedTransactions = (result.transactions || []).filter((t: any) => t.flagged === true);
 
-    console.log(`Analysis complete: ${result.transactions?.length || 0} total transactions, ${flaggedTransactions.length} flagged for review`);
+    console.log('📈 Analysis Results:');
+    console.log(`  ✓ Total transactions: ${result.transactions?.length || 0}`);
+    console.log(`  ✓ Flagged for review: ${flaggedTransactions.length}`);
+    console.log(`  ✓ Monthly deposits: $${result.totalIncome || 0}`);
+    console.log(`  ✓ Monthly expenses: $${result.totalExpenses || 0}`);
+    console.log(`  ✓ Net cash flow: $${result.netCashFlow || 0}`);
+    console.log(`  ✓ Confidence: ${((result.confidence || 0) * 100).toFixed(0)}%`);
 
     return {
       totalIncome: result.totalIncome || 0,

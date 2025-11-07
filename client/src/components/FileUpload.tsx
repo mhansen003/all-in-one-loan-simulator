@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { processFilesWithPdfConversion } from '../utils/pdfConverter';
+// TESTING: Disabled PDF conversion
+// import { processFilesWithPdfConversion } from '../utils/pdfConverter';
 import './FileUpload.css';
 
 interface FileUploadProps {
@@ -26,8 +27,9 @@ export default function FileUpload({
       try {
         setIsProcessingPdf(true);
 
-        // Convert any PDFs to images client-side
-        const processedFiles = await processFilesWithPdfConversion(acceptedFiles);
+        // TESTING: Skip PDF conversion, send PDFs directly to server
+        // const processedFiles = await processFilesWithPdfConversion(acceptedFiles);
+        const processedFiles = acceptedFiles; // Send files as-is
 
         const newFiles = [...selectedFiles, ...processedFiles];
         setSelectedFiles(newFiles);

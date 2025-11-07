@@ -67,7 +67,7 @@ const testData = {
 };
 
 console.log('='.repeat(70));
-console.log('🧪 OFFICIAL CALCULATOR TEST - All-In-One Loan Simulator');
+console.log('🧪 OFFICIAL CALCULATOR TEST - All-In-One Look Back Simulator');
 console.log('='.repeat(70));
 
 console.log('\n📊 INPUT DATA:');

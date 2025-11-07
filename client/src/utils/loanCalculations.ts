@@ -1,5 +1,15 @@
 /**
  * Loan calculation utilities for Traditional vs AIO loan comparison
+ *
+ * ⚠️ IMPORTANT - CALCULATION VALIDATION REQUIRED ⚠️
+ * ====================================================
+ * These calculations MUST match the existing CMG All-In-One simulator EXACTLY.
+ *
+ * TODO: Validate against C# source code from production simulator.
+ * Contact Paul Akinmade or CMG Dev Team for validation.
+ *
+ * See api/src/services/loan-calculator.ts for full requirements.
+ * ====================================================
  */
 
 export interface LoanInputs {

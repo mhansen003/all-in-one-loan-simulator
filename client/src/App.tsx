@@ -2,9 +2,10 @@ import { useState } from 'react';
 import type { AppStep, MortgageDetails, CashFlowAnalysis, EligibilityResult, SimulationResult } from './types';
 import MortgageDetailsForm from './components/MortgageDetailsForm';
 import FileUpload from './components/FileUpload';
-import DepositsExpensesInput from './components/DepositsExpensesInput';
-import AIOProposalInput from './components/AIOProposalInput';
-import LoanComparisonTabs from './components/LoanComparisonTabs';
+// REMOVED: Manual entry components (per requirements)
+// import DepositsExpensesInput from './components/DepositsExpensesInput';
+// import AIOProposalInput from './components/AIOProposalInput';
+// import LoanComparisonTabs from './components/LoanComparisonTabs';
 import CashFlowReview from './components/CashFlowReview';
 import SimulationResults from './components/SimulationResults';
 import FAQSlideout from './components/FAQSlideout';
@@ -18,13 +19,12 @@ function App() {
   const [bankStatements, setBankStatements] = useState<File[]>([]);
   const [cashFlowAnalysis, setCashFlowAnalysis] = useState<CashFlowAnalysis | null>(null);
 
-  // NEW: Detailed cash flow breakdown
-  const [monthlyDeposits, setMonthlyDeposits] = useState<number>(0);
-  const [monthlyExpenses, setMonthlyExpenses] = useState<number>(0);
-  const [monthlyLeftover, setMonthlyLeftover] = useState<number>(0);
-  const [depositFrequency, setDepositFrequency] = useState<'monthly' | 'biweekly' | 'weekly'>('monthly');
-
-  const [aioRate, setAIORate] = useState<number>(8.375);
+  // REMOVED: Manual entry state (no longer needed)
+  // const [monthlyDeposits, setMonthlyDeposits] = useState<number>(0);
+  // const [monthlyExpenses, setMonthlyExpenses] = useState<number>(0);
+  // const [monthlyLeftover, setMonthlyLeftover] = useState<number>(0);
+  // const [depositFrequency, setDepositFrequency] = useState<'monthly' | 'biweekly' | 'weekly'>('monthly');
+  // const [aioRate, setAIORate] = useState<number>(8.375);
   const [_eligibilityResult, setEligibilityResult] = useState<EligibilityResult | null>(null);
   const [simulationResult, setSimulationResult] = useState<SimulationResult | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -40,11 +40,12 @@ function App() {
     setMortgageDetails({});
     setBankStatements([]);
     setCashFlowAnalysis(null);
-    setMonthlyDeposits(0);
-    setMonthlyExpenses(0);
-    setMonthlyLeftover(0);
-    setDepositFrequency('monthly');
-    setAIORate(8.375);
+    // REMOVED: Manual entry state resets
+    // setMonthlyDeposits(0);
+    // setMonthlyExpenses(0);
+    // setMonthlyLeftover(0);
+    // setDepositFrequency('monthly');
+    // setAIORate(8.375);
     setEligibilityResult(null);
     setSimulationResult(null);
     setError(null);
@@ -53,9 +54,12 @@ function App() {
 
   const handleMortgageSubmit = (data: MortgageDetails) => {
     setMortgageDetails(data);
-    setStep('manual-cash-flow');
+    // CHANGED: Go directly to bank statement upload (removed manual entry path)
+    setStep('upload-statements');
   };
 
+  // REMOVED: Manual entry handlers (no longer used)
+  /*
   const handleCashFlowSubmit = (cashFlowData: {
     monthlyDeposits: number;
     monthlyExpenses: number;
@@ -73,6 +77,7 @@ function App() {
     setAIORate(rate);
     setStep('comparison');
   };
+  */
 
   const handleFilesSelected = (files: File[]) => {
     setBankStatements(files);
@@ -147,7 +152,7 @@ function App() {
               <span className="logo-financial">FINANCIAL</span>
             </div>
             <div className="header-divider"></div>
-            <h1 className="header-title">All-In-One Loan Simulator</h1>
+            <h1 className="header-title">All-In-One Look Back Simulator</h1>
           </div>
           <div className="header-right">
             <div className="header-phone-section">
@@ -245,6 +250,7 @@ function App() {
             </div>
           )}
 
+          {/* REMOVED: Manual entry path per Paul's requirements - "Don't even put the button there"
           {step === 'manual-cash-flow' && (
             <div className="section-card">
               <DepositsExpensesInput
@@ -277,6 +283,7 @@ function App() {
               />
             </div>
           )}
+          */}
 
           {step === 'upload-statements' && (
             <div className="section-card">
@@ -340,7 +347,7 @@ function App() {
               <span className="logo-financial">FINANCIAL</span>
             </div>
             <p style={{ fontSize: '0.85rem', lineHeight: '1.6', marginTop: '0.5rem' }}>
-              All-In-One Loan Simulator
+              All-In-One Look Back Simulator
               <br />
               Powered by AI
             </p>
@@ -375,7 +382,7 @@ function App() {
         <div className="footer-bottom">
           <p>© {new Date().getFullYear()} CMG Financial. All rights reserved. | NMLS# 1820</p>
           <p style={{ marginTop: '0.5rem' }}>
-            AI-powered All-In-One Loan Simulation Tool
+            AI-powered All-In-One Look Back Simulator
           </p>
         </div>
       </footer>

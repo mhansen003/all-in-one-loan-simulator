@@ -53,6 +53,73 @@ router.get('/health', (req, res) => {
   res.json({ status: 'ok', message: 'API is running' });
 });
 
+// Test AI connectivity (OpenRouter or OpenAI direct)
+router.get('/test-ai', async (req, res) => {
+  try {
+    const USE_OPENROUTER = process.env.USE_OPENROUTER === 'true';
+    console.log(`🧪 Testing AI connectivity (${USE_OPENROUTER ? 'OpenRouter' : 'OpenAI Direct'})...`);
+
+    const { default: OpenAI } = await import('openai');
+
+    const openai = USE_OPENROUTER
+      ? new OpenAI({
+          apiKey: process.env.OPENROUTER_API_KEY,
+          baseURL: 'https://openrouter.ai/api/v1',
+          defaultHeaders: {
+            'HTTP-Referer': process.env.YOUR_SITE_URL || 'https://aio-simulator.cmgfinancial.ai',
+            'X-Title': 'All-In-One Look Back Simulator',
+          },
+        })
+      : new OpenAI({
+          apiKey: process.env.OPENAI_API_KEY,
+        });
+
+    const MODEL = USE_OPENROUTER ? 'anthropic/claude-sonnet-4.5' : 'gpt-4o';
+
+    console.log('   📡 Endpoint:', openai.baseURL || 'https://api.openai.com/v1');
+    console.log('   🔑 API Key configured:', USE_OPENROUTER ? !!process.env.OPENROUTER_API_KEY : !!process.env.OPENAI_API_KEY);
+    console.log(`   🚀 Sending test request to ${MODEL}...`);
+
+    const startTime = Date.now();
+    const response = await openai.chat.completions.create({
+      model: MODEL,
+      messages: [
+        {
+          role: 'user',
+          content: 'Say "Hello" in exactly one word.',
+        },
+      ],
+      max_tokens: 10, // GPT-4o uses max_tokens
+    }, {
+      timeout: 30000, // 30 second timeout for test
+    });
+
+    const elapsedTime = Date.now() - startTime;
+    const result = response.choices[0]?.message?.content || '';
+
+    console.log(`   ✅ Response received in ${(elapsedTime / 1000).toFixed(2)}s`);
+    console.log(`   📝 Result: "${result}"`);
+
+    res.json({
+      status: 'success',
+      message: `AI is responding (${USE_OPENROUTER ? 'OpenRouter/Claude' : 'OpenAI/GPT-4o Direct'})`,
+      responseTime: `${(elapsedTime / 1000).toFixed(2)}s`,
+      result: result,
+      endpoint: openai.baseURL || 'https://api.openai.com/v1',
+      model: MODEL,
+      provider: USE_OPENROUTER ? 'OpenRouter' : 'OpenAI Direct',
+    });
+  } catch (error: any) {
+    console.error('❌ AI test failed:', error);
+    res.status(500).json({
+      status: 'error',
+      message: 'AI connectivity test failed',
+      error: error.message || 'Unknown error',
+      details: error.toString(),
+    });
+  }
+});
+
 // Analyze bank statements
 router.post('/analyze-statements', upload.array('files', 20), async (req, res) => {
   try {
