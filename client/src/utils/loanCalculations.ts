@@ -141,7 +141,6 @@ export function compareLoanOptions(inputs: LoanInputs): LoanComparison {
     traditionalRate,
     aioRate,
     averageMonthlyBalance,
-    currentHousingPayment = 0,
   } = inputs;
 
   // Calculate traditional loan
