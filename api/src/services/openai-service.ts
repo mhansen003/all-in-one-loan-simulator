@@ -18,7 +18,8 @@ async function extractTextFromPDF(filePath: string): Promise<string> {
   try {
     // Dynamically import pdf-parse (CommonJS module)
     if (!pdfParse) {
-      pdfParse = (await import('pdf-parse')).default;
+      const module = await import('pdf-parse');
+      pdfParse = (module as any).default || module;
     }
 
     const dataBuffer = await fs.readFile(filePath);
