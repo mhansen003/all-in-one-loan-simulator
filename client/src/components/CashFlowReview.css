@@ -161,6 +161,110 @@
   font-size: 0.85rem;
 }
 
+/* Temperature Rating */
+.temperature-rating {
+  background: white;
+  border: 3px solid;
+  border-radius: 16px;
+  padding: 2rem;
+  margin: 2rem 0;
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  animation: slideIn 0.5s ease;
+}
+
+.rating-icon {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.rating-content {
+  flex: 1;
+}
+
+.rating-badge {
+  display: inline-block;
+  color: white;
+  padding: 0.5rem 1.5rem;
+  border-radius: 24px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  margin-bottom: 0.75rem;
+}
+
+.rating-content h3 {
+  color: #2d3748;
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0 0 0.5rem 0;
+}
+
+.rating-content p {
+  color: #4a5568;
+  font-size: 1rem;
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* Transaction Sub-Tabs */
+.transaction-sub-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  padding: 0.5rem;
+  background: #f7fafc;
+  border-radius: 10px;
+  overflow-x: auto;
+  flex-wrap: wrap;
+}
+
+.sub-tab {
+  padding: 0.75rem 1.25rem;
+  background: white;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #718096;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  white-space: nowrap;
+}
+
+.sub-tab:hover {
+  border-color: #9bc53d;
+  color: #2d3748;
+}
+
+.sub-tab.active {
+  background: #9bc53d;
+  border-color: #9bc53d;
+  color: white;
+}
+
+.sub-tab-badge {
+  background: rgba(0, 0, 0, 0.1);
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
+}
+
+.sub-tab.active .sub-tab-badge {
+  background: rgba(255, 255, 255, 0.2);
+}
+
 /* Info Panel */
 .info-panel {
   background: #f7fafc;

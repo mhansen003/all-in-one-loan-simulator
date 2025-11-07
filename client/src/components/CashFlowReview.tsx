@@ -20,7 +20,14 @@ export default function CashFlowReview({
   onCashFlowUpdate
 }: CashFlowReviewProps) {
   const [activeTab, setActiveTab] = useState<'summary' | 'transactions'>('summary');
-  const [transactions, setTransactions] = useState<Transaction[]>(cashFlow.transactions);
+  const [transactionSubTab, setTransactionSubTab] = useState<'all' | 'income' | 'expense' | 'housing' | 'one-time'>('all');
+  const [transactions, setTransactions] = useState<Transaction[]>(() => {
+    // Auto-exclude housing and one-time transactions on initial load
+    return cashFlow.transactions.map(t => ({
+      ...t,
+      excluded: t.excluded || t.category === 'housing' || t.category === 'one-time'
+    }));
+  });
   const [editingTransaction, setEditingTransaction] = useState<number | null>(null);
 
   // Recalculate totals whenever transactions change
@@ -112,9 +119,9 @@ export default function CashFlowReview({
       case 'expense':
         return 'Regular Expense';
       case 'housing':
-        return 'Housing (Excluded)';
+        return 'Housing (Auto-Excluded)';
       case 'one-time':
-        return 'One-Time (Excluded)';
+        return 'One-Time (Auto-Excluded)';
       case 'recurring':
         return 'Recurring';
       default:
@@ -122,6 +129,7 @@ export default function CashFlowReview({
     }
   };
 
+  // Group transactions by category
   const groupedTransactions = transactions.reduce((acc, transaction) => {
     const category = transaction.category;
     if (!acc[category]) {
@@ -131,8 +139,84 @@ export default function CashFlowReview({
     return acc;
   }, {} as Record<string, Transaction[]>);
 
+  // Get temperature rating based on net cash flow
+  const getTemperatureRating = (netCashFlow: number): {
+    rating: string;
+    color: string;
+    description: string;
+    icon: string;
+  } => {
+    if (netCashFlow >= 2000) {
+      return {
+        rating: 'EXCELLENT',
+        color: '#10b981',
+        description: 'Perfect candidate for AIO loan! Significant interest savings expected.',
+        icon: '🔥'
+      };
+    } else if (netCashFlow >= 1000) {
+      return {
+        rating: 'VERY GOOD',
+        color: '#22c55e',
+        description: 'Great candidate! Will see substantial benefits from daily interest calculation.',
+        icon: '✨'
+      };
+    } else if (netCashFlow >= 500) {
+      return {
+        rating: 'GOOD',
+        color: '#84cc16',
+        description: 'Good candidate. AIO loan will provide meaningful interest savings.',
+        icon: '👍'
+      };
+    } else if (netCashFlow >= 200) {
+      return {
+        rating: 'FAIR',
+        color: '#eab308',
+        description: 'Moderate benefits. AIO loan can help, but savings will be modest.',
+        icon: '⚠️'
+      };
+    } else if (netCashFlow >= 0) {
+      return {
+        rating: 'MARGINAL',
+        color: '#f59e0b',
+        description: 'Limited benefits. Consider traditional mortgage or improving cash flow first.',
+        icon: '⚡'
+      };
+    } else {
+      return {
+        rating: 'NOT SUITABLE',
+        color: '#ef4444',
+        description: 'Not recommended. Negative cash flow means AIO loan will not provide benefits.',
+        icon: '❌'
+      };
+    }
+  };
+
+  const temperatureRating = getTemperatureRating(displayNetCashFlow);
+
   const confidenceColor = cashFlow.confidence >= 0.8 ? '#48bb78' : cashFlow.confidence >= 0.6 ? '#ed8936' : '#f56565';
   const confidenceLabel = cashFlow.confidence >= 0.8 ? 'High' : cashFlow.confidence >= 0.6 ? 'Medium' : 'Low';
+
+  // Filter transactions by active sub-tab
+  const getFilteredTransactions = () => {
+    if (transactionSubTab === 'all') {
+      return groupedTransactions;
+    }
+    const filtered = transactions.filter(t => {
+      if (transactionSubTab === 'income') return t.category === 'income';
+      if (transactionSubTab === 'expense') return t.category === 'expense' || t.category === 'recurring';
+      if (transactionSubTab === 'housing') return t.category === 'housing';
+      if (transactionSubTab === 'one-time') return t.category === 'one-time';
+      return true;
+    });
+    return { [transactionSubTab]: filtered };
+  };
+
+  // Calculate category totals
+  const getCategoryTotal = (category: string) => {
+    const categoryTransactions = groupedTransactions[category] || [];
+    const includedOnly = categoryTransactions.filter(t => !t.excluded);
+    return includedOnly.reduce((sum, t) => sum + Math.abs(t.amount), 0) / 12;
+  };
 
   return (
     <div className="cash-flow-review">
@@ -153,6 +237,48 @@ export default function CashFlowReview({
         </div>
       </div>
 
+      {/* Always Visible Summary Cards */}
+      <div className="summary-cards">
+        <div className="summary-card income-card">
+          <div className="card-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <div className="card-content">
+            <div className="card-label">Total Monthly Income</div>
+            <div className="card-value">{formatCurrency(displayTotalIncome)}</div>
+            <div className="card-description">Average across 12 months</div>
+          </div>
+        </div>
+
+        <div className="summary-card expense-card">
+          <div className="card-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+            </svg>
+          </div>
+          <div className="card-content">
+            <div className="card-label">Total Monthly Expenses</div>
+            <div className="card-value">{formatCurrency(displayTotalExpenses)}</div>
+            <div className="card-description">Recurring expenses only</div>
+          </div>
+        </div>
+
+        <div className="summary-card cashflow-card">
+          <div className="card-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+            </svg>
+          </div>
+          <div className="card-content">
+            <div className="card-label">Net Cash Flow</div>
+            <div className="card-value positive">{formatCurrency(displayNetCashFlow)}</div>
+            <div className="card-description">Available for loan offset</div>
+          </div>
+        </div>
+      </div>
+
       <div className="tabs">
         <button
           className={`tab ${activeTab === 'summary' ? 'active' : ''}`}
@@ -164,50 +290,23 @@ export default function CashFlowReview({
           className={`tab ${activeTab === 'transactions' ? 'active' : ''}`}
           onClick={() => setActiveTab('transactions')}
         >
-          Transactions ({cashFlow.transactions.length})
+          Transactions ({transactions.length})
         </button>
       </div>
 
       {activeTab === 'summary' && (
         <div className="summary-view">
-          <div className="summary-cards">
-            <div className="summary-card income-card">
-              <div className="card-icon">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <div className="card-content">
-                <div className="card-label">Total Monthly Income</div>
-                <div className="card-value">{formatCurrency(displayTotalIncome)}</div>
-                <div className="card-description">Average across 12 months</div>
-              </div>
+          {/* Temperature Rating */}
+          <div className="temperature-rating" style={{ borderColor: temperatureRating.color }}>
+            <div className="rating-icon" style={{ background: temperatureRating.color }}>
+              <span style={{ fontSize: '3rem' }}>{temperatureRating.icon}</span>
             </div>
-
-            <div className="summary-card expense-card">
-              <div className="card-icon">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                </svg>
+            <div className="rating-content">
+              <div className="rating-badge" style={{ background: temperatureRating.color }}>
+                {temperatureRating.rating}
               </div>
-              <div className="card-content">
-                <div className="card-label">Total Monthly Expenses</div>
-                <div className="card-value">{formatCurrency(displayTotalExpenses)}</div>
-                <div className="card-description">Recurring expenses only</div>
-              </div>
-            </div>
-
-            <div className="summary-card cashflow-card">
-              <div className="card-icon">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                </svg>
-              </div>
-              <div className="card-content">
-                <div className="card-label">Net Cash Flow</div>
-                <div className="card-value positive">{formatCurrency(displayNetCashFlow)}</div>
-                <div className="card-description">Available for loan offset</div>
-              </div>
+              <h3>AIO Loan Suitability</h3>
+              <p>{temperatureRating.description}</p>
             </div>
           </div>
 
@@ -261,7 +360,7 @@ export default function CashFlowReview({
               <h3>What this means for the All-In-One loan</h3>
             </div>
             <p>
-              Your net monthly cash flow of <strong>{formatCurrency(cashFlow.netCashFlow)}</strong> will be
+              Your net monthly cash flow of <strong>{formatCurrency(displayNetCashFlow)}</strong> will be
               used to offset the principal balance of your loan. This means you'll pay interest on a lower
               effective balance, resulting in significant interest savings and a faster payoff timeline.
             </p>
@@ -290,7 +389,45 @@ export default function CashFlowReview({
             </div>
           </div>
 
-          {Object.entries(groupedTransactions).map(([category, categoryTransactions]) => {
+          {/* Transaction Sub-Tabs */}
+          <div className="transaction-sub-tabs">
+            <button
+              className={`sub-tab ${transactionSubTab === 'all' ? 'active' : ''}`}
+              onClick={() => setTransactionSubTab('all')}
+            >
+              All Categories
+            </button>
+            <button
+              className={`sub-tab ${transactionSubTab === 'income' ? 'active' : ''}`}
+              onClick={() => setTransactionSubTab('income')}
+            >
+              Income
+              <span className="sub-tab-badge">{formatCurrency(getCategoryTotal('income'))}</span>
+            </button>
+            <button
+              className={`sub-tab ${transactionSubTab === 'expense' ? 'active' : ''}`}
+              onClick={() => setTransactionSubTab('expense')}
+            >
+              Expenses
+              <span className="sub-tab-badge">{formatCurrency(getCategoryTotal('expense') + getCategoryTotal('recurring'))}</span>
+            </button>
+            <button
+              className={`sub-tab ${transactionSubTab === 'housing' ? 'active' : ''}`}
+              onClick={() => setTransactionSubTab('housing')}
+            >
+              Housing
+              <span className="sub-tab-badge">{formatCurrency(getCategoryTotal('housing'))}</span>
+            </button>
+            <button
+              className={`sub-tab ${transactionSubTab === 'one-time' ? 'active' : ''}`}
+              onClick={() => setTransactionSubTab('one-time')}
+            >
+              One-Time
+              <span className="sub-tab-badge">{formatCurrency(getCategoryTotal('one-time'))}</span>
+            </button>
+          </div>
+
+          {Object.entries(getFilteredTransactions()).map(([category, categoryTransactions]) => {
             const actualIndices = categoryTransactions.map(t =>
               transactions.findIndex(tr => tr === t)
             );
@@ -310,7 +447,7 @@ export default function CashFlowReview({
                 </div>
 
                 <div className="transaction-list">
-                  {categoryTransactions.slice(0, 10).map((transaction, idx) => {
+                  {categoryTransactions.slice(0, 50).map((transaction, idx) => {
                     const actualIndex = actualIndices[idx];
                     return (
                       <div key={actualIndex} className={`transaction-item ${transaction.excluded ? 'excluded' : ''}`}>
@@ -371,9 +508,9 @@ export default function CashFlowReview({
                       </div>
                     );
                   })}
-                  {categoryTransactions.length > 10 && (
+                  {categoryTransactions.length > 50 && (
                     <div className="transaction-item more">
-                      <span>... and {categoryTransactions.length - 10} more</span>
+                      <span>... and {categoryTransactions.length - 50} more</span>
                     </div>
                   )}
                 </div>
