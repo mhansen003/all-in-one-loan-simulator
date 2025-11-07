@@ -2,29 +2,52 @@ import OpenAI from 'openai';
 import fs from 'fs/promises';
 import path from 'path';
 import xlsx from 'xlsx';
+// Use legacy build for Node.js - doesn't require worker files
+import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf.mjs';
 import type { CashFlowAnalysis, Transaction, OpenAIAnalysisResult } from '../types.js';
-
-// pdf-parse is CommonJS, need to import dynamically
-let pdfParse: any;
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
 /**
- * Extract text from PDF file
+ * Extract text from PDF file using pdfjs-dist legacy build
+ * (legacy build designed for Node.js, no worker files needed)
  */
 async function extractTextFromPDF(filePath: string): Promise<string> {
   try {
-    // Dynamically import pdf-parse (CommonJS module)
-    if (!pdfParse) {
-      const module = await import('pdf-parse');
-      pdfParse = (module as any).default || module;
+    console.log('Extracting text from PDF using pdfjs-dist legacy...');
+    const pdfBuffer = await fs.readFile(filePath);
+
+    // Load the PDF document (legacy build doesn't require worker)
+    const loadingTask = pdfjsLib.getDocument({
+      data: new Uint8Array(pdfBuffer),
+      useSystemFonts: true,
+      isEvalSupported: false, // Disable eval for serverless security
+    });
+
+    const pdfDocument = await loadingTask.promise;
+    const numPages = pdfDocument.numPages;
+    console.log(`PDF has ${numPages} pages`);
+
+    let allText = '';
+
+    // Extract text from each page
+    for (let pageNum = 1; pageNum <= numPages; pageNum++) {
+      const page = await pdfDocument.getPage(pageNum);
+      const textContent = await page.getTextContent();
+
+      // Combine text items
+      const pageText = textContent.items
+        .map((item: any) => item.str)
+        .join(' ');
+
+      allText += pageText + '\n\n';
+      console.log(`Extracted page ${pageNum}/${numPages}`);
     }
 
-    const dataBuffer = await fs.readFile(filePath);
-    const data = await pdfParse(dataBuffer);
-    return data.text;
+    console.log(`Successfully extracted text from ${numPages} pages`);
+    return allText;
   } catch (error) {
     console.error('Error extracting PDF text:', error);
     throw new Error('Failed to extract text from PDF');

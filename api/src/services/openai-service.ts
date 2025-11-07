@@ -2,7 +2,8 @@ import OpenAI from 'openai';
 import fs from 'fs/promises';
 import path from 'path';
 import xlsx from 'xlsx';
-import * as pdfjsLib from 'pdfjs-dist';
+// Use legacy build for Node.js - doesn't require worker files
+import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf.mjs';
 import type { CashFlowAnalysis, Transaction, OpenAIAnalysisResult } from '../types.js';
 
 const openai = new OpenAI({
@@ -10,18 +11,19 @@ const openai = new OpenAI({
 });
 
 /**
- * Extract text from PDF file using pdfjs-dist
- * (pure JavaScript, works in serverless environments)
+ * Extract text from PDF file using pdfjs-dist legacy build
+ * (legacy build designed for Node.js, no worker files needed)
  */
 async function extractTextFromPDF(filePath: string): Promise<string> {
   try {
-    console.log('Extracting text from PDF...');
+    console.log('Extracting text from PDF using pdfjs-dist legacy...');
     const pdfBuffer = await fs.readFile(filePath);
 
-    // Load the PDF document
+    // Load the PDF document (legacy build doesn't require worker)
     const loadingTask = pdfjsLib.getDocument({
       data: new Uint8Array(pdfBuffer),
       useSystemFonts: true,
+      isEvalSupported: false, // Disable eval for serverless security
     });
 
     const pdfDocument = await loadingTask.promise;
@@ -41,9 +43,10 @@ async function extractTextFromPDF(filePath: string): Promise<string> {
         .join(' ');
 
       allText += pageText + '\n\n';
+      console.log(`Extracted page ${pageNum}/${numPages}`);
     }
 
-    console.log(`Extracted text from ${numPages} pages`);
+    console.log(`Successfully extracted text from ${numPages} pages`);
     return allText;
   } catch (error) {
     console.error('Error extracting PDF text:', error);
