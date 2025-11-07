@@ -311,6 +311,32 @@
   }
 }
 
+/* Icon-only button */
+.btn-icon-only {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem;
+  background: white;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: #64748b;
+}
+
+.btn-icon-only:hover {
+  border-color: #3b82f6;
+  background: #eff6ff;
+  color: #3b82f6;
+}
+
+.btn-icon-only svg {
+  width: 20px;
+  height: 20px;
+  display: block;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .proposal-builder {

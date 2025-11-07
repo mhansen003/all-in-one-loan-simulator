@@ -18,6 +18,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import html2pdf from 'html2pdf.js';
 import type { SimulationResult, MortgageDetails } from '../types';
+import PitchOptionsModal, { PitchOptions } from './PitchOptionsModal';
 import './ProposalBuilder.css';
 
 interface ProposalComponent {
@@ -96,6 +97,16 @@ export default function ProposalBuilder({
   const [aiPitch, setAiPitch] = useState('');
   const [isGeneratingPitch, setIsGeneratingPitch] = useState(false);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+  const [showPitchOptions, setShowPitchOptions] = useState(false);
+  const [pitchOptions, setPitchOptions] = useState<PitchOptions>({
+    tone: 'neutral',
+    length: 'standard',
+    technicalLevel: 'moderate',
+    focus: 'balanced',
+    urgency: 'moderate',
+    style: 'balanced',
+    cta: 'moderate',
+  });
 
   // PDF content ref
   const pdfContentRef = useRef<HTMLDivElement>(null);
@@ -172,6 +183,7 @@ export default function ProposalBuilder({
           simulation,
           mortgageDetails,
           clientName: clientName || 'this client',
+          options: pitchOptions,
         }),
       });
 
@@ -185,6 +197,14 @@ export default function ProposalBuilder({
     } finally {
       setIsGeneratingPitch(false);
     }
+  };
+
+  const handleApplyPitchOptions = (options: PitchOptions) => {
+    setPitchOptions(options);
+    // Automatically regenerate pitch with new options
+    setTimeout(() => {
+      handleGeneratePitch();
+    }, 100);
   };
 
   const handleGeneratePDF = async () => {
@@ -281,25 +301,36 @@ export default function ProposalBuilder({
                   : 'Generate a personalized pitch highlighting the key benefits for this client'}
               </p>
             </div>
-            <button
-              className="btn-primary"
-              onClick={handleGeneratePitch}
-              disabled={isGeneratingPitch}
-            >
-              {isGeneratingPitch ? (
-                <>
-                  <div className="spinner-small"></div>
-                  Generating...
-                </>
-              ) : (
-                <>
-                  <svg className="btn-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                  </svg>
-                  {aiPitch ? 'Regenerate' : 'Generate'} Pitch
-                </>
-              )}
-            </button>
+            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+              <button
+                className="btn-icon-only"
+                onClick={() => setShowPitchOptions(true)}
+                title="Customize pitch options"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                </svg>
+              </button>
+              <button
+                className="btn-primary"
+                onClick={handleGeneratePitch}
+                disabled={isGeneratingPitch}
+              >
+                {isGeneratingPitch ? (
+                  <>
+                    <div className="spinner-small"></div>
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <svg className="btn-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                    {aiPitch ? 'Regenerate' : 'Generate'} Pitch
+                  </>
+                )}
+              </button>
+            </div>
           </div>
 
           {aiPitch && (
@@ -507,6 +538,14 @@ export default function ProposalBuilder({
           )}
         </div>
       </div>
+
+      {/* Pitch Options Modal */}
+      <PitchOptionsModal
+        isOpen={showPitchOptions}
+        onClose={() => setShowPitchOptions(false)}
+        onApply={handleApplyPitchOptions}
+        currentOptions={pitchOptions}
+      />
     </div>
   );
 }

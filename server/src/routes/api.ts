@@ -348,4 +348,136 @@ Be conversational, professional, and persuasive. Focus on the "why" not just the
   }
 });
 
+// Generate AI pitch for proposal
+router.post('/generate-pitch', async (req, res) => {
+  try {
+    const { simulation, mortgageDetails, clientName, options } = req.body;
+
+    if (!simulation || !mortgageDetails) {
+      return res.status(400).json({
+        error: 'Missing required data',
+        message: 'Please provide simulation and mortgage details',
+      });
+    }
+
+    const { OpenAI } = await import('openai');
+    const openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    });
+
+    // Build prompt based on options with proper type checking
+    const toneGuide: Record<string, string> = {
+      casual: 'Use a friendly, conversational tone like talking to a friend. Use contractions and approachable language.',
+      professional: 'Use formal, professional language appropriate for a financial proposal. Maintain authority and expertise.',
+      neutral: 'Use clear, straightforward language that is neither too casual nor overly formal.',
+    };
+
+    const lengthGuide: Record<string, string> = {
+      shorter: 'Keep it concise - 2-3 short paragraphs maximum (150-200 words).',
+      standard: 'Write 3-4 well-developed paragraphs (250-350 words).',
+      longer: 'Provide comprehensive detail in 4-5 substantial paragraphs (400-500 words).',
+    };
+
+    const technicalGuide: Record<string, string> = {
+      simple: 'Avoid jargon. Explain everything in simple terms anyone can understand.',
+      moderate: 'Use some financial terminology but explain complex concepts clearly.',
+      technical: 'Use precise financial terminology and assume the reader has mortgage knowledge.',
+    };
+
+    const focusGuide: Record<string, string> = {
+      savings: 'Emphasize the dollar amount saved and interest reduction.',
+      flexibility: 'Emphasize the access to funds and financial flexibility.',
+      security: 'Emphasize the stability, safety, and long-term financial security.',
+      balanced: 'Provide balanced coverage of savings, flexibility, and security.',
+    };
+
+    const urgencyGuide: Record<string, string> = {
+      low: 'Maintain a calm, informative tone without creating pressure.',
+      moderate: 'Gently suggest this is a valuable opportunity worth acting on.',
+      high: 'Create urgency about the benefits of acting now and potential opportunity cost.',
+    };
+
+    const styleGuide: Record<string, string> = {
+      'data-driven': 'Lead with numbers, statistics, and concrete facts. Be analytical.',
+      balanced: 'Mix data points with relatable explanations and real-world context.',
+      'story-based': 'Use narrative, relatable scenarios, and paint a picture of their future.',
+    };
+
+    const ctaGuide: Record<string, string> = {
+      soft: 'End with an open invitation to learn more or ask questions.',
+      moderate: 'End with a clear next step like scheduling a follow-up conversation.',
+      strong: 'End with a compelling call to action that encourages immediate response.',
+    };
+
+    const formatCurrency = (amount: number) => {
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+      }).format(amount);
+    };
+
+    const formatMonths = (totalMonths: number) => {
+      const years = Math.floor(totalMonths / 12);
+      const months = totalMonths % 12;
+      return `${years} year${years !== 1 ? 's' : ''} and ${months} month${months !== 1 ? 's' : ''}`;
+    };
+
+    const prompt = `You are an expert loan officer creating a personalized sales pitch for the All-In-One loan.
+
+CLIENT: ${clientName || 'this client'}
+
+KEY NUMBERS:
+- Total Interest Savings: ${formatCurrency(simulation.comparison.interestSavings)}
+- Time Saved: ${formatMonths(simulation.comparison.timeSavedMonths)}
+- Interest Reduction: ${simulation.comparison.percentageSavings.toFixed(1)}%
+- Current Loan Balance: ${formatCurrency(mortgageDetails.loanBalance)}
+- Traditional Total Interest: ${formatCurrency(simulation.traditionalLoan.totalInterestPaid)}
+- AIO Total Interest: ${formatCurrency(simulation.allInOneLoan.totalInterestPaid)}
+
+CUSTOMIZATION PREFERENCES:
+- Tone: ${toneGuide[options?.tone] || toneGuide['neutral']}
+- Length: ${lengthGuide[options?.length] || lengthGuide['standard']}
+- Technical Level: ${technicalGuide[options?.technicalLevel] || technicalGuide['moderate']}
+- Focus: ${focusGuide[options?.focus] || focusGuide['balanced']}
+- Urgency: ${urgencyGuide[options?.urgency] || urgencyGuide['moderate']}
+- Style: ${styleGuide[options?.style] || styleGuide['balanced']}
+- Call to Action: ${ctaGuide[options?.cta] || ctaGuide['moderate']}
+
+Write a compelling sales pitch that will appear at the top of the proposal. Focus on why the All-In-One loan is right for this client based on their specific numbers.
+
+DO NOT use a greeting or signature. Start directly with the pitch content. Do not use markdown formatting.`;
+
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4',
+      messages: [
+        {
+          role: 'system',
+          content: 'You are an expert loan officer who creates compelling, personalized sales pitches for the All-In-One loan product.',
+        },
+        {
+          role: 'user',
+          content: prompt,
+        },
+      ],
+      temperature: 0.7,
+      max_tokens: 600,
+    });
+
+    const pitch = completion.choices[0]?.message?.content || 'Unable to generate pitch. Please try again.';
+
+    res.json({
+      pitch,
+      message: 'Pitch generated successfully',
+    });
+  } catch (error: any) {
+    console.error('Error generating pitch:', error);
+    res.status(500).json({
+      error: 'Pitch generation failed',
+      message: error.message || 'Failed to generate pitch',
+    });
+  }
+});
+
 export default router;
