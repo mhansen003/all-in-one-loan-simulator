@@ -12,7 +12,7 @@ function App() {
   const [mortgageDetails, setMortgageDetails] = useState<Partial<MortgageDetails>>({});
   const [bankStatements, setBankStatements] = useState<File[]>([]);
   const [cashFlowAnalysis, setCashFlowAnalysis] = useState<CashFlowAnalysis | null>(null);
-  const [eligibilityResult, setEligibilityResult] = useState<EligibilityResult | null>(null);
+  const [_eligibilityResult, setEligibilityResult] = useState<EligibilityResult | null>(null);
   const [simulationResult, setSimulationResult] = useState<SimulationResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);

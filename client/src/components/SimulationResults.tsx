@@ -10,7 +10,7 @@ interface SimulationResultsProps {
 
 export default function SimulationResults({
   simulation,
-  mortgageDetails,
+  mortgageDetails: _mortgageDetails,
   onReset,
   onGenerateReport,
 }: SimulationResultsProps) {
