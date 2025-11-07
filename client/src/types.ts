@@ -79,6 +79,8 @@ export interface SimulationResponse {
 // App state types
 export type AppStep =
   | 'mortgage-details'
+  | 'manual-cash-flow'
+  | 'comparison'
   | 'upload-statements'
   | 'analyzing'
   | 'cash-flow-review'

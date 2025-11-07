@@ -1,0 +1,346 @@
+.loan-comparison-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+.comparison-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.comparison-header h1 {
+  font-size: 2rem;
+  color: #2d3748;
+  margin-bottom: 0.5rem;
+}
+
+.comparison-header p {
+  font-size: 1.125rem;
+  color: #718096;
+}
+
+.comparison-header .highlight {
+  color: #9bc53d;
+  font-weight: 700;
+}
+
+/* Savings Banner */
+.savings-banner {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  background: linear-gradient(135deg, #9bc53d 0%, #7da62e 100%);
+  color: white;
+  padding: 2rem;
+  border-radius: 16px;
+  margin-bottom: 2rem;
+  box-shadow: 0 8px 24px rgba(155, 197, 61, 0.25);
+}
+
+.savings-icon {
+  font-size: 4rem;
+  line-height: 1;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+.savings-content {
+  flex: 1;
+}
+
+.savings-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  opacity: 0.9;
+  margin-bottom: 0.25rem;
+}
+
+.savings-value {
+  font-size: 2.5rem;
+  font-weight: 800;
+  line-height: 1.2;
+  margin-bottom: 0.25rem;
+}
+
+.savings-subtitle {
+  font-size: 1rem;
+  opacity: 0.95;
+}
+
+/* Comparison Grid */
+.comparison-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 2rem;
+  margin-bottom: 3rem;
+}
+
+.loan-card {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.loan-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.loan-card.aio {
+  border: 3px solid #9bc53d;
+  position: relative;
+}
+
+.loan-card.aio::before {
+  content: 'RECOMMENDED';
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: #9bc53d;
+  color: white;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  letter-spacing: 0.05em;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.5rem;
+  background: #f7fafc;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.loan-card.aio .card-header {
+  background: linear-gradient(135deg, rgba(155, 197, 61, 0.1) 0%, rgba(155, 197, 61, 0.05) 100%);
+  border-bottom-color: #9bc53d;
+}
+
+.card-icon {
+  font-size: 2.5rem;
+  line-height: 1;
+}
+
+.card-header h3 {
+  font-size: 1.25rem;
+  color: #2d3748;
+  margin: 0;
+}
+
+.card-subtitle {
+  font-size: 0.875rem;
+  color: #718096;
+  margin: 0.25rem 0 0 0;
+}
+
+.card-body {
+  padding: 1.5rem;
+}
+
+.metric-row {
+  padding: 1rem 0;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.metric-row:last-child {
+  border-bottom: none;
+}
+
+.metric-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #718096;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+  margin-bottom: 0.5rem;
+}
+
+.metric-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #2d3748;
+}
+
+.metric-hint {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: #a0aec0;
+  margin-top: 0.25rem;
+}
+
+.highlight-row {
+  background: #f7fafc;
+  margin: 0 -1.5rem;
+  padding: 1.5rem 1.5rem !important;
+  border: none !important;
+}
+
+.highlight-row.success {
+  background: linear-gradient(135deg, rgba(155, 197, 61, 0.15) 0%, rgba(155, 197, 61, 0.05) 100%);
+  position: relative;
+}
+
+.metric-value-large {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: #2d3748;
+  line-height: 1.2;
+}
+
+.highlight-row.success .metric-value-large {
+  color: #7da62e;
+}
+
+.savings-badge {
+  display: inline-block;
+  background: #9bc53d;
+  color: white;
+  font-size: 0.875rem;
+  font-weight: 700;
+  padding: 0.5rem 1rem;
+  border-radius: 24px;
+  margin-top: 0.75rem;
+}
+
+/* How It Works */
+.how-it-works {
+  background: #f7fafc;
+  border-radius: 16px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+}
+
+.how-it-works h3 {
+  font-size: 1.5rem;
+  color: #2d3748;
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.how-it-works-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 2rem;
+}
+
+.how-item {
+  display: flex;
+  gap: 1rem;
+}
+
+.how-number {
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  background: #9bc53d;
+  color: white;
+  font-size: 1.5rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.how-content h4 {
+  font-size: 1.125rem;
+  color: #2d3748;
+  margin: 0 0 0.5rem 0;
+}
+
+.how-content p {
+  font-size: 0.9375rem;
+  color: #718096;
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* Action Buttons */
+.comparison-actions {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-top: 2rem;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .comparison-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .savings-banner {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .savings-value {
+    font-size: 2rem;
+  }
+
+  .how-it-works-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .comparison-header h1 {
+    font-size: 1.5rem;
+  }
+
+  .metric-value {
+    font-size: 1.25rem;
+  }
+
+  .metric-value-large {
+    font-size: 2rem;
+  }
+
+  .savings-icon {
+    font-size: 3rem;
+  }
+
+  .loan-card.aio::before {
+    top: 8px;
+    right: 8px;
+    font-size: 0.625rem;
+    padding: 0.2rem 0.6rem;
+  }
+}
+
+/* Print Styles */
+@media print {
+  .comparison-actions {
+    display: none;
+  }
+
+  .loan-card {
+    break-inside: avoid;
+    box-shadow: none;
+    border: 1px solid #e2e8f0;
+  }
+
+  .savings-banner {
+    color: #2d3748;
+    background: #f7fafc !important;
+    border: 2px solid #9bc53d;
+  }
+}

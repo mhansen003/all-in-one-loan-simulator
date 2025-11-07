@@ -2,6 +2,8 @@ import { useState } from 'react';
 import type { AppStep, MortgageDetails, CashFlowAnalysis, EligibilityResult, SimulationResult } from './types';
 import MortgageDetailsForm from './components/MortgageDetailsForm';
 import FileUpload from './components/FileUpload';
+import ManualCashFlowInput from './components/ManualCashFlowInput';
+import LoanComparison from './components/LoanComparison';
 import CashFlowReview from './components/CashFlowReview';
 import SimulationResults from './components/SimulationResults';
 import FAQSlideout from './components/FAQSlideout';
@@ -14,6 +16,7 @@ function App() {
   const [mortgageDetails, setMortgageDetails] = useState<Partial<MortgageDetails>>({});
   const [bankStatements, setBankStatements] = useState<File[]>([]);
   const [cashFlowAnalysis, setCashFlowAnalysis] = useState<CashFlowAnalysis | null>(null);
+  const [averageMonthlyCashFlow, setAverageMonthlyCashFlow] = useState<number>(0);
   const [_eligibilityResult, setEligibilityResult] = useState<EligibilityResult | null>(null);
   const [simulationResult, setSimulationResult] = useState<SimulationResult | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -29,6 +32,7 @@ function App() {
     setMortgageDetails({});
     setBankStatements([]);
     setCashFlowAnalysis(null);
+    setAverageMonthlyCashFlow(0);
     setEligibilityResult(null);
     setSimulationResult(null);
     setError(null);
@@ -37,7 +41,12 @@ function App() {
 
   const handleMortgageSubmit = (data: MortgageDetails) => {
     setMortgageDetails(data);
-    setStep('upload-statements');
+    setStep('manual-cash-flow'); // Go to manual input (placeholder for bank statements)
+  };
+
+  const handleCashFlowSubmit = (cashFlow: number) => {
+    setAverageMonthlyCashFlow(cashFlow);
+    setStep('comparison');
   };
 
   const handleFilesSelected = (files: File[]) => {
@@ -211,6 +220,26 @@ function App() {
               <MortgageDetailsForm
                 initialData={mortgageDetails}
                 onSubmit={handleMortgageSubmit}
+              />
+            </div>
+          )}
+
+          {step === 'manual-cash-flow' && (
+            <div className="section-card">
+              <ManualCashFlowInput
+                onSubmit={handleCashFlowSubmit}
+                onBack={() => setStep('mortgage-details')}
+              />
+            </div>
+          )}
+
+          {step === 'comparison' && (
+            <div className="section-card">
+              <LoanComparison
+                mortgageDetails={mortgageDetails}
+                averageMonthlyCashFlow={averageMonthlyCashFlow}
+                onBack={() => setStep('manual-cash-flow')}
+                onReset={handleReset}
               />
             </div>
           )}
