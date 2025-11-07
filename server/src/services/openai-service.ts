@@ -12,7 +12,9 @@ const openai = new OpenAI({
 
 /**
  * Extract text from PDF file using pdfjs-dist legacy build
- * (legacy build designed for Node.js, no worker files needed)
+ *
+ * OPTIMIZATION: Skip irrelevant pages (disclosures, blank pages)
+ * to reduce processing time and AI token usage
  */
 async function extractTextFromPDF(filePath: string): Promise<string> {
   try {
@@ -31,8 +33,20 @@ async function extractTextFromPDF(filePath: string): Promise<string> {
     console.log(`PDF has ${numPages} pages`);
 
     let allText = '';
+    let skippedPages = 0;
 
-    // Extract text from each page
+    // Keywords that indicate non-transaction pages to skip
+    const skipKeywords = [
+      'IN CASE OF ERRORS',
+      'INTENTIONALLY LEFT BLANK',
+      'MEMBER FDIC',
+      'DISCLOSURE',
+      'PRIVACY NOTICE',
+      'TERMS AND CONDITIONS',
+      'IMPORTANT INFORMATION',
+    ];
+
+    // Extract text from each page with intelligent filtering
     for (let pageNum = 1; pageNum <= numPages; pageNum++) {
       const page = await pdfDocument.getPage(pageNum);
       const textContent = await page.getTextContent();
@@ -42,11 +56,22 @@ async function extractTextFromPDF(filePath: string): Promise<string> {
         .map((item: any) => item.str)
         .join(' ');
 
+      // Check if page should be skipped (disclosures, blank pages, etc.)
+      const shouldSkip = skipKeywords.some(keyword =>
+        pageText.toUpperCase().includes(keyword)
+      ) || pageText.trim().length < 100; // Skip if very little content
+
+      if (shouldSkip) {
+        console.log(`Skipped page ${pageNum}/${numPages} (disclosure/blank page)`);
+        skippedPages++;
+        continue;
+      }
+
       allText += pageText + '\n\n';
       console.log(`Extracted page ${pageNum}/${numPages}`);
     }
 
-    console.log(`Successfully extracted text from ${numPages} pages`);
+    console.log(`Successfully extracted ${numPages - skippedPages}/${numPages} pages (skipped ${skippedPages} irrelevant pages)`);
     return allText;
   } catch (error) {
     console.error('Error extracting PDF text:', error);
@@ -139,15 +164,21 @@ export async function analyzeStatements(
   files: Express.Multer.File[],
   currentHousingPayment: number
 ): Promise<CashFlowAnalysis> {
+  const startTime = Date.now();
   try {
     // Extract text/data from all files IN PARALLEL (optimization #1)
+    console.log(`[TIMING] Starting analysis at ${new Date().toISOString()}`);
     console.log(`Processing ${files.length} files in parallel...`);
+
+    const extractionStart = Date.now();
     const extractionPromises = files.map(file => {
       console.log(`Starting: ${file.originalname}`);
       return processFile(file);
     });
 
     const extractedData = await Promise.all(extractionPromises);
+    const extractionTime = Date.now() - extractionStart;
+    console.log(`[TIMING] File extraction took ${extractionTime}ms (${(extractionTime/1000).toFixed(1)}s)`);
     console.log(`All ${files.length} files processed successfully`);
 
     const combinedData = extractedData.join('\n\n---NEW DOCUMENT---\n\n');
@@ -181,8 +212,9 @@ JSON format:
 }`;
 
     console.log('Analyzing combined transaction data with AI...');
-    console.log(`Combined data length: ${combinedData.length} characters`);
+    console.log(`[TIMING] Combined data length: ${combinedData.length} characters (~${Math.ceil(combinedData.length/4)} tokens)`);
 
+    const aiStart = Date.now();
     // Use gpt-4o-mini: 2-3x faster with same accuracy for structured tasks (optimization #3)
     const response = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
@@ -203,6 +235,8 @@ JSON format:
       timeout: 60000, // Reduced from 90s to 60s due to faster model
     });
 
+    const aiTime = Date.now() - aiStart;
+    console.log(`[TIMING] AI analysis took ${aiTime}ms (${(aiTime/1000).toFixed(1)}s)`);
     console.log('AI analysis completed successfully');
 
     const result = JSON.parse(response.choices[0]?.message?.content || '{}');
@@ -226,6 +260,10 @@ JSON format:
     // Extract flagged transactions
     const flaggedTransactions = (result.transactions || []).filter((t: any) => t.flagged);
 
+    const totalTime = Date.now() - startTime;
+    console.log(`[TIMING] ✅ Total analysis completed in ${totalTime}ms (${(totalTime/1000).toFixed(1)}s)`);
+    console.log(`[TIMING] Breakdown: Extraction=${extractionTime}ms, AI=${aiTime}ms, Overhead=${totalTime-extractionTime-aiTime}ms`);
+
     return {
       totalIncome: result.totalIncome || 0,
       totalExpenses: result.totalExpenses || 0,
@@ -241,6 +279,8 @@ JSON format:
       confidence: result.confidence || 0.7,
     };
   } catch (error) {
+    const errorTime = Date.now() - startTime;
+    console.error(`[TIMING] ❌ Analysis failed after ${errorTime}ms`);
     console.error('Error in analyzeStatements:', error);
     throw new Error(`Failed to analyze bank statements: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
