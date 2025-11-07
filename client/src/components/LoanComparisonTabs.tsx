@@ -536,17 +536,286 @@ function BreakdownTab({ comparison, weeklyBreakdown }: any) {
   );
 }
 
-// Visualize Tab Component (placeholder for now, will add charts)
-function VisualizeTab(_props: any) {
-  // Props: comparison, weeklyBreakdown, loanAmount (for future chart implementation)
+// Visualize Tab Component
+function VisualizeTab({ comparison, weeklyBreakdown, loanAmount }: any) {
+  // Sample balance data every 6 months for traditional, every month for AIO
+  const traditionalMonths = comparison.traditional.monthsToPayoff;
+  const aioMonths = comparison.aio.monthsToPayoff;
+  const maxMonths = Math.max(traditionalMonths, aioMonths);
+
+  // Generate traditional loan balance data (sample every 6 months)
+  const traditionalData: { month: number; balance: number }[] = [];
+  let tradBalance = loanAmount;
+
+  for (let month = 0; month <= traditionalMonths; month += 6) {
+    traditionalData.push({ month, balance: Math.max(0, tradBalance) });
+    // Approximate 6 months of payments
+    for (let i = 0; i < 6; i++) {
+      const interest = tradBalance * (0.065 / 12); // Approximate
+      const principal = comparison.traditional.monthlyPayment - interest;
+      tradBalance -= principal;
+      if (tradBalance < 0) tradBalance = 0;
+    }
+  }
+
+  // Generate AIO balance data from weekly breakdown (sample monthly)
+  const aioData: { month: number; balance: number }[] = [];
+  for (let month = 0; month <= aioMonths; month += 1) {
+    const weekIndex = Math.floor(month * 4.33); // Approximate week
+    if (weekIndex < weeklyBreakdown.length) {
+      aioData.push({ month, balance: weeklyBreakdown[weekIndex].balance });
+    }
+  }
+
+  // Chart dimensions
+  const chartWidth = 800;
+  const chartHeight = 400;
+  const padding = { top: 20, right: 40, bottom: 60, left: 80 };
+  const plotWidth = chartWidth - padding.left - padding.right;
+  const plotHeight = chartHeight - padding.top - padding.bottom;
+
+  // Scales
+  const maxBalance = loanAmount * 1.1;
+  const xScale = (month: number) => padding.left + (month / maxMonths) * plotWidth;
+  const yScale = (balance: number) => padding.top + plotHeight - (balance / maxBalance) * plotHeight;
+
+  // Generate path for traditional loan
+  const tradPath = traditionalData
+    .map((d, i) => `${i === 0 ? 'M' : 'L'} ${xScale(d.month)} ${yScale(d.balance)}`)
+    .join(' ');
+
+  // Generate path for AIO loan
+  const aioPath = aioData
+    .map((d, i) => `${i === 0 ? 'M' : 'L'} ${xScale(d.month)} ${yScale(d.balance)}`)
+    .join(' ');
+
   return (
     <div className="visualize-tab">
       <h2>📈 Visual Analysis</h2>
-      <p style={{ textAlign: 'center', padding: '3rem', color: '#718096' }}>
-        Charts coming in next update...
-        <br />
-        (Pie chart for savings, line chart for balance over time)
-      </p>
+
+      {/* Balance Over Time Chart */}
+      <div className="chart-container">
+        <h3>Balance Over Time</h3>
+        <svg width={chartWidth} height={chartHeight} style={{ border: '1px solid #e2e8f0', borderRadius: '8px', background: 'white' }}>
+          {/* Grid lines */}
+          {[0, 0.25, 0.5, 0.75, 1].map((fraction) => {
+            const y = yScale(maxBalance * fraction);
+            return (
+              <g key={fraction}>
+                <line
+                  x1={padding.left}
+                  y1={y}
+                  x2={chartWidth - padding.right}
+                  y2={y}
+                  stroke="#e2e8f0"
+                  strokeWidth="1"
+                />
+                <text
+                  x={padding.left - 10}
+                  y={y + 4}
+                  textAnchor="end"
+                  fontSize="12"
+                  fill="#718096"
+                >
+                  {formatCurrency(maxBalance * fraction)}
+                </text>
+              </g>
+            );
+          })}
+
+          {/* X-axis labels */}
+          {[0, 0.25, 0.5, 0.75, 1].map((fraction) => {
+            const month = Math.round(maxMonths * fraction);
+            const x = xScale(month);
+            return (
+              <text
+                key={fraction}
+                x={x}
+                y={chartHeight - padding.bottom + 20}
+                textAnchor="middle"
+                fontSize="12"
+                fill="#718096"
+              >
+                {month}mo
+              </text>
+            );
+          })}
+
+          {/* Traditional loan line */}
+          <path d={tradPath} fill="none" stroke="#4299e1" strokeWidth="3" />
+
+          {/* AIO loan line */}
+          <path d={aioPath} fill="none" stroke="#9bc53d" strokeWidth="3" />
+
+          {/* Legend */}
+          <g transform={`translate(${padding.left}, ${padding.top - 10})`}>
+            <line x1="0" y1="0" x2="30" y2="0" stroke="#4299e1" strokeWidth="3" />
+            <text x="35" y="4" fontSize="14" fill="#2d3748">Traditional ({formatMonthsToYears(traditionalMonths)})</text>
+
+            <line x1="260" y1="0" x2="290" y2="0" stroke="#9bc53d" strokeWidth="3" />
+            <text x="295" y="4" fontSize="14" fill="#2d3748">All-In-One ({formatMonthsToYears(aioMonths)})</text>
+          </g>
+
+          {/* Axis labels */}
+          <text
+            x={chartWidth / 2}
+            y={chartHeight - 10}
+            textAnchor="middle"
+            fontSize="14"
+            fill="#2d3748"
+            fontWeight="600"
+          >
+            Time (Months)
+          </text>
+          <text
+            x={-chartHeight / 2}
+            y={20}
+            textAnchor="middle"
+            fontSize="14"
+            fill="#2d3748"
+            fontWeight="600"
+            transform={`rotate(-90 20 ${chartHeight / 2})`}
+          >
+            Loan Balance
+          </text>
+        </svg>
+      </div>
+
+      {/* Interest Comparison Bar Chart */}
+      <div className="chart-container" style={{ marginTop: '3rem' }}>
+        <h3>Total Interest Comparison</h3>
+        <div style={{ display: 'flex', gap: '2rem', alignItems: 'flex-end', padding: '2rem' }}>
+          {/* Traditional Bar */}
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <div
+              style={{
+                width: '100%',
+                height: `${(comparison.traditional.totalInterestPaid / Math.max(comparison.traditional.totalInterestPaid, comparison.aio.totalInterestPaid)) * 300}px`,
+                background: 'linear-gradient(180deg, #4299e1 0%, #3182ce 100%)',
+                borderRadius: '8px 8px 0 0',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'white',
+                fontWeight: '700',
+                fontSize: '1.25rem',
+                minHeight: '60px',
+              }}
+            >
+              {formatCurrency(comparison.traditional.totalInterestPaid)}
+            </div>
+            <div style={{ marginTop: '1rem', fontWeight: '600', color: '#2d3748' }}>
+              Traditional Loan
+            </div>
+          </div>
+
+          {/* AIO Bar */}
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <div
+              style={{
+                width: '100%',
+                height: `${(comparison.aio.totalInterestPaid / Math.max(comparison.traditional.totalInterestPaid, comparison.aio.totalInterestPaid)) * 300}px`,
+                background: 'linear-gradient(180deg, #9bc53d 0%, #7da62e 100%)',
+                borderRadius: '8px 8px 0 0',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'white',
+                fontWeight: '700',
+                fontSize: '1.25rem',
+                minHeight: '60px',
+              }}
+            >
+              {formatCurrency(comparison.aio.totalInterestPaid)}
+            </div>
+            <div style={{ marginTop: '1rem', fontWeight: '600', color: '#2d3748' }}>
+              All-In-One Loan
+            </div>
+          </div>
+        </div>
+
+        {/* Savings Callout */}
+        {comparison.interestSaved > 0 && (
+          <div style={{
+            margin: '2rem auto',
+            maxWidth: '600px',
+            padding: '1.5rem',
+            background: 'linear-gradient(135deg, #e8f5e9 0%, #f1f8e9 100%)',
+            border: '2px solid #9bc53d',
+            borderRadius: '12px',
+            textAlign: 'center',
+          }}>
+            <div style={{ fontSize: '0.9rem', color: '#558b2f', fontWeight: '600', marginBottom: '0.5rem' }}>
+              💰 Total Interest Savings
+            </div>
+            <div style={{ fontSize: '2rem', fontWeight: '700', color: '#2d3748' }}>
+              {formatCurrency(comparison.interestSaved)}
+            </div>
+            <div style={{ fontSize: '0.9rem', color: '#7da62e', marginTop: '0.5rem' }}>
+              Save {formatMonthsToYears(comparison.timeSavedMonths)} by choosing All-In-One!
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Timeline Visualization */}
+      <div className="chart-container" style={{ marginTop: '3rem' }}>
+        <h3>Payoff Timeline</h3>
+        <div style={{ padding: '2rem' }}>
+          {/* Traditional Timeline */}
+          <div style={{ marginBottom: '2rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '0.5rem' }}>
+              <span style={{ fontWeight: '600', color: '#2d3748', minWidth: '160px' }}>Traditional Loan:</span>
+              <div style={{
+                flex: `0 0 ${(traditionalMonths / maxMonths) * 100}%`,
+                height: '40px',
+                background: 'linear-gradient(90deg, #4299e1 0%, #3182ce 100%)',
+                borderRadius: '8px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'white',
+                fontWeight: '600',
+              }}>
+                {formatMonthsToYears(traditionalMonths)}
+              </div>
+            </div>
+          </div>
+
+          {/* AIO Timeline */}
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '0.5rem' }}>
+              <span style={{ fontWeight: '600', color: '#2d3748', minWidth: '160px' }}>All-In-One Loan:</span>
+              <div style={{
+                flex: `0 0 ${(aioMonths / maxMonths) * 100}%`,
+                height: '40px',
+                background: 'linear-gradient(90deg, #9bc53d 0%, #7da62e 100%)',
+                borderRadius: '8px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'white',
+                fontWeight: '600',
+              }}>
+                {formatMonthsToYears(aioMonths)}
+              </div>
+              {comparison.timeSavedMonths > 0 && (
+                <span style={{
+                  marginLeft: '1rem',
+                  padding: '0.5rem 1rem',
+                  background: '#e8f5e9',
+                  color: '#558b2f',
+                  borderRadius: '6px',
+                  fontWeight: '600',
+                  fontSize: '0.9rem',
+                }}>
+                  ⚡ {formatMonthsToYears(comparison.timeSavedMonths)} faster!
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
