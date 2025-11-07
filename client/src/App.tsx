@@ -9,6 +9,7 @@ import FileUpload from './components/FileUpload';
 import CashFlowReview from './components/CashFlowReview';
 import SimulationResults from './components/SimulationResults';
 import ProposalBuilder from './components/ProposalBuilder';
+import AnalyzingModal from './components/AnalyzingModal';
 import FAQSlideout from './components/FAQSlideout';
 import PitchGuideModal from './components/PitchGuideModal';
 import { analyzeStatements, checkEligibility, simulateLoan } from './api';
@@ -19,6 +20,7 @@ function App() {
   const [mortgageDetails, setMortgageDetails] = useState<Partial<MortgageDetails>>({});
   const [bankStatements, setBankStatements] = useState<File[]>([]);
   const [cashFlowAnalysis, setCashFlowAnalysis] = useState<CashFlowAnalysis | null>(null);
+  const [depositFrequency, setDepositFrequency] = useState<'monthly' | 'biweekly' | 'weekly'>('monthly');
 
   // REMOVED: Manual entry state (no longer needed)
   // const [monthlyDeposits, setMonthlyDeposits] = useState<number>(0);
@@ -41,6 +43,7 @@ function App() {
     setMortgageDetails({});
     setBankStatements([]);
     setCashFlowAnalysis(null);
+    setDepositFrequency('monthly');
     // REMOVED: Manual entry state resets
     // setMonthlyDeposits(0);
     // setMonthlyExpenses(0);
@@ -121,17 +124,23 @@ function App() {
     setStep('simulation');
 
     try {
+      // Include deposit frequency in cash flow analysis
+      const cashFlowWithFrequency = {
+        ...cashFlowAnalysis,
+        depositFrequency
+      };
+
       // Check eligibility
       const eligibility = await checkEligibility(
         mortgageDetails as MortgageDetails,
-        cashFlowAnalysis
+        cashFlowWithFrequency
       );
       setEligibilityResult(eligibility);
 
       // Run simulation
       const simulation = await simulateLoan(
         mortgageDetails as MortgageDetails,
-        cashFlowAnalysis
+        cashFlowWithFrequency
       );
       setSimulationResult(simulation);
 
@@ -299,13 +308,7 @@ function App() {
           )}
 
           {step === 'analyzing' && (
-            <div className="section-card">
-              <div className="processing-section">
-                <div className="spinner"></div>
-                <h2>Analyzing Bank Statements...</h2>
-                <p>Our AI is reading and categorizing your transactions. This may take a few moments.</p>
-              </div>
-            </div>
+            <AnalyzingModal fileCount={bankStatements.length} />
           )}
 
           {step === 'cash-flow-review' && cashFlowAnalysis && (
@@ -314,6 +317,9 @@ function App() {
                 cashFlow={cashFlowAnalysis}
                 onContinue={handleContinueToSimulation}
                 onBack={() => setStep('upload-statements')}
+                depositFrequency={depositFrequency}
+                onDepositFrequencyChange={setDepositFrequency}
+                onCashFlowUpdate={setCashFlowAnalysis}
               />
             </div>
           )}

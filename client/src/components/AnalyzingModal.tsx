@@ -6,7 +6,6 @@ interface AnalyzingModalProps {
 }
 
 export default function AnalyzingModal({ fileCount }: AnalyzingModalProps) {
-  const [progress, setProgress] = useState(0);
   const [currentStep, setCurrentStep] = useState(0);
 
   const steps = [
@@ -19,20 +18,7 @@ export default function AnalyzingModal({ fileCount }: AnalyzingModalProps) {
   ];
 
   useEffect(() => {
-    let progressInterval: NodeJS.Timeout;
     let stepTimeout: NodeJS.Timeout;
-
-    const startProgress = () => {
-      const totalDuration = steps.reduce((sum, step) => sum + step.duration, 0);
-      const incrementRate = 100 / totalDuration;
-
-      progressInterval = setInterval(() => {
-        setProgress((prev) => {
-          const next = prev + incrementRate * 100;
-          return next >= 99 ? 99 : next;
-        });
-      }, 100);
-    };
 
     const cycleSteps = () => {
       let currentIndex = 0;
@@ -48,11 +34,9 @@ export default function AnalyzingModal({ fileCount }: AnalyzingModalProps) {
       nextStep();
     };
 
-    startProgress();
     cycleSteps();
 
     return () => {
-      clearInterval(progressInterval);
       clearTimeout(stepTimeout);
     };
   }, []);
@@ -90,15 +74,11 @@ export default function AnalyzingModal({ fileCount }: AnalyzingModalProps) {
             Analyzing {fileCount} {fileCount === 1 ? 'document' : 'documents'} with advanced AI
           </p>
 
-          {/* Progress Bar */}
+          {/* Knight Rider Progress Bar */}
           <div className="progress-container">
-            <div className="progress-bar">
-              <div
-                className="progress-fill"
-                style={{ width: `${progress}%` }}
-              ></div>
+            <div className="progress-bar knight-rider">
+              <div className="knight-rider-bar"></div>
             </div>
-            <span className="progress-text">{Math.round(progress)}%</span>
           </div>
 
           {/* Current Step */}

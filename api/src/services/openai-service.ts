@@ -258,23 +258,6 @@ async function processFile(file: Express.Multer.File, retries = 2): Promise<stri
 
   if (ext === '.csv' || ext === '.xlsx' || ext === '.xls') {
     return await extractDataFromSpreadsheet(file.path);
-  } else if (ext === '.pdf') {
-    // TESTING: Try native PDF processing
-    let lastError: Error | null = null;
-    for (let attempt = 1; attempt <= retries; attempt++) {
-      try {
-        console.log(`Attempt ${attempt}/${retries} for PDF: ${file.originalname}`);
-        return await analyzePdf(file.path);
-      } catch (error) {
-        lastError = error as Error;
-        console.error(`Attempt ${attempt}/${retries} failed:`, error instanceof Error ? error.message : error);
-        if (attempt < retries) {
-          console.log(`Retrying in 2 seconds...`);
-          await new Promise(resolve => setTimeout(resolve, 2000));
-        }
-      }
-    }
-    throw lastError || new Error('Failed to process PDF after retries');
   } else if (['.jpg', '.jpeg', '.png', '.gif', '.webp'].includes(ext)) {
     // Retry logic for image analysis
     let lastError: Error | null = null;

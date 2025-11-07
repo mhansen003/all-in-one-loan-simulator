@@ -1,7 +1,6 @@
 import { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
-// TESTING: Disabled PDF conversion
-// import { processFilesWithPdfConversion } from '../utils/pdfConverter';
+import { processFilesWithPdfConversion } from '../utils/pdfConverter';
 import './FileUpload.css';
 
 interface FileUploadProps {
@@ -21,15 +20,15 @@ export default function FileUpload({
 }: FileUploadProps) {
   const [selectedFiles, setSelectedFiles] = useState<File[]>(files);
   const [isProcessingPdf, setIsProcessingPdf] = useState(false);
+  const [showManualEntryModal, setShowManualEntryModal] = useState(false);
 
   const onDrop = useCallback(
     async (acceptedFiles: File[]) => {
       try {
         setIsProcessingPdf(true);
 
-        // TESTING: Skip PDF conversion, send PDFs directly to server
-        // const processedFiles = await processFilesWithPdfConversion(acceptedFiles);
-        const processedFiles = acceptedFiles; // Send files as-is
+        // Convert PDFs to JPG images for better AI processing
+        const processedFiles = await processFilesWithPdfConversion(acceptedFiles);
 
         const newFiles = [...selectedFiles, ...processedFiles];
         setSelectedFiles(newFiles);
@@ -218,6 +217,71 @@ export default function FileUpload({
           )}
         </button>
       </div>
+
+      {/* Manual Entry Redirect Button */}
+      <div style={{ textAlign: 'center', marginTop: '1.5rem' }}>
+        <button
+          type="button"
+          className="btn-manual-entry"
+          onClick={() => setShowManualEntryModal(true)}
+          disabled={isAnalyzing || isProcessingPdf}
+        >
+          Don't have bank statements?
+        </button>
+      </div>
+
+      {/* Manual Entry Modal */}
+      {showManualEntryModal && (
+        <div className="modal-overlay" onClick={() => setShowManualEntryModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Manual Entry</h3>
+              <button
+                className="modal-close"
+                onClick={() => setShowManualEntryModal(false)}
+                aria-label="Close modal"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="modal-body">
+              <div className="modal-icon-info">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <p>
+                If you want to enter your cash flow information manually, please use the existing <strong>All-In-One Calculator</strong>.
+              </p>
+              <p style={{ marginTop: '1rem', fontSize: '0.9rem', color: '#718096' }}>
+                The Look Back Simulator is designed for detailed analysis using actual bank statements. For quick estimates with manual entry, our main calculator is better suited.
+              </p>
+            </div>
+            <div className="modal-actions">
+              <button
+                className="btn-secondary"
+                onClick={() => setShowManualEntryModal(false)}
+              >
+                Cancel
+              </button>
+              <a
+                href="https://www.allinoneloan.com/#calculator"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn-primary"
+                style={{ textDecoration: 'none' }}
+              >
+                Go to Calculator
+                <svg className="btn-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

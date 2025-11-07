@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { CashFlowAnalysis, Transaction } from '../types';
 import './CashFlowReview.css';
 
@@ -6,10 +6,78 @@ interface CashFlowReviewProps {
   cashFlow: CashFlowAnalysis;
   onContinue: () => void;
   onBack?: () => void;
+  depositFrequency?: 'monthly' | 'biweekly' | 'weekly';
+  onDepositFrequencyChange?: (frequency: 'monthly' | 'biweekly' | 'weekly') => void;
+  onCashFlowUpdate?: (updatedCashFlow: CashFlowAnalysis) => void;
 }
 
-export default function CashFlowReview({ cashFlow, onContinue, onBack }: CashFlowReviewProps) {
+export default function CashFlowReview({
+  cashFlow,
+  onContinue,
+  onBack,
+  depositFrequency = 'monthly',
+  onDepositFrequencyChange,
+  onCashFlowUpdate
+}: CashFlowReviewProps) {
   const [activeTab, setActiveTab] = useState<'summary' | 'transactions'>('summary');
+  const [transactions, setTransactions] = useState<Transaction[]>(cashFlow.transactions);
+  const [editingTransaction, setEditingTransaction] = useState<number | null>(null);
+
+  // Recalculate totals whenever transactions change
+  useEffect(() => {
+    const includedTransactions = transactions.filter(t => !t.excluded);
+
+    const totalIncome = includedTransactions
+      .filter(t => t.category === 'income')
+      .reduce((sum, t) => sum + t.amount, 0) / 12; // Average monthly
+
+    const totalExpenses = includedTransactions
+      .filter(t => t.category === 'expense' || t.category === 'recurring')
+      .reduce((sum, t) => sum + Math.abs(t.amount), 0) / 12; // Average monthly
+
+    const netCashFlow = totalIncome - totalExpenses;
+
+    const updatedCashFlow: CashFlowAnalysis = {
+      ...cashFlow,
+      transactions,
+      totalIncome,
+      totalExpenses,
+      netCashFlow
+    };
+
+    onCashFlowUpdate?.(updatedCashFlow);
+  }, [transactions]);
+
+  const toggleTransactionExclusion = (index: number) => {
+    const updatedTransactions = [...transactions];
+    updatedTransactions[index] = {
+      ...updatedTransactions[index],
+      excluded: !updatedTransactions[index].excluded
+    };
+    setTransactions(updatedTransactions);
+  };
+
+  const updateTransactionAmount = (index: number, newAmount: number) => {
+    const updatedTransactions = [...transactions];
+    updatedTransactions[index] = {
+      ...updatedTransactions[index],
+      amount: newAmount
+    };
+    setTransactions(updatedTransactions);
+    setEditingTransaction(null);
+  };
+
+  // Recalculate totals for display
+  const includedTransactions = transactions.filter(t => !t.excluded);
+  const displayTotalIncome = includedTransactions
+    .filter(t => t.category === 'income')
+    .reduce((sum, t) => sum + t.amount, 0) / 12;
+
+  const displayTotalExpenses = includedTransactions
+    .filter(t => t.category === 'expense' || t.category === 'recurring')
+    .reduce((sum, t) => sum + Math.abs(t.amount), 0) / 12;
+
+  const displayNetCashFlow = displayTotalIncome - displayTotalExpenses;
 
   const formatCurrency = (amount: number): string => {
     return new Intl.NumberFormat('en-US', {
@@ -54,7 +122,7 @@ export default function CashFlowReview({ cashFlow, onContinue, onBack }: CashFlo
     }
   };
 
-  const groupedTransactions = cashFlow.transactions.reduce((acc, transaction) => {
+  const groupedTransactions = transactions.reduce((acc, transaction) => {
     const category = transaction.category;
     if (!acc[category]) {
       acc[category] = [];
@@ -111,7 +179,7 @@ export default function CashFlowReview({ cashFlow, onContinue, onBack }: CashFlo
               </div>
               <div className="card-content">
                 <div className="card-label">Total Monthly Income</div>
-                <div className="card-value">{formatCurrency(cashFlow.totalIncome)}</div>
+                <div className="card-value">{formatCurrency(displayTotalIncome)}</div>
                 <div className="card-description">Average across 12 months</div>
               </div>
             </div>
@@ -124,7 +192,7 @@ export default function CashFlowReview({ cashFlow, onContinue, onBack }: CashFlo
               </div>
               <div className="card-content">
                 <div className="card-label">Total Monthly Expenses</div>
-                <div className="card-value">{formatCurrency(cashFlow.totalExpenses)}</div>
+                <div className="card-value">{formatCurrency(displayTotalExpenses)}</div>
                 <div className="card-description">Recurring expenses only</div>
               </div>
             </div>
@@ -137,9 +205,51 @@ export default function CashFlowReview({ cashFlow, onContinue, onBack }: CashFlo
               </div>
               <div className="card-content">
                 <div className="card-label">Net Cash Flow</div>
-                <div className="card-value positive">{formatCurrency(cashFlow.netCashFlow)}</div>
+                <div className="card-value positive">{formatCurrency(displayNetCashFlow)}</div>
                 <div className="card-description">Available for loan offset</div>
               </div>
+            </div>
+          </div>
+
+          {/* Deposit Frequency Selector */}
+          <div className="deposit-frequency-section">
+            <div className="frequency-header">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="frequency-icon">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              <div>
+                <h3>How often do you receive deposits?</h3>
+                <p>Select your typical deposit frequency for more accurate calculations</p>
+              </div>
+            </div>
+
+            <div className="frequency-options">
+              <button
+                type="button"
+                className={`frequency-option ${depositFrequency === 'weekly' ? 'active' : ''}`}
+                onClick={() => onDepositFrequencyChange?.('weekly')}
+              >
+                <div className="frequency-label">Weekly</div>
+                <div className="frequency-description">Every Friday</div>
+              </button>
+
+              <button
+                type="button"
+                className={`frequency-option ${depositFrequency === 'biweekly' ? 'active' : ''}`}
+                onClick={() => onDepositFrequencyChange?.('biweekly')}
+              >
+                <div className="frequency-label">Bi-Weekly</div>
+                <div className="frequency-description">1st &amp; 15th of month</div>
+              </button>
+
+              <button
+                type="button"
+                className={`frequency-option ${depositFrequency === 'monthly' ? 'active' : ''}`}
+                onClick={() => onDepositFrequencyChange?.('monthly')}
+              >
+                <div className="frequency-label">Monthly</div>
+                <div className="frequency-description">Once per month</div>
+              </button>
             </div>
           </div>
 
@@ -169,44 +279,107 @@ export default function CashFlowReview({ cashFlow, onContinue, onBack }: CashFlo
       {activeTab === 'transactions' && (
         <div className="transactions-view">
           <div className="transactions-header">
-            <p>Showing {cashFlow.transactions.length} categorized transactions</p>
+            <p>Showing {transactions.length} categorized transactions</p>
+            <div className="transactions-instructions">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span>
+                <strong>Check to EXCLUDE</strong> transactions from calculations. Click amounts to edit if OCR errors are detected.
+              </span>
+            </div>
           </div>
 
-          {Object.entries(groupedTransactions).map(([category, transactions]) => (
-            <div key={category} className="transaction-group">
-              <div className="group-header">
-                <span
-                  className="category-badge"
-                  style={{ backgroundColor: getCategoryColor(category as Transaction['category']) }}
-                >
-                  {getCategoryLabel(category as Transaction['category'])}
-                </span>
-                <span className="group-count">
-                  {transactions.length} transaction{transactions.length !== 1 ? 's' : ''}
-                </span>
-              </div>
+          {Object.entries(groupedTransactions).map(([category, categoryTransactions]) => {
+            const actualIndices = categoryTransactions.map(t =>
+              transactions.findIndex(tr => tr === t)
+            );
 
-              <div className="transaction-list">
-                {transactions.slice(0, 10).map((transaction, idx) => (
-                  <div key={idx} className="transaction-item">
-                    <div className="transaction-date">
-                      {new Date(transaction.date).toLocaleDateString()}
+            return (
+              <div key={category} className="transaction-group">
+                <div className="group-header">
+                  <span
+                    className="category-badge"
+                    style={{ backgroundColor: getCategoryColor(category as Transaction['category']) }}
+                  >
+                    {getCategoryLabel(category as Transaction['category'])}
+                  </span>
+                  <span className="group-count">
+                    {categoryTransactions.length} transaction{categoryTransactions.length !== 1 ? 's' : ''}
+                  </span>
+                </div>
+
+                <div className="transaction-list">
+                  {categoryTransactions.slice(0, 10).map((transaction, idx) => {
+                    const actualIndex = actualIndices[idx];
+                    return (
+                      <div key={actualIndex} className={`transaction-item ${transaction.excluded ? 'excluded' : ''}`}>
+                        <div className="transaction-checkbox">
+                          <input
+                            type="checkbox"
+                            checked={transaction.excluded || false}
+                            onChange={() => toggleTransactionExclusion(actualIndex)}
+                            id={`transaction-${actualIndex}`}
+                          />
+                          <label htmlFor={`transaction-${actualIndex}`}>Exclude</label>
+                        </div>
+                        <div className="transaction-date">
+                          {new Date(transaction.date).toLocaleDateString()}
+                        </div>
+                        <div className="transaction-description">{transaction.description}</div>
+                        {editingTransaction === actualIndex ? (
+                          <input
+                            type="number"
+                            className="transaction-amount-input"
+                            defaultValue={Math.abs(transaction.amount)}
+                            onBlur={(e) => {
+                              const newAmount = parseFloat(e.target.value);
+                              if (!isNaN(newAmount) && newAmount > 0) {
+                                updateTransactionAmount(
+                                  actualIndex,
+                                  transaction.category === 'income' ? newAmount : -newAmount
+                                );
+                              } else {
+                                setEditingTransaction(null);
+                              }
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                const newAmount = parseFloat(e.currentTarget.value);
+                                if (!isNaN(newAmount) && newAmount > 0) {
+                                  updateTransactionAmount(
+                                    actualIndex,
+                                    transaction.category === 'income' ? newAmount : -newAmount
+                                  );
+                                }
+                              } else if (e.key === 'Escape') {
+                                setEditingTransaction(null);
+                              }
+                            }}
+                            autoFocus
+                          />
+                        ) : (
+                          <div
+                            className={`transaction-amount editable ${transaction.category === 'income' ? 'positive' : 'negative'}`}
+                            onClick={() => setEditingTransaction(actualIndex)}
+                            title="Click to edit amount"
+                          >
+                            {transaction.category === 'income' ? '+' : '-'}
+                            {formatCurrency(Math.abs(transaction.amount))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                  {categoryTransactions.length > 10 && (
+                    <div className="transaction-item more">
+                      <span>... and {categoryTransactions.length - 10} more</span>
                     </div>
-                    <div className="transaction-description">{transaction.description}</div>
-                    <div className={`transaction-amount ${transaction.category === 'income' ? 'positive' : 'negative'}`}>
-                      {transaction.category === 'income' ? '+' : '-'}
-                      {formatCurrency(Math.abs(transaction.amount))}
-                    </div>
-                  </div>
-                ))}
-                {transactions.length > 10 && (
-                  <div className="transaction-item more">
-                    <span>... and {transactions.length - 10} more</span>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 

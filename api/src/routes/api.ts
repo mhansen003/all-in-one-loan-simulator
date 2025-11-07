@@ -4,7 +4,7 @@ import path from 'path';
 import { existsSync, mkdirSync } from 'fs';
 import { analyzeStatements } from '../services/openai-service.js';
 import { calculateEligibility } from '../services/eligibility-checker.js';
-import { simulateLoan } from '../services/loan-calculator.js';
+import { simulateLoan } from '../services/loan-calculator-v2.js';
 import type { MortgageDetails, CashFlowAnalysis } from '../types.js';
 
 const router = express.Router();

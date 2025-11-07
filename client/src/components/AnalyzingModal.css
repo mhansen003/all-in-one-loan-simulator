@@ -174,46 +174,34 @@
   position: relative;
 }
 
-.progress-fill {
-  height: 100%;
-  background: linear-gradient(90deg, #fbbf24 0%, #f59e0b 100%);
-  border-radius: 12px;
-  transition: width 0.3s ease;
-  position: relative;
-  box-shadow: 0 0 20px rgba(251, 191, 36, 0.6);
-}
-
-.progress-fill::after {
-  content: '';
+/* Knight Rider Progress Bar */
+.knight-rider-bar {
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  height: 100%;
+  width: 25%;
   background: linear-gradient(
     90deg,
     transparent 0%,
-    rgba(255, 255, 255, 0.3) 50%,
+    #ef4444 20%,
+    #dc2626 50%,
+    #ef4444 80%,
     transparent 100%
   );
-  animation: shimmer 1.5s infinite;
+  border-radius: 12px;
+  box-shadow: 0 0 20px rgba(239, 68, 68, 0.8), 0 0 40px rgba(220, 38, 38, 0.6);
+  animation: knight-rider-scan 1.5s ease-in-out infinite;
 }
 
-@keyframes shimmer {
+@keyframes knight-rider-scan {
   0% {
-    transform: translateX(-100%);
+    left: -25%;
+  }
+  50% {
+    left: 100%;
   }
   100% {
-    transform: translateX(100%);
+    left: -25%;
   }
-}
-
-.progress-text {
-  display: block;
-  margin-top: 0.5rem;
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.9);
 }
 
 /* Current Step */
