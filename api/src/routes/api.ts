@@ -1,6 +1,7 @@
 import express from 'express';
 import multer from 'multer';
 import path from 'path';
+import { existsSync, mkdirSync } from 'fs';
 import { analyzeStatements } from '../services/openai-service.js';
 import { calculateEligibility } from '../services/eligibility-checker.js';
 import { simulateLoan } from '../services/loan-calculator.js';
@@ -8,10 +9,19 @@ import type { MortgageDetails, CashFlowAnalysis } from '../types.js';
 
 const router = express.Router();
 
+// Determine upload directory based on environment
+// Vercel serverless functions can only write to /tmp
+const UPLOAD_DIR = process.env.VERCEL ? '/tmp' : 'uploads';
+
+// Ensure upload directory exists (for local development)
+if (!process.env.VERCEL && !existsSync(UPLOAD_DIR)) {
+  mkdirSync(UPLOAD_DIR, { recursive: true });
+}
+
 // Configure multer for file uploads
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, 'uploads/');
+    cb(null, UPLOAD_DIR);
   },
   filename: (req, file, cb) => {
     const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;

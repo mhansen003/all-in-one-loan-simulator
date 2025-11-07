@@ -1,9 +1,11 @@
 import OpenAI from 'openai';
 import fs from 'fs/promises';
 import path from 'path';
-import pdfParse from 'pdf-parse';
 import xlsx from 'xlsx';
 import type { CashFlowAnalysis, Transaction, OpenAIAnalysisResult } from '../types.js';
+
+// pdf-parse is CommonJS, need to import dynamically
+let pdfParse: any;
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -14,6 +16,12 @@ const openai = new OpenAI({
  */
 async function extractTextFromPDF(filePath: string): Promise<string> {
   try {
+    // Dynamically import pdf-parse (CommonJS module)
+    if (!pdfParse) {
+      const module = await import('pdf-parse');
+      pdfParse = (module as any).default || module;
+    }
+
     const dataBuffer = await fs.readFile(filePath);
     const data = await pdfParse(dataBuffer);
     return data.text;
