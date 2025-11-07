@@ -169,6 +169,50 @@ body {
   height: 1rem;
 }
 
+/* FAQ Button */
+.btn-icon-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(155, 197, 61, 0.15);
+  color: #9bc53d;
+  border: 1.5px solid rgba(155, 197, 61, 0.3);
+  padding: 0.6rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-icon-header:hover {
+  background: rgba(155, 197, 61, 0.25);
+  border-color: #9bc53d;
+  transform: translateY(-1px);
+}
+
+/* Pitch Guide Button */
+.btn-header-pitch {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: linear-gradient(135deg, #9bc53d 0%, #8ab62f 100%);
+  color: white;
+  border: none;
+  padding: 0.6rem 1.25rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(155, 197, 61, 0.3);
+}
+
+.btn-header-pitch:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(155, 197, 61, 0.4);
+}
+
 /* ==================== MAIN CONTENT ==================== */
 
 .app-main {

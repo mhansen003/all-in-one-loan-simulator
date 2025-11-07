@@ -252,4 +252,90 @@ router.post('/calculate-payment', async (req, res) => {
   }
 });
 
+// AI Pitch Guide - Get AI-powered answers about the All-In-One loan
+router.post('/pitch-guide', async (req, res) => {
+  try {
+    const { question, conversationHistory } = req.body;
+
+    if (!question) {
+      return res.status(400).json({
+        error: 'Missing required parameter',
+        message: 'Please provide a question',
+      });
+    }
+
+    const { OpenAI } = await import('openai');
+    const openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    });
+
+    // Build conversation context
+    const messages: any[] = [
+      {
+        role: 'system',
+        content: `You are an expert loan officer and financial advisor specializing in CMG Financial's All-In-One loan product.
+
+PRODUCT OVERVIEW:
+The All-In-One loan is a revolutionary 30-year HELOC (Home Equity Line of Credit) that functions as the borrower's primary checking account. It calculates interest DAILY on the effective balance (Loan Balance - Available Cash), allowing borrowers to save significant interest compared to traditional mortgages.
+
+KEY FEATURES:
+- Daily interest calculation: (Balance - Cash) × (Rate / 365)
+- Functions as full checking account with debit card, checks, online banking
+- Deposits immediately reduce interest-bearing balance
+- Funds remain fully accessible (unlike extra principal payments)
+- No prepayment penalties
+- Typical savings: 30-40% on total interest, 5-10 years faster payoff
+
+QUALIFICATION:
+- Maximum 80% LTV
+- Positive monthly cash flow (minimum $500)
+- Good credit score
+- Sufficient home equity
+
+YOUR ROLE:
+Answer questions about the All-In-One loan with enthusiasm and clarity. Help loan officers craft compelling pitches, overcome objections, and explain benefits to borrowers. Use real examples, comparisons to traditional mortgages, and emphasize the unique daily calculation advantage.
+
+Be conversational, professional, and persuasive. Focus on the "why" not just the "what".`,
+      },
+    ];
+
+    // Add conversation history if provided
+    if (conversationHistory && Array.isArray(conversationHistory)) {
+      conversationHistory.forEach((msg: any) => {
+        messages.push({
+          role: msg.role,
+          content: msg.content,
+        });
+      });
+    }
+
+    // Add current question
+    messages.push({
+      role: 'user',
+      content: question,
+    });
+
+    // Call OpenAI
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4',
+      messages: messages,
+      temperature: 0.7,
+      max_tokens: 500,
+    });
+
+    const answer = completion.choices[0]?.message?.content || 'I apologize, but I could not generate a response. Please try again.';
+
+    res.json({
+      answer,
+      message: 'Pitch guide response generated successfully',
+    });
+  } catch (error: any) {
+    console.error('Error in pitch guide:', error);
+    res.status(500).json({
+      error: 'Pitch guide failed',
+      message: error.message || 'Failed to generate pitch response',
+    });
+  }
+});
+
 export default router;
