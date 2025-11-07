@@ -22,6 +22,7 @@ function App() {
   // FAQ and Pitch Guide state
   const [isFAQOpen, setIsFAQOpen] = useState(false);
   const [isPitchGuideOpen, setIsPitchGuideOpen] = useState(false);
+  const [isHelpDropdownOpen, setIsHelpDropdownOpen] = useState(false);
 
   const handleReset = () => {
     setStep('mortgage-details');
@@ -107,17 +108,6 @@ function App() {
       <header className="app-header">
         <div className="header-container">
           <div className="header-left">
-            <button
-              className="btn-icon-header"
-              onClick={() => setIsFAQOpen(true)}
-              title="View FAQ"
-              style={{ marginRight: '1rem' }}
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '20px', height: '20px' }}>
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-              </svg>
-              <span style={{ fontSize: '0.85rem' }}>FAQ</span>
-            </button>
             <div className="logo">
               <span className="logo-cmg">CMG</span>
               <span className="logo-financial">FINANCIAL</span>
@@ -126,16 +116,62 @@ function App() {
             <h1 className="header-title">All-In-One Loan Simulator</h1>
           </div>
           <div className="header-right">
-            <button
-              className="btn-header-pitch"
-              onClick={() => setIsPitchGuideOpen(true)}
-              style={{ marginRight: '1rem' }}
-            >
-              <svg className="btn-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-              </svg>
-              🎯 Pitch Guide
-            </button>
+            {/* Help Dropdown */}
+            <div className="help-dropdown-container">
+              <button
+                className="btn-header-help"
+                onClick={() => setIsHelpDropdownOpen(!isHelpDropdownOpen)}
+                onBlur={() => setTimeout(() => setIsHelpDropdownOpen(false), 200)}
+              >
+                <svg className="btn-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Help
+                <svg
+                  className={`dropdown-chevron ${isHelpDropdownOpen ? 'open' : ''}`}
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              {isHelpDropdownOpen && (
+                <div className="help-dropdown-menu">
+                  <button
+                    className="help-dropdown-item"
+                    onClick={() => {
+                      setIsFAQOpen(true);
+                      setIsHelpDropdownOpen(false);
+                    }}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                    </svg>
+                    <div>
+                      <div className="dropdown-item-title">FAQ</div>
+                      <div className="dropdown-item-desc">Common questions</div>
+                    </div>
+                  </button>
+                  <button
+                    className="help-dropdown-item"
+                    onClick={() => {
+                      setIsPitchGuideOpen(true);
+                      setIsHelpDropdownOpen(false);
+                    }}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                    </svg>
+                    <div>
+                      <div className="dropdown-item-title">Q&A with CMG AI Helper</div>
+                      <div className="dropdown-item-desc">Ask questions, get answers</div>
+                    </div>
+                  </button>
+                </div>
+              )}
+            </div>
             <div className="header-phone-section">
               <svg className="phone-icon-header" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />

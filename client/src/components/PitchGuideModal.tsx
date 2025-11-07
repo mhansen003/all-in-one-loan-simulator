@@ -87,8 +87,8 @@ export default function PitchGuideModal({ isOpen, onClose }: PitchGuideModalProp
       <div className="pitch-modal">
         <div className="pitch-header">
           <div>
-            <h2>🎯 AI Pitch Guide</h2>
-            <p>Get instant answers about why All-In-One is the right choice</p>
+            <h2>💬 Q&A with CMG AI Helper</h2>
+            <p>Ask me anything about the All-In-One loan product</p>
           </div>
           <button className="pitch-close-btn" onClick={onClose} aria-label="Close Pitch Guide">
             ×
@@ -100,8 +100,8 @@ export default function PitchGuideModal({ isOpen, onClose }: PitchGuideModalProp
           {messages.length === 0 && (
             <div className="pitch-welcome">
               <div className="pitch-welcome-icon">💡</div>
-              <h3>Welcome to your AI Pitch Assistant!</h3>
-              <p>Ask me anything about the All-In-One loan product. I'm here to help you understand the benefits, answer objections, and craft the perfect pitch for your borrowers.</p>
+              <h3>Welcome to CMG AI Helper!</h3>
+              <p>Ask me anything about the All-In-One loan product. I'm here to help you understand the benefits, answer questions, and provide expert guidance on this innovative mortgage solution.</p>
 
               <div className="quick-questions-grid">
                 <h4>Quick Questions:</h4>
