@@ -58,3 +58,5 @@ coverage/
 # Temp files
 *.tmp
 *.temp
+
+.vercel
