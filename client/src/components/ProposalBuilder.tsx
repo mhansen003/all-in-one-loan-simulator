@@ -19,6 +19,7 @@ import { CSS } from '@dnd-kit/utilities';
 import html2pdf from 'html2pdf.js';
 import type { SimulationResult, MortgageDetails } from '../types';
 import PitchOptionsModal, { PitchOptions } from './PitchOptionsModal';
+import { CMG_BRANDING } from '../constants/cmgBranding';
 import './ProposalBuilder.css';
 
 interface ProposalComponent {
@@ -491,8 +492,13 @@ export default function ProposalBuilder({
 
             <div className="proposal-preview">
               <div className="preview-content">
-                {/* Header */}
+                {/* Header with CMG Logo */}
                 <div className="preview-header">
+                  <img
+                    src={CMG_BRANDING.logo.url}
+                    alt={CMG_BRANDING.logo.alt}
+                    style={{ maxWidth: '180px', marginBottom: '1rem' }}
+                  />
                   <h1>All-In-One Loan Proposal</h1>
                   {clientName && <h2>Prepared for {clientName}</h2>}
                   <p>{new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
@@ -576,11 +582,52 @@ export default function ProposalBuilder({
                   </div>
                 )}
 
-                {/* Footer */}
+                {/* CMG Financial Footer */}
                 {includeFooter && (
                   <div className="preview-footer">
-                    <p>This proposal was generated using professional loan analysis software.</p>
-                    <p>For questions or to proceed, please contact your loan officer.</p>
+                    <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+                      <img
+                        src={CMG_BRANDING.logo.url}
+                        alt={CMG_BRANDING.logo.alt}
+                        style={{ maxWidth: '140px', marginBottom: '1rem' }}
+                      />
+                      <p style={{ fontWeight: 600, fontSize: '1rem', marginBottom: '0.5rem', color: '#333' }}>
+                        {CMG_BRANDING.company.name}
+                      </p>
+                      <p style={{ fontSize: '0.85rem', color: '#666', margin: '0' }}>
+                        {CMG_BRANDING.company.tagline}
+                      </p>
+                    </div>
+
+                    <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
+                      <p style={{ margin: '0.25rem 0', fontSize: '0.85rem', color: '#666' }}>
+                        {CMG_BRANDING.company.address}
+                      </p>
+                      <p style={{ margin: '0.25rem 0', fontSize: '0.85rem', color: '#666' }}>
+                        Phone: {CMG_BRANDING.company.phone} | Website: <a href={CMG_BRANDING.company.website} style={{ color: CMG_BRANDING.colors.primary }}>{CMG_BRANDING.company.website}</a>
+                      </p>
+                    </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
+                      <a href={CMG_BRANDING.socialMedia.linkedin} target="_blank" rel="noopener noreferrer" style={{ color: '#0077b5' }}>
+                        <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg>
+                      </a>
+                      <a href={CMG_BRANDING.socialMedia.facebook} target="_blank" rel="noopener noreferrer" style={{ color: '#1877f2' }}>
+                        <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24"><path d="M9 8h-3v4h3v12h5v-12h3.642l.358-4h-4v-1.667c0-.955.192-1.333 1.115-1.333h2.885v-5h-3.808c-3.596 0-5.192 1.583-5.192 4.615v3.385z"/></svg>
+                      </a>
+                      <a href={CMG_BRANDING.socialMedia.twitter} target="_blank" rel="noopener noreferrer" style={{ color: '#1da1f2' }}>
+                        <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24"><path d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z"/></svg>
+                      </a>
+                      <a href={CMG_BRANDING.socialMedia.instagram} target="_blank" rel="noopener noreferrer" style={{ color: '#e4405f' }}>
+                        <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+                      </a>
+                    </div>
+
+                    <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '1rem', textAlign: 'center', fontSize: '0.75rem', color: '#999' }}>
+                      <p style={{ margin: '0.25rem 0' }}>{CMG_BRANDING.legal.nmls} | {CMG_BRANDING.legal.equalHousing}</p>
+                      <p style={{ margin: '0.25rem 0' }}>{CMG_BRANDING.legal.licensing}</p>
+                      <p style={{ margin: '0.5rem 0 0 0' }}>This proposal was generated using professional loan analysis software.</p>
+                    </div>
                   </div>
                 )}
               </div>
@@ -636,8 +683,9 @@ export default function ProposalBuilder({
       {/* Hidden PDF Content */}
       <div ref={pdfContentRef} className="pdf-content" style={{ position: 'absolute', left: '-9999px', width: '8.5in' }}>
         <div style={{ padding: '0.75in', fontFamily: 'Arial, sans-serif', color: '#333' }}>
-          {/* Header */}
+          {/* CMG Header */}
           <div style={{ textAlign: 'center', marginBottom: '2rem', borderBottom: '3px solid #9bc53d', paddingBottom: '1rem' }}>
+            <img src={CMG_BRANDING.logo.url} alt={CMG_BRANDING.logo.alt} style={{ maxWidth: '180px', marginBottom: '1rem' }} />
             <h1 style={{ margin: 0, fontSize: '2rem', color: '#2d3748' }}>All-In-One Loan Proposal</h1>
             {clientName && <h2 style={{ margin: '0.5rem 0 0 0', fontSize: '1.5rem', color: '#718096', fontWeight: 'normal' }}>Prepared for {clientName}</h2>}
             <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.9rem', color: '#a0aec0' }}>{new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
@@ -724,11 +772,39 @@ export default function ProposalBuilder({
             </div>
           )}
 
-          {/* Footer */}
+          {/* CMG Financial Footer */}
           {includeFooter && (
-            <div style={{ marginTop: '3rem', paddingTop: '1.5rem', borderTop: '2px solid #e2e8f0', textAlign: 'center', fontSize: '0.85rem', color: '#718096' }}>
-              <p style={{ margin: 0 }}>This proposal was generated using professional loan analysis software.</p>
-              <p style={{ margin: '0.5rem 0 0 0' }}>For questions or to proceed, please contact your loan officer.</p>
+            <div style={{ marginTop: '3rem', paddingTop: '1.5rem', borderTop: '2px solid #e2e8f0', textAlign: 'center' }}>
+              {/* CMG Logo */}
+              <div style={{ marginBottom: '1rem' }}>
+                <img src={CMG_BRANDING.logo.url} alt={CMG_BRANDING.logo.alt} style={{ maxWidth: '140px', marginBottom: '0.75rem' }} />
+                <p style={{ fontWeight: 600, fontSize: '1rem', marginBottom: '0.25rem', color: '#333', margin: '0.25rem 0' }}>
+                  {CMG_BRANDING.company.name}
+                </p>
+                <p style={{ fontSize: '0.85rem', color: '#666', margin: '0.25rem 0' }}>
+                  {CMG_BRANDING.company.tagline}
+                </p>
+              </div>
+
+              {/* Company Info */}
+              <div style={{ marginBottom: '1rem' }}>
+                <p style={{ margin: '0.25rem 0', fontSize: '0.85rem', color: '#666' }}>
+                  {CMG_BRANDING.company.address}
+                </p>
+                <p style={{ margin: '0.25rem 0', fontSize: '0.85rem', color: '#666' }}>
+                  Phone: {CMG_BRANDING.company.phone}
+                </p>
+                <p style={{ margin: '0.25rem 0', fontSize: '0.85rem', color: '#666' }}>
+                  Website: {CMG_BRANDING.company.website}
+                </p>
+              </div>
+
+              {/* Legal Disclaimers */}
+              <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '1rem', fontSize: '0.75rem', color: '#999' }}>
+                <p style={{ margin: '0.25rem 0' }}>{CMG_BRANDING.legal.nmls} | {CMG_BRANDING.legal.equalHousing}</p>
+                <p style={{ margin: '0.25rem 0' }}>{CMG_BRANDING.legal.licensing}</p>
+                <p style={{ margin: '0.25rem 0' }}>This proposal was generated using professional loan analysis software.</p>
+              </div>
             </div>
           )}
         </div>
