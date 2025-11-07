@@ -152,4 +152,104 @@ router.post('/generate-report', async (req, res) => {
   }
 });
 
+// Get detailed amortization schedule
+router.post('/amortization-schedule', async (req, res) => {
+  try {
+    const { mortgageDetails, cashFlow, months } = req.body;
+
+    if (!mortgageDetails || !cashFlow) {
+      return res.status(400).json({
+        error: 'Missing required data',
+        message: 'Please provide mortgage details and cash flow analysis',
+      });
+    }
+
+    const { getDetailedAmortization } = await import('../services/loan-calculator.js');
+
+    const schedule = getDetailedAmortization(
+      mortgageDetails as MortgageDetails,
+      cashFlow as CashFlowAnalysis,
+      months || 12
+    );
+
+    res.json({
+      schedule,
+      message: 'Amortization schedule generated successfully',
+    });
+  } catch (error: any) {
+    console.error('Error generating schedule:', error);
+    res.status(500).json({
+      error: 'Schedule generation failed',
+      message: error.message || 'Failed to generate amortization schedule',
+    });
+  }
+});
+
+// Quick savings estimate (no bank statement analysis required)
+router.post('/estimate-savings', async (req, res) => {
+  try {
+    const { loanBalance, interestRate, avgMonthlyCashFlow, remainingMonths } = req.body;
+
+    if (!loanBalance || !interestRate || !avgMonthlyCashFlow || !remainingMonths) {
+      return res.status(400).json({
+        error: 'Missing required parameters',
+        message: 'Please provide: loanBalance, interestRate, avgMonthlyCashFlow, remainingMonths',
+      });
+    }
+
+    const { estimateSavingsPotential } = await import('../services/loan-calculator.js');
+
+    const estimate = estimateSavingsPotential(
+      parseFloat(loanBalance),
+      parseFloat(interestRate),
+      parseFloat(avgMonthlyCashFlow),
+      parseInt(remainingMonths)
+    );
+
+    res.json({
+      estimate,
+      message: 'Savings estimate calculated successfully',
+    });
+  } catch (error: any) {
+    console.error('Error estimating savings:', error);
+    res.status(500).json({
+      error: 'Estimation failed',
+      message: error.message || 'Failed to estimate savings',
+    });
+  }
+});
+
+// Calculate monthly payment
+router.post('/calculate-payment', async (req, res) => {
+  try {
+    const { principal, annualRate, termMonths } = req.body;
+
+    if (!principal || !annualRate || !termMonths) {
+      return res.status(400).json({
+        error: 'Missing required parameters',
+        message: 'Please provide: principal, annualRate, termMonths',
+      });
+    }
+
+    const { calculateMonthlyPayment } = await import('../services/loan-calculator.js');
+
+    const payment = calculateMonthlyPayment(
+      parseFloat(principal),
+      parseFloat(annualRate),
+      parseInt(termMonths)
+    );
+
+    res.json({
+      monthlyPayment: payment,
+      message: 'Monthly payment calculated successfully',
+    });
+  } catch (error: any) {
+    console.error('Error calculating payment:', error);
+    res.status(500).json({
+      error: 'Calculation failed',
+      message: error.message || 'Failed to calculate monthly payment',
+    });
+  }
+});
+
 export default router;
