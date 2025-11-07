@@ -40,6 +40,7 @@ export async function convertPdfToImages(file: File): Promise<File[]> {
       await page.render({
         canvasContext: context,
         viewport: viewport,
+        canvas: canvas,
       }).promise;
 
       // Convert canvas to blob
