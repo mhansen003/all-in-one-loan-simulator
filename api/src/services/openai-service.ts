@@ -1,55 +1,50 @@
 import OpenAI from 'openai';
+import Anthropic from '@anthropic-ai/sdk';
 import fs from 'fs/promises';
 import path from 'path';
 import xlsx from 'xlsx';
-import { convert } from 'pdf-img-convert';
 import type { CashFlowAnalysis, Transaction, OpenAIAnalysisResult } from '../types.js';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
+const anthropic = new Anthropic({
+  apiKey: process.env.ANTHROPIC_API_KEY,
+});
+
 /**
- * Extract text from PDF by converting to images and using GPT-4 Vision
+ * Extract text from PDF using Claude's native PDF support
+ * Claude (Anthropic) has native PDF support - no conversion needed!
  * This is the most reliable method for serverless environments
- * Works with both text-based and scanned/image-based PDFs
  */
 async function extractTextFromPDF(filePath: string): Promise<string> {
   try {
-    console.log('Converting PDF to images for GPT-4 Vision processing...');
+    console.log('Extracting text from PDF using Claude (native PDF support)...');
 
     // Read the PDF file
     const pdfBuffer = await fs.readFile(filePath);
+    const base64Pdf = pdfBuffer.toString('base64');
 
-    // Convert PDF pages to PNG images
-    const imageBuffers = await convert(pdfBuffer, {
-      width: 2000, // High resolution for better text recognition
-      height: 2000,
-      page_numbers: [1, 2, 3, 4, 5], // Process up to 5 pages
-    });
-
-    console.log(`Converted PDF to ${imageBuffers.length} images`);
-
-    let allTransactions = '';
-
-    // Process each page with GPT-4 Vision
-    for (let i = 0; i < imageBuffers.length; i++) {
-      const pageNum = i + 1;
-      console.log(`Processing page ${pageNum}/${imageBuffers.length}...`);
-
-      // Convert buffer to base64
-      const base64Image = Buffer.from(imageBuffers[i]).toString('base64');
-
-      // Use GPT-4 Vision to extract transaction data
-      const response = await openai.chat.completions.create({
-        model: 'gpt-4o',
-        messages: [
-          {
-            role: 'user',
-            content: [
-              {
-                type: 'text',
-                text: `Extract ALL transaction data from this bank statement page ${pageNum}.
+    // Use Claude with native PDF support
+    const message = await anthropic.messages.create({
+      model: 'claude-3-5-sonnet-20241022',
+      max_tokens: 4096,
+      messages: [
+        {
+          role: 'user',
+          content: [
+            {
+              type: 'document',
+              source: {
+                type: 'base64',
+                media_type: 'application/pdf',
+                data: base64Pdf,
+              },
+            },
+            {
+              type: 'text',
+              text: `Extract ALL transaction data from this bank statement PDF.
 
 For each transaction, provide:
 - Date (YYYY-MM-DD format)
@@ -60,32 +55,24 @@ Include:
 - All deposits (income, paychecks, transfers in)
 - All withdrawals (purchases, payments, transfers out)
 - Account balance information if visible
+- Opening and closing balances
 
 Format each transaction on a new line like:
 2024-08-15 | Paycheck Deposit | +3500.00
 2024-08-16 | Grocery Store | -125.50
+2024-08-16 | ATM Withdrawal | -100.00
 
-Be thorough and extract EVERY transaction visible on this page.`,
-              },
-              {
-                type: 'image_url',
-                image_url: {
-                  url: `data:image/png;base64,${base64Image}`,
-                },
-              },
-            ],
-          },
-        ],
-        max_tokens: 4096,
-      });
+Be thorough and extract EVERY transaction from ALL pages of the PDF.
+If the PDF has multiple pages, process all of them.`,
+            },
+          ],
+        },
+      ],
+    });
 
-      const pageTransactions = response.choices[0]?.message?.content || '';
-      allTransactions += pageTransactions + '\n\n';
-      console.log(`Extracted transactions from page ${pageNum}`);
-    }
-
-    console.log(`Successfully extracted transaction data from all ${imageBuffers.length} pages`);
-    return allTransactions;
+    const extractedText = message.content[0]?.type === 'text' ? message.content[0].text : '';
+    console.log(`Successfully extracted transaction data from PDF using Claude`);
+    return extractedText;
   } catch (error) {
     console.error('Error extracting PDF text:', error);
     throw new Error('Failed to extract text from PDF');

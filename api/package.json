@@ -4,12 +4,12 @@
   "type": "module",
   "main": "index.ts",
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.32.1",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
     "multer": "^2.0.2",
     "openai": "^6.7.0",
-    "pdf-img-convert": "^1.1.0",
     "sharp": "^0.33.5",
     "xlsx": "^0.18.5"
   },
