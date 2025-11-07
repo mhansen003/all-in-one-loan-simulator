@@ -28,7 +28,6 @@
     }
   ],
   "env": {
-    "OPENAI_API_KEY": "@openai-api-key",
     "NODE_ENV": "production"
   },
   "build": {
