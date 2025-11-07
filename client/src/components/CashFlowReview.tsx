@@ -19,7 +19,7 @@ export default function CashFlowReview({
   onDepositFrequencyChange,
   onCashFlowUpdate
 }: CashFlowReviewProps) {
-  const [activeTab, setActiveTab] = useState<'summary' | 'transactions'>('summary');
+  // No more tabs - single view
   const [transactionSubTab, setTransactionSubTab] = useState<'all' | 'income' | 'expense' | 'housing' | 'one-time'>('all');
   const [transactions, setTransactions] = useState<Transaction[]>(() => {
     // Auto-exclude housing and one-time transactions on initial load
@@ -129,6 +129,9 @@ export default function CashFlowReview({
     }
   };
 
+  // Define category order to match tab order
+  const categoryOrder = ['income', 'expense', 'recurring', 'housing', 'one-time'];
+
   // Group transactions by category
   const groupedTransactions = transactions.reduce((acc, transaction) => {
     const category = transaction.category;
@@ -138,6 +141,13 @@ export default function CashFlowReview({
     acc[category].push(transaction);
     return acc;
   }, {} as Record<string, Transaction[]>);
+
+  // Sort grouped transactions by category order
+  const sortedGroupedTransactions = Object.fromEntries(
+    categoryOrder
+      .filter(cat => groupedTransactions[cat])
+      .map(cat => [cat, groupedTransactions[cat]])
+  );
 
   // Get temperature rating based on net cash flow
   const getTemperatureRating = (netCashFlow: number): {
@@ -199,7 +209,7 @@ export default function CashFlowReview({
   // Filter transactions by active sub-tab
   const getFilteredTransactions = () => {
     if (transactionSubTab === 'all') {
-      return groupedTransactions;
+      return sortedGroupedTransactions;
     }
     const filtered = transactions.filter(t => {
       if (transactionSubTab === 'income') return t.category === 'income';
@@ -225,15 +235,28 @@ export default function CashFlowReview({
         <p>Review the AI-generated analysis of your bank statements</p>
       </div>
 
-      <div className="confidence-banner" style={{ borderColor: confidenceColor }}>
-        <div className="confidence-icon" style={{ background: confidenceColor }}>
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
+      {/* Confidence and Suitability Side-by-Side */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '2rem' }}>
+        <div className="confidence-banner" style={{ borderColor: confidenceColor, marginBottom: 0 }}>
+          <div className="confidence-icon" style={{ background: confidenceColor }}>
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <div>
+            <strong>Analysis Confidence: {confidenceLabel}</strong>
+            <p>AI confidence score: {(cashFlow.confidence * 100).toFixed(0)}%</p>
+          </div>
         </div>
-        <div>
-          <strong>Analysis Confidence: {confidenceLabel}</strong>
-          <p>AI confidence score: {(cashFlow.confidence * 100).toFixed(0)}%</p>
+
+        <div className="confidence-banner" style={{ borderColor: temperatureRating.color, marginBottom: 0 }}>
+          <div className="confidence-icon" style={{ background: temperatureRating.color }}>
+            <span style={{ fontSize: '1.5rem' }}>{temperatureRating.icon}</span>
+          </div>
+          <div>
+            <strong>{temperatureRating.rating}</strong>
+            <p>AIO Loan Suitability</p>
+          </div>
         </div>
       </div>
 
@@ -279,141 +302,81 @@ export default function CashFlowReview({
         </div>
       </div>
 
-      <div className="tabs">
-        <button
-          className={`tab ${activeTab === 'summary' ? 'active' : ''}`}
-          onClick={() => setActiveTab('summary')}
-        >
-          Cash Flow Summary
-        </button>
-        <button
-          className={`tab ${activeTab === 'transactions' ? 'active' : ''}`}
-          onClick={() => setActiveTab('transactions')}
-        >
-          Transactions ({transactions.length})
-        </button>
-      </div>
-
-      {activeTab === 'summary' && (
-        <div className="summary-view">
-          {/* Temperature Rating */}
-          <div className="temperature-rating" style={{ borderColor: temperatureRating.color }}>
-            <div className="rating-icon" style={{ background: temperatureRating.color }}>
-              <span style={{ fontSize: '3rem' }}>{temperatureRating.icon}</span>
-            </div>
-            <div className="rating-content">
-              <div className="rating-badge" style={{ background: temperatureRating.color }}>
-                {temperatureRating.rating}
-              </div>
-              <h3>AIO Loan Suitability</h3>
-              <p>{temperatureRating.description}</p>
-            </div>
-          </div>
-
-          {/* Deposit Frequency Selector */}
-          <div className="deposit-frequency-section">
-            <div className="frequency-header">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="frequency-icon">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
-              <div>
-                <h3>How often do you receive deposits?</h3>
-                <p>Select your typical deposit frequency for more accurate calculations</p>
-              </div>
-            </div>
-
-            <div className="frequency-options">
-              <button
-                type="button"
-                className={`frequency-option ${depositFrequency === 'weekly' ? 'active' : ''}`}
-                onClick={() => onDepositFrequencyChange?.('weekly')}
-              >
-                <div className="frequency-label">Weekly</div>
-                <div className="frequency-description">Every Friday</div>
-              </button>
-
-              <button
-                type="button"
-                className={`frequency-option ${depositFrequency === 'biweekly' ? 'active' : ''}`}
-                onClick={() => onDepositFrequencyChange?.('biweekly')}
-              >
-                <div className="frequency-label">Bi-Weekly</div>
-                <div className="frequency-description">1st &amp; 15th of month</div>
-              </button>
-
-              <button
-                type="button"
-                className={`frequency-option ${depositFrequency === 'monthly' ? 'active' : ''}`}
-                onClick={() => onDepositFrequencyChange?.('monthly')}
-              >
-                <div className="frequency-label">Monthly</div>
-                <div className="frequency-description">Once per month</div>
-              </button>
-            </div>
-          </div>
-
-          <div className="info-panel">
-            <div className="info-panel-header">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <h3>What this means for the All-In-One loan</h3>
-            </div>
-            <p>
-              Your net monthly cash flow of <strong>{formatCurrency(displayNetCashFlow)}</strong> will be
-              used to offset the principal balance of your loan. This means you'll pay interest on a lower
-              effective balance, resulting in significant interest savings and a faster payoff timeline.
-            </p>
-            <div className="exclusions-note">
-              <strong>Automatically Excluded:</strong>
-              <ul>
-                <li>Current housing payments (rent/mortgage)</li>
-                <li>One-time large expenses (vacations, major purchases)</li>
-              </ul>
-            </div>
+      {/* Deposit Frequency Selector */}
+      <div className="deposit-frequency-section">
+        <div className="frequency-header">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="frequency-icon">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+          <div>
+            <h3>How often do you receive deposits?</h3>
+            <p>Select your typical deposit frequency for more accurate calculations</p>
           </div>
         </div>
-      )}
 
-      {activeTab === 'transactions' && (
-        <div className="transactions-view">
-          <div className="transactions-header">
-            <p>Showing {transactions.length} categorized transactions</p>
-            <div className="transactions-instructions">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <span>
-                <strong>Check to EXCLUDE</strong> transactions from calculations. Click amounts to edit if OCR errors are detected.
-              </span>
-            </div>
+        <div className="frequency-options">
+          <button
+            type="button"
+            className={`frequency-option ${depositFrequency === 'weekly' ? 'active' : ''}`}
+            onClick={() => onDepositFrequencyChange?.('weekly')}
+          >
+            <div className="frequency-label">Weekly</div>
+            <div className="frequency-description">Every Friday</div>
+          </button>
+
+          <button
+            type="button"
+            className={`frequency-option ${depositFrequency === 'biweekly' ? 'active' : ''}`}
+            onClick={() => onDepositFrequencyChange?.('biweekly')}
+          >
+            <div className="frequency-label">Bi-Weekly</div>
+            <div className="frequency-description">1st &amp; 15th of month</div>
+          </button>
+
+          <button
+            type="button"
+            className={`frequency-option ${depositFrequency === 'monthly' ? 'active' : ''}`}
+            onClick={() => onDepositFrequencyChange?.('monthly')}
+          >
+            <div className="frequency-label">Monthly</div>
+            <div className="frequency-description">Once per month</div>
+          </button>
+        </div>
+      </div>
+
+      {/* Transactions Section */}
+      <div className="transactions-view">
+        <div className="transactions-header">
+          <p>Showing {transactions.length} categorized transactions</p>
+          <div className="transactions-instructions">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span>
+              <strong>Check to EXCLUDE</strong> transactions from calculations. Click amounts to edit if OCR errors are detected.
+            </span>
           </div>
+        </div>
 
-          {/* Transaction Sub-Tabs */}
-          <div className="transaction-sub-tabs">
-            <button
-              className={`sub-tab ${transactionSubTab === 'all' ? 'active' : ''}`}
-              onClick={() => setTransactionSubTab('all')}
-            >
-              All Categories
-            </button>
-            <button
-              className={`sub-tab ${transactionSubTab === 'income' ? 'active' : ''}`}
-              onClick={() => setTransactionSubTab('income')}
-            >
-              Income
-              <span className="sub-tab-badge">{formatCurrency(getCategoryTotal('income'))}</span>
-            </button>
-            <button
-              className={`sub-tab ${transactionSubTab === 'expense' ? 'active' : ''}`}
-              onClick={() => setTransactionSubTab('expense')}
-            >
-              Expenses
-              <span className="sub-tab-badge">{formatCurrency(getCategoryTotal('expense') + getCategoryTotal('recurring'))}</span>
-            </button>
-            <button
-              className={`sub-tab ${transactionSubTab === 'housing' ? 'active' : ''}`}
-              onClick={() => setTransactionSubTab('housing')}
+        {/* Transaction Sub-Tabs - Reordered to match display */}
+        <div className="transaction-sub-tabs">
+          <button
+            className={`sub-tab ${transactionSubTab === 'income' ? 'active' : ''}`}
+            onClick={() => setTransactionSubTab('income')}
+          >
+            Income
+            <span className="sub-tab-badge">{formatCurrency(getCategoryTotal('income'))}</span>
+          </button>
+          <button
+            className={`sub-tab ${transactionSubTab === 'expense' ? 'active' : ''}`}
+            onClick={() => setTransactionSubTab('expense')}
+          >
+            Expenses
+            <span className="sub-tab-badge">{formatCurrency(getCategoryTotal('expense') + getCategoryTotal('recurring'))}</span>
+          </button>
+          <button
+            className={`sub-tab ${transactionSubTab === 'housing' ? 'active' : ''}`}
+            onClick={() => setTransactionSubTab('housing')}
             >
               Housing
               <span className="sub-tab-badge">{formatCurrency(getCategoryTotal('housing'))}</span>
@@ -425,8 +388,16 @@ export default function CashFlowReview({
               One-Time
               <span className="sub-tab-badge">{formatCurrency(getCategoryTotal('one-time'))}</span>
             </button>
+            <button
+              className={`sub-tab ${transactionSubTab === 'all' ? 'active' : ''}`}
+              onClick={() => setTransactionSubTab('all')}
+            >
+              All Categories
+            </button>
           </div>
 
+          {/* Scrollable Transaction Container */}
+          <div style={{ maxHeight: '600px', overflowY: 'auto', border: '1px solid #e2e8f0', borderRadius: '8px', marginTop: '1rem' }}>
           {Object.entries(getFilteredTransactions()).map(([category, categoryTransactions]) => {
             const actualIndices = categoryTransactions.map(t =>
               transactions.findIndex(tr => tr === t)
@@ -517,8 +488,8 @@ export default function CashFlowReview({
               </div>
             );
           })}
-        </div>
-      )}
+          </div>{/* End scrollable container */}
+        </div>{/* End transactions-view */}
 
       <div className="form-actions">
         {onBack && (

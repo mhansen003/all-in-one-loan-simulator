@@ -7,6 +7,7 @@ interface AnalyzingModalProps {
 
 export default function AnalyzingModal({ fileCount }: AnalyzingModalProps) {
   const [currentStep, setCurrentStep] = useState(0);
+  const [currentTip, setCurrentTip] = useState(0);
 
   const steps = [
     { label: 'Extracting text from documents', duration: 3000 },
@@ -15,6 +16,33 @@ export default function AnalyzingModal({ fileCount }: AnalyzingModalProps) {
     { label: 'Calculating monthly averages', duration: 2000 },
     { label: 'Flagging irregular transactions', duration: 2500 },
     { label: 'Finalizing analysis', duration: 2000 },
+  ];
+
+  const tips = [
+    {
+      title: "What is an All-In-One Loan?",
+      content: "An All-In-One (AIO) loan combines your mortgage and bank account into one, allowing your income to offset your loan balance daily, reducing interest charges."
+    },
+    {
+      title: "How Does Cash Flow Matter?",
+      content: "The more positive cash flow you have each month, the greater your interest savings. Every dollar in your account works to reduce the balance that accrues interest."
+    },
+    {
+      title: "What About Access to My Money?",
+      content: "You have complete access to your funds anytime with checks, debit cards, and online transfers. Your money remains fully liquid while saving you interest."
+    },
+    {
+      title: "How Much Can I Save?",
+      content: "Most borrowers save 30-50% on total interest and pay off their mortgage 8-12 years faster, depending on their cash flow."
+    },
+    {
+      title: "Is This Right for Everyone?",
+      content: "AIO loans work best for borrowers with consistent positive cash flow. Our analysis will show your suitability based on your transaction history."
+    },
+    {
+      title: "What Makes This Different?",
+      content: "Unlike traditional mortgages that calculate interest monthly, AIO loans calculate daily. This means every deposit immediately starts reducing your interest."
+    },
   ];
 
   useEffect(() => {
@@ -39,6 +67,15 @@ export default function AnalyzingModal({ fileCount }: AnalyzingModalProps) {
     return () => {
       clearTimeout(stepTimeout);
     };
+  }, []);
+
+  // Rotate through tips every 6 seconds
+  useEffect(() => {
+    const tipInterval = setInterval(() => {
+      setCurrentTip((prev) => (prev + 1) % tips.length);
+    }, 6000);
+
+    return () => clearInterval(tipInterval);
   }, []);
 
   return (
@@ -114,6 +151,25 @@ export default function AnalyzingModal({ fileCount }: AnalyzingModalProps) {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               <span>Calculating monthly averages</span>
+            </div>
+          </div>
+
+          {/* FAQ Tips Carousel */}
+          <div className="tips-carousel">
+            <div className="tip-content-wrapper">
+              <div className="tip-icon">💡</div>
+              <div className="tip-text">
+                <h4 className="tip-title">{tips[currentTip].title}</h4>
+                <p className="tip-description">{tips[currentTip].content}</p>
+              </div>
+            </div>
+            <div className="tip-dots">
+              {tips.map((_, index) => (
+                <div
+                  key={index}
+                  className={`tip-dot ${index === currentTip ? 'active' : ''}`}
+                />
+              ))}
             </div>
           </div>
 
