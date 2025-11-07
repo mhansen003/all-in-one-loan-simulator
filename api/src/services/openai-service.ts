@@ -2,8 +2,6 @@ import OpenAI from 'openai';
 import fs from 'fs/promises';
 import path from 'path';
 import xlsx from 'xlsx';
-// Use legacy build for Node.js - doesn't require worker files
-import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf.mjs';
 import type { CashFlowAnalysis, Transaction, OpenAIAnalysisResult } from '../types.js';
 
 const openai = new OpenAI({
@@ -11,43 +9,60 @@ const openai = new OpenAI({
 });
 
 /**
- * Extract text from PDF file using pdfjs-dist legacy build
- * (legacy build designed for Node.js, no worker files needed)
+ * Extract text from PDF file using GPT-4 Vision
+ * This is the most reliable method for serverless environments
+ * Works with both text-based and scanned/image-based PDFs
  */
 async function extractTextFromPDF(filePath: string): Promise<string> {
   try {
-    console.log('Extracting text from PDF using pdfjs-dist legacy...');
-    const pdfBuffer = await fs.readFile(filePath);
+    console.log('Extracting text from PDF using GPT-4 Vision...');
 
-    // Load the PDF document (legacy build doesn't require worker)
-    const loadingTask = pdfjsLib.getDocument({
-      data: new Uint8Array(pdfBuffer),
-      useSystemFonts: true,
-      isEvalSupported: false, // Disable eval for serverless security
+    // Read the PDF file
+    const fileBuffer = await fs.readFile(filePath);
+    const base64Pdf = fileBuffer.toString('base64');
+
+    // Use GPT-4 Vision to extract transaction data
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o',
+      messages: [
+        {
+          role: 'user',
+          content: [
+            {
+              type: 'text',
+              text: `Extract ALL transaction data from this bank statement PDF.
+
+For each transaction, provide:
+- Date (YYYY-MM-DD format)
+- Description
+- Amount (positive for deposits, negative for withdrawals)
+
+Include:
+- All deposits (income, paychecks, transfers in)
+- All withdrawals (purchases, payments, transfers out)
+- Account balance information if visible
+
+Format each transaction on a new line like:
+2024-08-15 | Paycheck Deposit | +3500.00
+2024-08-16 | Grocery Store | -125.50
+
+Be thorough and extract EVERY transaction visible in the PDF.`,
+            },
+            {
+              type: 'image_url',
+              image_url: {
+                url: `data:application/pdf;base64,${base64Pdf}`,
+              },
+            },
+          ],
+        },
+      ],
+      max_tokens: 4096,
     });
 
-    const pdfDocument = await loadingTask.promise;
-    const numPages = pdfDocument.numPages;
-    console.log(`PDF has ${numPages} pages`);
-
-    let allText = '';
-
-    // Extract text from each page
-    for (let pageNum = 1; pageNum <= numPages; pageNum++) {
-      const page = await pdfDocument.getPage(pageNum);
-      const textContent = await page.getTextContent();
-
-      // Combine text items
-      const pageText = textContent.items
-        .map((item: any) => item.str)
-        .join(' ');
-
-      allText += pageText + '\n\n';
-      console.log(`Extracted page ${pageNum}/${numPages}`);
-    }
-
-    console.log(`Successfully extracted text from ${numPages} pages`);
-    return allText;
+    const extractedText = response.choices[0]?.message?.content || '';
+    console.log(`Successfully extracted transaction data from PDF`);
+    return extractedText;
   } catch (error) {
     console.error('Error extracting PDF text:', error);
     throw new Error('Failed to extract text from PDF');
