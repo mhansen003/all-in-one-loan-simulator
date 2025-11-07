@@ -2,7 +2,7 @@ import OpenAI from 'openai';
 import fs from 'fs/promises';
 import path from 'path';
 import xlsx from 'xlsx';
-import { pdf } from 'pdf-to-img';
+import * as pdfjsLib from 'pdfjs-dist';
 import type { CashFlowAnalysis, Transaction, OpenAIAnalysisResult } from '../types.js';
 
 const openai = new OpenAI({
@@ -10,56 +10,40 @@ const openai = new OpenAI({
 });
 
 /**
- * Extract text from PDF file by converting to images and using GPT-4 Vision
- * (pdf-parse has issues in serverless environments due to canvas dependencies)
+ * Extract text from PDF file using pdfjs-dist
+ * (pure JavaScript, works in serverless environments)
  */
 async function extractTextFromPDF(filePath: string): Promise<string> {
   try {
-    console.log('Converting PDF to images...');
+    console.log('Extracting text from PDF...');
     const pdfBuffer = await fs.readFile(filePath);
 
-    // Convert PDF pages to images
-    const document = await pdf(pdfBuffer, { scale: 2 });
+    // Load the PDF document
+    const loadingTask = pdfjsLib.getDocument({
+      data: new Uint8Array(pdfBuffer),
+      useSystemFonts: true,
+    });
+
+    const pdfDocument = await loadingTask.promise;
+    const numPages = pdfDocument.numPages;
+    console.log(`PDF has ${numPages} pages`);
 
     let allText = '';
-    let pageNum = 0;
 
-    // Process each page
-    for await (const image of document) {
-      pageNum++;
-      console.log(`Processing page ${pageNum}...`);
+    // Extract text from each page
+    for (let pageNum = 1; pageNum <= numPages; pageNum++) {
+      const page = await pdfDocument.getPage(pageNum);
+      const textContent = await page.getTextContent();
 
-      // Convert image to base64
-      const base64Image = image.toString('base64');
+      // Combine text items
+      const pageText = textContent.items
+        .map((item: any) => item.str)
+        .join(' ');
 
-      // Use GPT-4 Vision to extract text from this page
-      const response = await openai.chat.completions.create({
-        model: 'gpt-4o',
-        messages: [
-          {
-            role: 'user',
-            content: [
-              {
-                type: 'text',
-                text: `Extract all transaction data from this bank statement page ${pageNum}. Return the transactions with date, description, and amount. Include all deposits (income) and withdrawals (expenses). Format as plain text with one transaction per line.`,
-              },
-              {
-                type: 'image_url',
-                image_url: {
-                  url: `data:image/png;base64,${base64Image}`,
-                },
-              },
-            ],
-          },
-        ],
-        max_tokens: 4096,
-      });
-
-      const pageText = response.choices[0]?.message?.content || '';
       allText += pageText + '\n\n';
     }
 
-    console.log(`Extracted text from ${pageNum} pages`);
+    console.log(`Extracted text from ${numPages} pages`);
     return allText;
   } catch (error) {
     console.error('Error extracting PDF text:', error);
