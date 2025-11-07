@@ -3,6 +3,7 @@ import type { AppStep, MortgageDetails, CashFlowAnalysis, EligibilityResult, Sim
 import MortgageDetailsForm from './components/MortgageDetailsForm';
 import FileUpload from './components/FileUpload';
 import ManualCashFlowInput from './components/ManualCashFlowInput';
+import AIOProposalInput from './components/AIOProposalInput';
 import LoanComparisonTabs from './components/LoanComparisonTabs';
 import CashFlowReview from './components/CashFlowReview';
 import SimulationResults from './components/SimulationResults';
@@ -17,6 +18,7 @@ function App() {
   const [bankStatements, setBankStatements] = useState<File[]>([]);
   const [cashFlowAnalysis, setCashFlowAnalysis] = useState<CashFlowAnalysis | null>(null);
   const [averageMonthlyCashFlow, setAverageMonthlyCashFlow] = useState<number>(0);
+  const [aioRate, setAIORate] = useState<number>(8.375);
   const [_eligibilityResult, setEligibilityResult] = useState<EligibilityResult | null>(null);
   const [simulationResult, setSimulationResult] = useState<SimulationResult | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -33,6 +35,7 @@ function App() {
     setBankStatements([]);
     setCashFlowAnalysis(null);
     setAverageMonthlyCashFlow(0);
+    setAIORate(8.375);
     setEligibilityResult(null);
     setSimulationResult(null);
     setError(null);
@@ -41,11 +44,16 @@ function App() {
 
   const handleMortgageSubmit = (data: MortgageDetails) => {
     setMortgageDetails(data);
-    setStep('manual-cash-flow'); // Go to manual input (placeholder for bank statements)
+    setStep('manual-cash-flow');
   };
 
   const handleCashFlowSubmit = (cashFlow: number) => {
     setAverageMonthlyCashFlow(cashFlow);
+    setStep('aio-proposal');
+  };
+
+  const handleAIOProposalSubmit = (rate: number) => {
+    setAIORate(rate);
     setStep('comparison');
   };
 
@@ -229,12 +237,22 @@ function App() {
             </div>
           )}
 
+          {step === 'aio-proposal' && (
+            <div className="section-card">
+              <AIOProposalInput
+                onSubmit={handleAIOProposalSubmit}
+                onBack={() => setStep('manual-cash-flow')}
+              />
+            </div>
+          )}
+
           {step === 'comparison' && (
             <div className="section-card">
               <LoanComparisonTabs
                 mortgageDetails={mortgageDetails}
                 averageMonthlyCashFlow={averageMonthlyCashFlow}
-                onBack={() => setStep('manual-cash-flow')}
+                aioRate={aioRate}
+                onBack={() => setStep('aio-proposal')}
               />
             </div>
           )}

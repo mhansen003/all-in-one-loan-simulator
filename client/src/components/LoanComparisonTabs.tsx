@@ -11,29 +11,30 @@ import './LoanComparisonTabs.css';
 
 interface LoanComparisonTabsProps {
   mortgageDetails: {
-    purchasePrice?: number;
-    downPayment?: number;
+    currentBalance?: number;
     interestRate?: number;
+    monthlyPayment?: number;
     currentHousingPayment?: number;
   };
   averageMonthlyCashFlow: number;
+  aioRate: number;
   onBack?: () => void;
 }
 
-type TabView = 'results' | 'math' | 'visualize';
+type TabView = 'results' | 'formulas' | 'breakdown' | 'visualize';
 
 export default function LoanComparisonTabs({
   mortgageDetails,
   averageMonthlyCashFlow,
+  aioRate: proposedAIORate,
   onBack,
 }: LoanComparisonTabsProps) {
   const [activeTab, setActiveTab] = useState<TabView>('results');
 
   const { comparison, loanAmount, traditionalRate, aioRate } = useMemo(() => {
-    const loanAmt =
-      (mortgageDetails.purchasePrice || 0) - (mortgageDetails.downPayment || 0);
+    const loanAmt = mortgageDetails.currentBalance || 0;
     const tradRate = (mortgageDetails.interestRate || 6.99) / 100;
-    const aRate = 8.375 / 100;
+    const aRate = proposedAIORate / 100;
 
     const inputs: LoanInputs = {
       loanAmount: loanAmt,
@@ -51,7 +52,7 @@ export default function LoanComparisonTabs({
       traditionalRate: tradRate,
       aioRate: aRate,
     };
-  }, [mortgageDetails, averageMonthlyCashFlow]);
+  }, [mortgageDetails, averageMonthlyCashFlow, proposedAIORate]);
 
   const weeklyBreakdown = useMemo(() => {
     return generateWeeklyBreakdown(
@@ -93,8 +94,8 @@ export default function LoanComparisonTabs({
         </button>
 
         <button
-          className={`tab-btn ${activeTab === 'math' ? 'active' : ''}`}
-          onClick={() => setActiveTab('math')}
+          className={`tab-btn ${activeTab === 'formulas' ? 'active' : ''}`}
+          onClick={() => setActiveTab('formulas')}
         >
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path
@@ -104,7 +105,22 @@ export default function LoanComparisonTabs({
               d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"
             />
           </svg>
-          Show Me The Math
+          Formulas
+        </button>
+
+        <button
+          className={`tab-btn ${activeTab === 'breakdown' ? 'active' : ''}`}
+          onClick={() => setActiveTab('breakdown')}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
+            />
+          </svg>
+          Weekly Breakdown
         </button>
 
         <button
@@ -135,13 +151,19 @@ export default function LoanComparisonTabs({
           />
         )}
 
-        {activeTab === 'math' && (
-          <MathTab
+        {activeTab === 'formulas' && (
+          <FormulasTab
             comparison={comparison}
             loanAmount={loanAmount}
             traditionalRate={traditionalRate}
             aioRate={aioRate}
             averageMonthlyCashFlow={averageMonthlyCashFlow}
+          />
+        )}
+
+        {activeTab === 'breakdown' && (
+          <BreakdownTab
+            comparison={comparison}
             weeklyBreakdown={weeklyBreakdown}
           />
         )}
@@ -346,18 +368,14 @@ function ResultsTab({
   );
 }
 
-// Math Tab Component
-function MathTab({
+// Formulas Tab Component
+function FormulasTab({
   comparison,
   loanAmount,
   traditionalRate,
   aioRate,
   averageMonthlyCashFlow,
-  weeklyBreakdown,
 }: any) {
-  const [showFullBreakdown, setShowFullBreakdown] = useState(false);
-  const displayedBreakdown = showFullBreakdown ? weeklyBreakdown : weeklyBreakdown.slice(0, 52); // Show first year
-
   return (
     <div className="math-tab">
       <h2>🧮 The Mathematics Behind AIO</h2>
@@ -413,13 +431,25 @@ function MathTab({
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+// Breakdown Tab Component
+function BreakdownTab({ comparison, weeklyBreakdown }: any) {
+  const [showFullBreakdown, setShowFullBreakdown] = useState(false);
+  const displayedBreakdown = showFullBreakdown ? weeklyBreakdown : weeklyBreakdown.slice(0, 52); // Show first year
+
+  return (
+    <div className="math-tab">
+      <h2>📅 Week-by-Week Payment Breakdown</h2>
 
       {/* Weekly Breakdown Table */}
       <div className="breakdown-section">
         <h3>
-          📅 Week-by-Week Breakdown
+          AIO Loan Progress
           {!showFullBreakdown && (
-            <span className="showing-note">(Showing first year - {displayedBreakdown.length} weeks)</span>
+            <span className="showing-note"> (Showing first year - {displayedBreakdown.length} weeks)</span>
           )}
         </h3>
 

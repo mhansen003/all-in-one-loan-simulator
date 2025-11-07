@@ -80,6 +80,7 @@ export interface SimulationResponse {
 export type AppStep =
   | 'mortgage-details'
   | 'manual-cash-flow'
+  | 'aio-proposal'
   | 'comparison'
   | 'upload-statements'
   | 'analyzing'
