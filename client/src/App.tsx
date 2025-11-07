@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { AppStep, MortgageDetails, CashFlowAnalysis, EligibilityResult, SimulationResult } from './types';
 import MortgageDetailsForm from './components/MortgageDetailsForm';
 import FileUpload from './components/FileUpload';
-import ManualCashFlowInput from './components/ManualCashFlowInput';
+import DepositsExpensesInput from './components/DepositsExpensesInput';
 import AIOProposalInput from './components/AIOProposalInput';
 import LoanComparisonTabs from './components/LoanComparisonTabs';
 import CashFlowReview from './components/CashFlowReview';
@@ -17,7 +17,13 @@ function App() {
   const [mortgageDetails, setMortgageDetails] = useState<Partial<MortgageDetails>>({});
   const [bankStatements, setBankStatements] = useState<File[]>([]);
   const [cashFlowAnalysis, setCashFlowAnalysis] = useState<CashFlowAnalysis | null>(null);
-  const [averageMonthlyCashFlow, setAverageMonthlyCashFlow] = useState<number>(0);
+
+  // NEW: Detailed cash flow breakdown
+  const [monthlyDeposits, setMonthlyDeposits] = useState<number>(0);
+  const [monthlyExpenses, setMonthlyExpenses] = useState<number>(0);
+  const [monthlyLeftover, setMonthlyLeftover] = useState<number>(0);
+  const [depositFrequency, setDepositFrequency] = useState<'monthly' | 'biweekly' | 'weekly'>('monthly');
+
   const [aioRate, setAIORate] = useState<number>(8.375);
   const [_eligibilityResult, setEligibilityResult] = useState<EligibilityResult | null>(null);
   const [simulationResult, setSimulationResult] = useState<SimulationResult | null>(null);
@@ -34,7 +40,10 @@ function App() {
     setMortgageDetails({});
     setBankStatements([]);
     setCashFlowAnalysis(null);
-    setAverageMonthlyCashFlow(0);
+    setMonthlyDeposits(0);
+    setMonthlyExpenses(0);
+    setMonthlyLeftover(0);
+    setDepositFrequency('monthly');
     setAIORate(8.375);
     setEligibilityResult(null);
     setSimulationResult(null);
@@ -47,8 +56,16 @@ function App() {
     setStep('manual-cash-flow');
   };
 
-  const handleCashFlowSubmit = (cashFlow: number) => {
-    setAverageMonthlyCashFlow(cashFlow);
+  const handleCashFlowSubmit = (cashFlowData: {
+    monthlyDeposits: number;
+    monthlyExpenses: number;
+    monthlyLeftover: number;
+    depositFrequency: 'monthly' | 'biweekly' | 'weekly';
+  }) => {
+    setMonthlyDeposits(cashFlowData.monthlyDeposits);
+    setMonthlyExpenses(cashFlowData.monthlyExpenses);
+    setMonthlyLeftover(cashFlowData.monthlyLeftover);
+    setDepositFrequency(cashFlowData.depositFrequency);
     setStep('aio-proposal');
   };
 
@@ -230,7 +247,7 @@ function App() {
 
           {step === 'manual-cash-flow' && (
             <div className="section-card">
-              <ManualCashFlowInput
+              <DepositsExpensesInput
                 onSubmit={handleCashFlowSubmit}
                 onBack={() => setStep('mortgage-details')}
                 mortgageDetails={mortgageDetails}
@@ -251,7 +268,10 @@ function App() {
             <div className="section-card">
               <LoanComparisonTabs
                 mortgageDetails={mortgageDetails}
-                averageMonthlyCashFlow={averageMonthlyCashFlow}
+                monthlyDeposits={monthlyDeposits}
+                monthlyExpenses={monthlyExpenses}
+                monthlyLeftover={monthlyLeftover}
+                depositFrequency={depositFrequency}
                 aioRate={aioRate}
                 onBack={() => setStep('aio-proposal')}
               />

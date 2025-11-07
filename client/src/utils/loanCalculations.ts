@@ -6,7 +6,10 @@ export interface LoanInputs {
   loanAmount: number;
   traditionalRate: number; // Annual rate as decimal (e.g., 0.0699 for 6.99%)
   aioRate: number; // Annual rate as decimal
-  averageMonthlyBalance: number; // Cash flow that offsets principal
+  monthlyDeposits: number; // Total monthly deposits/income
+  monthlyExpenses: number; // Total monthly expenses
+  monthlyLeftover: number; // Net leftover for principal reduction
+  depositFrequency: 'monthly' | 'biweekly' | 'weekly'; // Deposit timing
   currentHousingPayment?: number; // Current rent/mortgage
 }
 
@@ -23,6 +26,41 @@ export interface LoanComparison {
   timeSavedMonths: number;
   timeSavedYears: number;
   interestSaved: number;
+}
+
+/**
+ * Calculate average balance that offsets principal based on deposit frequency
+ *
+ * Key concept: More frequent deposits create a higher average balance throughout
+ * the month, which increases the offset effect.
+ *
+ * @param monthlyDeposits - Total monthly income/deposits
+ * @param monthlyExpenses - Total monthly expenses (including loan payment)
+ * @param frequency - How often deposits come in
+ * @returns Average balance that offsets the principal for interest calculation
+ */
+function calculateAverageBalance(
+  monthlyDeposits: number,
+  monthlyExpenses: number,
+  frequency: 'monthly' | 'biweekly' | 'weekly'
+): number {
+  const monthlyLeftover = monthlyDeposits - monthlyExpenses;
+
+  // Base calculation: average between peak (after deposit) and trough (before next deposit)
+  // For monthly deposits with linear expense drawdown: (deposits + leftover) / 2
+  let averageBalance = (monthlyDeposits + monthlyLeftover) / 2;
+
+  // More frequent deposits = higher average balance throughout the month
+  // These multipliers account for smaller peaks but more frequent replenishment
+  if (frequency === 'biweekly') {
+    // Biweekly deposits create ~15% higher average balance
+    averageBalance *= 1.15;
+  } else if (frequency === 'weekly') {
+    // Weekly deposits create ~25% higher average balance
+    averageBalance *= 1.25;
+  }
+
+  return averageBalance;
 }
 
 /**
@@ -140,15 +178,24 @@ export function compareLoanOptions(inputs: LoanInputs): LoanComparison {
     loanAmount,
     traditionalRate,
     aioRate,
-    averageMonthlyBalance,
+    monthlyDeposits,
+    monthlyExpenses,
+    monthlyLeftover,
+    depositFrequency,
   } = inputs;
 
   // Calculate traditional loan
   const traditional = calculateTraditionalLoan(loanAmount, traditionalRate, 30);
 
-  // For AIO: Monthly net cash flow is what you'd pay on traditional loan
-  // (since you're replacing your current housing payment with this loan)
-  const monthlyNetCashFlow = traditional.monthlyPayment;
+  // Calculate average balance for offset based on deposit frequency
+  const averageMonthlyBalance = calculateAverageBalance(
+    monthlyDeposits,
+    monthlyExpenses,
+    depositFrequency
+  );
+
+  // For AIO: Monthly leftover is what permanently reduces principal
+  const monthlyNetCashFlow = monthlyLeftover;
 
   // Calculate AIO loan
   const aio = calculateAIOLoan(

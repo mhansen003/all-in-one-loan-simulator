@@ -31,11 +31,20 @@ export default function LoanComparison({
     const traditionalRate = (mortgageDetails.interestRate || 6.99) / 100;
     const aioRate = 8.375 / 100; // Typical AIO rate
 
+    // For this simpler flow, we approximate the deposits/expenses breakdown
+    // Assume 50% of cash flow is leftover (deposits - expenses)
+    const estimatedMonthlyLeftover = averageMonthlyCashFlow * 0.5;
+    const estimatedMonthlyDeposits = averageMonthlyCashFlow;
+    const estimatedMonthlyExpenses = estimatedMonthlyDeposits - estimatedMonthlyLeftover;
+
     const inputs: LoanInputs = {
       loanAmount,
       traditionalRate,
       aioRate,
-      averageMonthlyBalance: averageMonthlyCashFlow,
+      monthlyDeposits: estimatedMonthlyDeposits,
+      monthlyExpenses: estimatedMonthlyExpenses,
+      monthlyLeftover: estimatedMonthlyLeftover,
+      depositFrequency: 'monthly',
       currentHousingPayment: mortgageDetails.currentHousingPayment || 0,
     };
 

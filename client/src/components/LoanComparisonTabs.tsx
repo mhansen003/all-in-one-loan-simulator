@@ -16,7 +16,10 @@ interface LoanComparisonTabsProps {
     monthlyPayment?: number;
     currentHousingPayment?: number;
   };
-  averageMonthlyCashFlow: number;
+  monthlyDeposits: number;
+  monthlyExpenses: number;
+  monthlyLeftover: number;
+  depositFrequency: 'monthly' | 'biweekly' | 'weekly';
   aioRate: number;
   onBack?: () => void;
 }
@@ -25,13 +28,16 @@ type TabView = 'results' | 'formulas' | 'breakdown' | 'visualize';
 
 export default function LoanComparisonTabs({
   mortgageDetails,
-  averageMonthlyCashFlow,
+  monthlyDeposits,
+  monthlyExpenses,
+  monthlyLeftover,
+  depositFrequency,
   aioRate: proposedAIORate,
   onBack,
 }: LoanComparisonTabsProps) {
   const [activeTab, setActiveTab] = useState<TabView>('results');
 
-  const { comparison, loanAmount, traditionalRate, aioRate } = useMemo(() => {
+  const { comparison, loanAmount, traditionalRate, aioRate, averageBalance } = useMemo(() => {
     const loanAmt = mortgageDetails.currentBalance || 0;
     const tradRate = (mortgageDetails.interestRate || 6.99) / 100;
     const aRate = proposedAIORate / 100;
@@ -40,28 +46,37 @@ export default function LoanComparisonTabs({
       loanAmount: loanAmt,
       traditionalRate: tradRate,
       aioRate: aRate,
-      averageMonthlyBalance: averageMonthlyCashFlow,
+      monthlyDeposits,
+      monthlyExpenses,
+      monthlyLeftover,
+      depositFrequency,
       currentHousingPayment: mortgageDetails.currentHousingPayment || 0,
     };
 
     const comp = compareLoanOptions(inputs);
+
+    // Calculate average balance for display purposes
+    const avgBalance = (monthlyDeposits + monthlyLeftover) / 2;
+    const frequencyMultiplier = depositFrequency === 'weekly' ? 1.25 : depositFrequency === 'biweekly' ? 1.15 : 1;
+    const calculatedAvgBalance = avgBalance * frequencyMultiplier;
 
     return {
       comparison: comp,
       loanAmount: loanAmt,
       traditionalRate: tradRate,
       aioRate: aRate,
+      averageBalance: calculatedAvgBalance,
     };
-  }, [mortgageDetails, averageMonthlyCashFlow, proposedAIORate]);
+  }, [mortgageDetails, monthlyDeposits, monthlyExpenses, monthlyLeftover, depositFrequency, proposedAIORate]);
 
   const weeklyBreakdown = useMemo(() => {
     return generateWeeklyBreakdown(
       loanAmount,
       aioRate,
-      averageMonthlyCashFlow,
-      comparison.traditional.monthlyPayment
+      averageBalance,
+      monthlyLeftover
     );
-  }, [loanAmount, aioRate, averageMonthlyCashFlow, comparison.traditional.monthlyPayment]);
+  }, [loanAmount, aioRate, averageBalance, monthlyLeftover]);
 
   return (
     <div className="loan-comparison-tabs-container">
@@ -147,7 +162,9 @@ export default function LoanComparisonTabs({
             loanAmount={loanAmount}
             traditionalRate={traditionalRate}
             aioRate={aioRate}
-            averageMonthlyCashFlow={averageMonthlyCashFlow}
+            averageBalance={averageBalance}
+            monthlyDeposits={monthlyDeposits}
+            monthlyLeftover={monthlyLeftover}
           />
         )}
 
@@ -157,7 +174,9 @@ export default function LoanComparisonTabs({
             loanAmount={loanAmount}
             traditionalRate={traditionalRate}
             aioRate={aioRate}
-            averageMonthlyCashFlow={averageMonthlyCashFlow}
+            averageBalance={averageBalance}
+            monthlyDeposits={monthlyDeposits}
+            monthlyLeftover={monthlyLeftover}
           />
         )}
 
@@ -222,7 +241,9 @@ function ResultsTab({
   loanAmount,
   traditionalRate,
   aioRate,
-  averageMonthlyCashFlow,
+  averageBalance,
+  monthlyDeposits,
+  monthlyLeftover,
 }: any) {
   return (
     <>
@@ -304,7 +325,7 @@ function ResultsTab({
               <div className="metric-value">
                 {formatCurrency(comparison.aio.effectivePrincipal || loanAmount)}
                 <span className="metric-hint">
-                  (Offset by ${averageMonthlyCashFlow.toLocaleString()} avg balance)
+                  (Offset by {formatCurrency(averageBalance)} avg balance)
                 </span>
               </div>
             </div>
@@ -346,8 +367,8 @@ function ResultsTab({
             <div className="how-content">
               <h4>Cash Flow Offsets Principal</h4>
               <p>
-                Your average balance of {formatCurrency(averageMonthlyCashFlow)} reduces the effective
-                principal, lowering daily interest charges.
+                Your {formatCurrency(monthlyDeposits)}/month in deposits creates an average balance of{' '}
+                {formatCurrency(averageBalance)}, which offsets the principal and lowers daily interest charges.
               </p>
             </div>
           </div>
@@ -357,8 +378,8 @@ function ResultsTab({
             <div className="how-content">
               <h4>Pay Off Faster</h4>
               <p>
-                Every dollar sitting in your account works to pay down your mortgage, potentially saving
-                you years of payments.
+                Your {formatCurrency(monthlyLeftover)}/month leftover permanently reduces the principal balance,
+                paying off your mortgage years faster than a traditional loan.
               </p>
             </div>
           </div>
@@ -374,7 +395,9 @@ function FormulasTab({
   loanAmount,
   traditionalRate,
   aioRate,
-  averageMonthlyCashFlow,
+  averageBalance,
+  monthlyDeposits,
+  monthlyLeftover,
 }: any) {
   return (
     <div className="math-tab">
@@ -405,24 +428,22 @@ function FormulasTab({
         <div className="formula-card aio-formula">
           <h4>All-In-One Loan (The Secret Sauce)</h4>
           <div className="formula">
-            <strong>Effective Principal =</strong> Actual Principal - Average Monthly Balance
+            <strong>Effective Principal =</strong> Actual Principal - Average Balance Offset
           </div>
           <div className="formula">
-            <strong>Weekly Interest =</strong> Effective Principal × (Annual Rate / 52)
+            <strong>Monthly Interest =</strong> Effective Principal × (Annual Rate / 12)
           </div>
           <div className="formula">
-            <strong>Principal Reduction =</strong> Weekly Net Cash Flow - Weekly Interest
+            <strong>Principal Reduction =</strong> Monthly Leftover - Monthly Interest
           </div>
           <div className="formula-explanation">
             <p>Key Variables:</p>
             <ul>
               <li>Starting Principal: {formatCurrency(loanAmount)}</li>
-              <li>Average Balance Offset: {formatCurrency(averageMonthlyCashFlow)}</li>
+              <li>Monthly Deposits: {formatCurrency(monthlyDeposits)}</li>
+              <li>Average Balance Offset: {formatCurrency(averageBalance)}</li>
+              <li>Monthly Leftover: {formatCurrency(monthlyLeftover)}</li>
               <li>Annual Rate: {(aioRate * 100).toFixed(3)}%</li>
-              <li>
-                Weekly Cash Flow: {formatCurrency(comparison.traditional.monthlyPayment / 4.33)} (from
-                traditional payment)
-              </li>
             </ul>
             <p className="result">
               <strong>Result:</strong> Loan paid off in{' '}

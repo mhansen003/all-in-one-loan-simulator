@@ -39,9 +39,14 @@ export interface CashFlowAnalysis {
   netCashFlow: number;
   averageMonthlyBalance: number;
   transactions: Transaction[];
-  monthlyBreakdown: MonthlyBreakdown[]; // NEW: Month-by-month analysis
-  flaggedTransactions: Transaction[]; // NEW: Transactions requiring review
+  monthlyBreakdown: MonthlyBreakdown[];
+  flaggedTransactions: Transaction[];
   confidence: number;
+  // NEW: Detailed breakdown for AIO calculation
+  monthlyDeposits?: number;        // Total monthly income/deposits
+  monthlyExpenses?: number;        // Total monthly expenses (including housing)
+  monthlyLeftover?: number;        // Net leftover (deposits - expenses)
+  depositFrequency?: 'monthly' | 'biweekly' | 'weekly';
 }
 
 export interface EligibilityResult {
