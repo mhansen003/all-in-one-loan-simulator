@@ -118,7 +118,7 @@ export default function AnalyzingModal({ fileCount }: AnalyzingModalProps) {
           </div>
 
           <p className="analyzing-note">
-            This usually takes 10-20 seconds depending on the number of transactions...
+            Sit back, this might take a few minutes...
           </p>
         </div>
       </div>
