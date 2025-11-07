@@ -128,34 +128,52 @@ export async function analyzeStatements(
 
     const combinedData = extractedData.join('\n\n---NEW DOCUMENT---\n\n');
 
-    // Use GPT-4 to analyze the transactions
-    const prompt = `You are a financial analysis expert. Analyze the following bank statement data covering 12 months of transactions.
+    // Use GPT-4 to analyze the transactions with enhanced anomaly detection
+    const prompt = `You are a financial analysis expert. Analyze the following bank statement data covering multiple months of transactions.
 
 Current housing payment (to exclude): $${currentHousingPayment}
 
 Bank Statement Data:
 ${combinedData}
 
-Please analyze these transactions and provide:
+Please perform a COMPREHENSIVE analysis with the following objectives:
 
-1. **All Transactions**: Extract and categorize every transaction as:
+1. **EXTRACT & CATEGORIZE ALL TRANSACTIONS**:
    - "income": Regular income deposits (salary, wages, business income)
-   - "expense": Regular recurring expenses
-   - "housing": Current rent or mortgage payments (around $${currentHousingPayment})
-   - "one-time": One-time large expenses (vacations, large purchases, etc.)
+   - "expense": Regular recurring monthly expenses (groceries, utilities, insurance, subscriptions, etc.)
+   - "housing": Current rent/mortgage payments (around $${currentHousingPayment})
+   - "one-time": One-time or irregular transactions
 
-2. **Cash Flow Summary**:
-   - Total monthly income (average)
-   - Total monthly expenses (average, EXCLUDING housing and one-time)
-   - Net monthly cash flow
+2. **IDENTIFY ANOMALIES & FLAG FOR REVIEW**:
+   Flag transactions that are:
+   - **Luxury items**: High-end dining, designer purchases, jewelry, luxury travel
+   - **Unusually large**: 2x or more above typical spending in that category
+   - **One-time purchases**: Major purchases, large cash withdrawals, large deposits
+   - **Irregular deposits**: Tax refunds, bonuses, gifts, large transfers
+   - **Non-essential**: Entertainment, hobbies, discretionary spending above normal patterns
 
-3. **Confidence Score**: Your confidence in the analysis (0-1 scale)
+   For each flagged transaction, provide a specific reason (e.g., "Luxury dining - $500 at upscale restaurant", "One-time: New laptop purchase", "Irregular: Large tax refund")
 
-IMPORTANT RULES:
-- Exclude current housing payments (rent/mortgage around $${currentHousingPayment}) from recurring expenses
-- Flag one-time expenses separately (vacations, major purchases)
-- Only include recurring, predictable expenses in the total
-- Calculate averages across the full 12-month period
+3. **MONTHLY BREAKDOWN**:
+   Provide month-by-month summary showing:
+   - Total income per month
+   - Total expenses per month (excluding housing and flagged items)
+   - Net cash flow per month
+   - Transaction count per month
+
+4. **CALCULATE AVERAGES**:
+   - Average monthly income
+   - Average monthly expenses (EXCLUDING housing and flagged one-time items)
+   - Average net monthly cash flow (available to offset mortgage principal)
+
+5. **CONFIDENCE SCORE**: Your confidence in the analysis (0-1 scale)
+
+CRITICAL RULES:
+- EXCLUDE current housing payments ($${currentHousingPayment}) from expense calculations
+- FLAG any transaction that seems irregular, luxury, or one-time
+- Only include predictable recurring expenses in the final average
+- Look back at as much historical data as possible
+- Be conservative: when in doubt, flag it for user review
 
 Return your response in the following JSON format:
 {
@@ -164,12 +182,24 @@ Return your response in the following JSON format:
       "date": "YYYY-MM-DD",
       "description": "Transaction description",
       "amount": 1234.56,
-      "category": "income" | "expense" | "housing" | "one-time"
+      "category": "income" | "expense" | "housing" | "one-time",
+      "flagged": true/false,
+      "flagReason": "Luxury dining - $500 at upscale restaurant" (only if flagged),
+      "monthYear": "2024-08"
+    }
+  ],
+  "monthlyBreakdown": [
+    {
+      "month": "2024-08",
+      "income": 5000.00,
+      "expenses": 2500.00,
+      "netCashFlow": 2500.00,
+      "transactionCount": 45
     }
   ],
   "totalIncome": 5000.00,
-  "totalExpenses": 3000.00,
-  "netCashFlow": 2000.00,
+  "totalExpenses": 2500.00,
+  "netCashFlow": 2500.00,
   "confidence": 0.85
 }`;
 
@@ -203,12 +233,19 @@ Return your response in the following JSON format:
     // Calculate average monthly balance (net cash flow that can offset principal)
     const averageMonthlyBalance = Math.max(0, result.netCashFlow);
 
+    // Extract flagged transactions for review
+    const flaggedTransactions = (result.transactions || []).filter((t: any) => t.flagged === true);
+
+    console.log(`Analysis complete: ${result.transactions?.length || 0} total transactions, ${flaggedTransactions.length} flagged for review`);
+
     return {
       totalIncome: result.totalIncome || 0,
       totalExpenses: result.totalExpenses || 0,
       netCashFlow: result.netCashFlow || 0,
       averageMonthlyBalance,
       transactions: result.transactions || [],
+      monthlyBreakdown: result.monthlyBreakdown || [],
+      flaggedTransactions,
       confidence: result.confidence || 0.7,
     };
   } catch (error) {

@@ -14,6 +14,17 @@ export interface Transaction {
   amount: number;
   category: 'income' | 'expense' | 'housing' | 'one-time' | 'recurring';
   excluded?: boolean;
+  flagged?: boolean; // AI flagged as potentially irregular
+  flagReason?: string; // Why it was flagged (luxury, one-time, unusually large, etc.)
+  monthYear?: string; // Month/Year for grouping (e.g., "2024-08")
+}
+
+export interface MonthlyBreakdown {
+  month: string; // "2024-08"
+  income: number;
+  expenses: number;
+  netCashFlow: number;
+  transactionCount: number;
 }
 
 export interface CashFlowAnalysis {
@@ -22,6 +33,8 @@ export interface CashFlowAnalysis {
   netCashFlow: number;
   averageMonthlyBalance: number;
   transactions: Transaction[];
+  monthlyBreakdown: MonthlyBreakdown[]; // NEW: Month-by-month analysis
+  flaggedTransactions: Transaction[]; // NEW: Transactions requiring review
   confidence: number;
 }
 

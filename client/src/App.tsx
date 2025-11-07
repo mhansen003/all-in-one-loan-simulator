@@ -233,6 +233,7 @@ function App() {
               <ManualCashFlowInput
                 onSubmit={handleCashFlowSubmit}
                 onBack={() => setStep('mortgage-details')}
+                mortgageDetails={mortgageDetails}
               />
             </div>
           )}
