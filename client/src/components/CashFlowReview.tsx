@@ -6,8 +6,6 @@ interface CashFlowReviewProps {
   cashFlow: CashFlowAnalysis;
   onContinue: () => void;
   onBack?: () => void;
-  depositFrequency?: 'monthly' | 'biweekly' | 'weekly';
-  onDepositFrequencyChange?: (frequency: 'monthly' | 'biweekly' | 'weekly') => void;
   onCashFlowUpdate?: (updatedCashFlow: CashFlowAnalysis) => void;
 }
 
@@ -15,8 +13,6 @@ export default function CashFlowReview({
   cashFlow,
   onContinue,
   onBack,
-  depositFrequency = 'monthly',
-  onDepositFrequencyChange,
   onCashFlowUpdate
 }: CashFlowReviewProps) {
   // No more tabs - single view
@@ -302,47 +298,7 @@ export default function CashFlowReview({
         </div>
       </div>
 
-      {/* Deposit Frequency Selector */}
-      <div className="deposit-frequency-section">
-        <div className="frequency-header">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="frequency-icon">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-          </svg>
-          <div>
-            <h3>How often do you receive deposits?</h3>
-            <p>Select your typical deposit frequency for more accurate calculations</p>
-          </div>
-        </div>
-
-        <div className="frequency-options">
-          <button
-            type="button"
-            className={`frequency-option ${depositFrequency === 'weekly' ? 'active' : ''}`}
-            onClick={() => onDepositFrequencyChange?.('weekly')}
-          >
-            <div className="frequency-label">Weekly</div>
-            <div className="frequency-description">Every Friday</div>
-          </button>
-
-          <button
-            type="button"
-            className={`frequency-option ${depositFrequency === 'biweekly' ? 'active' : ''}`}
-            onClick={() => onDepositFrequencyChange?.('biweekly')}
-          >
-            <div className="frequency-label">Bi-Weekly</div>
-            <div className="frequency-description">1st &amp; 15th of month</div>
-          </button>
-
-          <button
-            type="button"
-            className={`frequency-option ${depositFrequency === 'monthly' ? 'active' : ''}`}
-            onClick={() => onDepositFrequencyChange?.('monthly')}
-          >
-            <div className="frequency-label">Monthly</div>
-            <div className="frequency-description">Once per month</div>
-          </button>
-        </div>
-      </div>
+      {/* AI automatically detects deposit frequency from statements - no manual input needed */}
 
       {/* Transactions Section */}
       <div className="transactions-view">

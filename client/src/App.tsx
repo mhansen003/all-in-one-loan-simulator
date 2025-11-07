@@ -20,9 +20,8 @@ function App() {
   const [mortgageDetails, setMortgageDetails] = useState<Partial<MortgageDetails>>({});
   const [bankStatements, setBankStatements] = useState<File[]>([]);
   const [cashFlowAnalysis, setCashFlowAnalysis] = useState<CashFlowAnalysis | null>(null);
-  const [depositFrequency, setDepositFrequency] = useState<'monthly' | 'biweekly' | 'weekly'>('monthly');
 
-  // REMOVED: Manual entry state (no longer needed)
+  // REMOVED: Manual entry state (no longer needed - AI auto-detects deposit frequency from bank statements)
   // const [monthlyDeposits, setMonthlyDeposits] = useState<number>(0);
   // const [monthlyExpenses, setMonthlyExpenses] = useState<number>(0);
   // const [monthlyLeftover, setMonthlyLeftover] = useState<number>(0);
@@ -43,8 +42,7 @@ function App() {
     setMortgageDetails({});
     setBankStatements([]);
     setCashFlowAnalysis(null);
-    setDepositFrequency('monthly');
-    // REMOVED: Manual entry state resets
+    // REMOVED: Manual entry state resets (AI auto-detects deposit frequency from bank statements)
     // setMonthlyDeposits(0);
     // setMonthlyExpenses(0);
     // setMonthlyLeftover(0);
@@ -124,23 +122,18 @@ function App() {
     setStep('simulation');
 
     try {
-      // Include deposit frequency in cash flow analysis
-      const cashFlowWithFrequency = {
-        ...cashFlowAnalysis,
-        depositFrequency
-      };
-
+      // Cash flow analysis already includes AI-detected deposit frequency
       // Check eligibility
       const eligibility = await checkEligibility(
         mortgageDetails as MortgageDetails,
-        cashFlowWithFrequency
+        cashFlowAnalysis
       );
       setEligibilityResult(eligibility);
 
       // Run simulation
       const simulation = await simulateLoan(
         mortgageDetails as MortgageDetails,
-        cashFlowWithFrequency
+        cashFlowAnalysis
       );
       setSimulationResult(simulation);
 
@@ -287,7 +280,7 @@ function App() {
                 monthlyDeposits={monthlyDeposits}
                 monthlyExpenses={monthlyExpenses}
                 monthlyLeftover={monthlyLeftover}
-                depositFrequency={depositFrequency}
+                depositFrequency="monthly"
                 aioRate={aioRate}
                 onBack={() => setStep('aio-proposal')}
               />
@@ -317,8 +310,6 @@ function App() {
                 cashFlow={cashFlowAnalysis}
                 onContinue={handleContinueToSimulation}
                 onBack={() => setStep('upload-statements')}
-                depositFrequency={depositFrequency}
-                onDepositFrequencyChange={setDepositFrequency}
                 onCashFlowUpdate={setCashFlowAnalysis}
               />
             </div>
@@ -340,7 +331,6 @@ function App() {
                 simulation={simulationResult}
                 mortgageDetails={mortgageDetails as MortgageDetails}
                 cashFlow={cashFlowAnalysis || undefined}
-                depositFrequency={depositFrequency}
                 onReset={handleReset}
                 onCreateProposal={() => setStep('proposal-builder')}
                 onCashFlowUpdate={setCashFlowAnalysis}

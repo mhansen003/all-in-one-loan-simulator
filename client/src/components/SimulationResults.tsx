@@ -9,7 +9,6 @@ interface SimulationResultsProps {
   simulation: SimulationResult;
   mortgageDetails: MortgageDetails;
   cashFlow?: CashFlowAnalysis;
-  depositFrequency?: 'monthly' | 'biweekly' | 'weekly';
   onReset: () => void;
   onGenerateReport?: () => void;
   onCreateProposal?: () => void;
@@ -22,7 +21,6 @@ export default function SimulationResults({
   simulation,
   mortgageDetails,
   cashFlow,
-  depositFrequency = 'monthly',
   onReset,
   onGenerateReport,
   onCreateProposal,
@@ -297,7 +295,6 @@ export default function SimulationResults({
         <div className="cashflow-tab-content">
           <CashFlowReview
             cashFlow={cashFlow}
-            depositFrequency={depositFrequency}
             onContinue={() => setActiveTab('results')}
             onBack={() => setActiveTab('results')}
             onCashFlowUpdate={onCashFlowUpdate}
