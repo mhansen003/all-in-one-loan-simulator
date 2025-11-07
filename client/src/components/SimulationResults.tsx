@@ -118,7 +118,7 @@ export default function SimulationResults({
             <div className="stat-divider"></div>
             <div className="stat-item">
               <span className="stat-label">Interest Reduction</span>
-              <span className="stat-value">{Math.max(0, simulation.comparison.percentageSavings).toFixed(1)}%</span>
+              <span className="stat-value">{formatCurrency(Math.max(0, simulation.comparison.interestSavings))}</span>
             </div>
           </div>
         </div>
