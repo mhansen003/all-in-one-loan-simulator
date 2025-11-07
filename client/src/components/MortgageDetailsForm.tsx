@@ -22,6 +22,14 @@ export default function MortgageDetailsForm({
     currentHousingPayment: initialData.currentHousingPayment || undefined,
   });
 
+  // State for term input (years/months)
+  const [termYears, setTermYears] = useState<number>(
+    initialData.remainingTermMonths ? Math.floor(initialData.remainingTermMonths / 12) : 25
+  );
+  const [termMonths, setTermMonths] = useState<number>(
+    initialData.remainingTermMonths ? initialData.remainingTermMonths % 12 : 0
+  );
+
   const [errors, setErrors] = useState<Partial<Record<keyof MortgageDetails, string>>>({});
 
   // Debug function to pre-populate form with test data
@@ -32,8 +40,10 @@ export default function MortgageDetailsForm({
       monthlyPayment: 2200,
       remainingTermMonths: 300,
       propertyValue: 500000,
-      currentHousingPayment: 2200,
+      currentHousingPayment: 2800,
     });
+    setTermYears(25);
+    setTermMonths(0);
     setErrors({});
   };
 
@@ -89,6 +99,33 @@ export default function MortgageDetailsForm({
     }
   };
 
+  // Format currency on blur
+  const formatCurrency = (value: number | undefined): string => {
+    if (!value) return '';
+    return new Intl.NumberFormat('en-US').format(value);
+  };
+
+  // Handle term changes
+  const handleTermYearsChange = (value: string) => {
+    const years = parseInt(value) || 0;
+    setTermYears(years);
+    const totalMonths = years * 12 + termMonths;
+    setFormData((prev) => ({ ...prev, remainingTermMonths: totalMonths }));
+    if (errors.remainingTermMonths) {
+      setErrors((prev) => ({ ...prev, remainingTermMonths: undefined }));
+    }
+  };
+
+  const handleTermMonthsChange = (value: string) => {
+    const months = parseInt(value) || 0;
+    setTermMonths(months);
+    const totalMonths = termYears * 12 + months;
+    setFormData((prev) => ({ ...prev, remainingTermMonths: totalMonths }));
+    if (errors.remainingTermMonths) {
+      setErrors((prev) => ({ ...prev, remainingTermMonths: undefined }));
+    }
+  };
+
   return (
     <div className="mortgage-form-container">
       <div className="form-header">
@@ -123,14 +160,22 @@ export default function MortgageDetailsForm({
             <div className="input-wrapper">
               <span className="input-prefix">$</span>
               <input
-                type="number"
+                type="text"
+                inputMode="numeric"
                 id="currentBalance"
                 className={`form-input ${errors.currentBalance ? 'input-error' : ''}`}
                 placeholder="350,000"
-                value={formData.currentBalance || ''}
-                onChange={(e) => handleChange('currentBalance', e.target.value)}
-                step="1000"
-                min="0"
+                value={formData.currentBalance ? formatCurrency(formData.currentBalance) : ''}
+                onChange={(e) => {
+                  const value = e.target.value.replace(/[^0-9.]/g, '');
+                  handleChange('currentBalance', value);
+                }}
+                onBlur={(e) => {
+                  const value = e.target.value.replace(/[^0-9.]/g, '');
+                  if (value) {
+                    setFormData((prev) => ({ ...prev, currentBalance: parseFloat(value) }));
+                  }
+                }}
               />
             </div>
             {errors.currentBalance && <span className="error-text">{errors.currentBalance}</span>}
@@ -143,15 +188,23 @@ export default function MortgageDetailsForm({
             </label>
             <div className="input-wrapper">
               <input
-                type="number"
+                type="text"
+                inputMode="decimal"
                 id="interestRate"
                 className={`form-input ${errors.interestRate ? 'input-error' : ''}`}
-                placeholder="6.5"
-                value={formData.interestRate || ''}
-                onChange={(e) => handleChange('interestRate', e.target.value)}
-                step="0.125"
-                min="0"
-                max="20"
+                placeholder="6.500"
+                value={formData.interestRate !== undefined ? String(formData.interestRate) : ''}
+                onChange={(e) => {
+                  const value = e.target.value.replace(/[^0-9.]/g, '');
+                  handleChange('interestRate', value);
+                }}
+                onBlur={(e) => {
+                  const value = e.target.value.replace(/[^0-9.]/g, '');
+                  if (value) {
+                    const num = parseFloat(value);
+                    setFormData((prev) => ({ ...prev, interestRate: num }));
+                  }
+                }}
               />
               <span className="input-suffix">%</span>
             </div>
@@ -161,49 +214,71 @@ export default function MortgageDetailsForm({
           {/* Monthly Payment */}
           <div className="form-group">
             <label htmlFor="monthlyPayment" className="form-label required">
-              Monthly Payment (P&I)
+              Monthly Mortgage Payment (P&I)
             </label>
             <div className="input-wrapper">
               <span className="input-prefix">$</span>
               <input
-                type="number"
+                type="text"
+                inputMode="numeric"
                 id="monthlyPayment"
                 className={`form-input ${errors.monthlyPayment ? 'input-error' : ''}`}
                 placeholder="2,200"
-                value={formData.monthlyPayment || ''}
-                onChange={(e) => handleChange('monthlyPayment', e.target.value)}
-                step="10"
-                min="0"
+                value={formData.monthlyPayment ? formatCurrency(formData.monthlyPayment) : ''}
+                onChange={(e) => {
+                  const value = e.target.value.replace(/[^0-9.]/g, '');
+                  handleChange('monthlyPayment', value);
+                }}
+                onBlur={(e) => {
+                  const value = e.target.value.replace(/[^0-9.]/g, '');
+                  if (value) {
+                    setFormData((prev) => ({ ...prev, monthlyPayment: parseFloat(value) }));
+                  }
+                }}
               />
             </div>
             {errors.monthlyPayment && <span className="error-text">{errors.monthlyPayment}</span>}
-            <span className="form-help-text">Principal and Interest only (exclude taxes and insurance)</span>
+            <span className="form-help-text">Principal & Interest only (exclude taxes, insurance, HOA)</span>
           </div>
 
-          {/* Remaining Term */}
+          {/* Remaining Term - Years/Months */}
           <div className="form-group">
-            <label htmlFor="remainingTermMonths" className="form-label required">
+            <label htmlFor="termYears" className="form-label required">
               Remaining Term
             </label>
-            <div className="input-wrapper">
-              <input
-                type="number"
-                id="remainingTermMonths"
-                className={`form-input ${errors.remainingTermMonths ? 'input-error' : ''}`}
-                placeholder="300"
-                value={formData.remainingTermMonths || ''}
-                onChange={(e) => handleChange('remainingTermMonths', e.target.value)}
-                step="1"
-                min="1"
-                max="360"
-              />
-              <span className="input-suffix">months</span>
+            <div style={{ display: 'flex', gap: '1rem' }}>
+              <div className="input-wrapper" style={{ flex: 1 }}>
+                <input
+                  type="number"
+                  id="termYears"
+                  className={`form-input ${errors.remainingTermMonths ? 'input-error' : ''}`}
+                  placeholder="25"
+                  value={termYears || ''}
+                  onChange={(e) => handleTermYearsChange(e.target.value)}
+                  min="0"
+                  max="30"
+                />
+                <span className="input-suffix">years</span>
+              </div>
+              <div className="input-wrapper" style={{ flex: 1 }}>
+                <input
+                  type="number"
+                  id="termMonths"
+                  className={`form-input ${errors.remainingTermMonths ? 'input-error' : ''}`}
+                  placeholder="0"
+                  value={termMonths || ''}
+                  onChange={(e) => handleTermMonthsChange(e.target.value)}
+                  min="0"
+                  max="11"
+                />
+                <span className="input-suffix">months</span>
+              </div>
             </div>
             {errors.remainingTermMonths && <span className="error-text">{errors.remainingTermMonths}</span>}
             <span className="form-help-text">
               {formData.remainingTermMonths
-                ? `${Math.floor(formData.remainingTermMonths / 12)} years, ${formData.remainingTermMonths % 12} months`
-                : 'E.g., 25 years = 300 months'}
+                ? `Total: ${formData.remainingTermMonths} months`
+                : 'Enter years and months remaining on the loan'}
             </span>
           </div>
 
@@ -215,14 +290,22 @@ export default function MortgageDetailsForm({
             <div className="input-wrapper">
               <span className="input-prefix">$</span>
               <input
-                type="number"
+                type="text"
+                inputMode="numeric"
                 id="propertyValue"
                 className={`form-input ${errors.propertyValue ? 'input-error' : ''}`}
                 placeholder="500,000"
-                value={formData.propertyValue || ''}
-                onChange={(e) => handleChange('propertyValue', e.target.value)}
-                step="5000"
-                min="0"
+                value={formData.propertyValue ? formatCurrency(formData.propertyValue) : ''}
+                onChange={(e) => {
+                  const value = e.target.value.replace(/[^0-9.]/g, '');
+                  handleChange('propertyValue', value);
+                }}
+                onBlur={(e) => {
+                  const value = e.target.value.replace(/[^0-9.]/g, '');
+                  if (value) {
+                    setFormData((prev) => ({ ...prev, propertyValue: parseFloat(value) }));
+                  }
+                }}
               />
             </div>
             {errors.propertyValue && <span className="error-text">{errors.propertyValue}</span>}
@@ -236,24 +319,32 @@ export default function MortgageDetailsForm({
           {/* Current Housing Payment */}
           <div className="form-group">
             <label htmlFor="currentHousingPayment" className="form-label required">
-              Current Housing Payment
+              Total Monthly Housing Expense
             </label>
             <div className="input-wrapper">
               <span className="input-prefix">$</span>
               <input
-                type="number"
+                type="text"
+                inputMode="numeric"
                 id="currentHousingPayment"
                 className={`form-input ${errors.currentHousingPayment ? 'input-error' : ''}`}
                 placeholder="2,500"
-                value={formData.currentHousingPayment || ''}
-                onChange={(e) => handleChange('currentHousingPayment', e.target.value)}
-                step="10"
-                min="0"
+                value={formData.currentHousingPayment ? formatCurrency(formData.currentHousingPayment) : ''}
+                onChange={(e) => {
+                  const value = e.target.value.replace(/[^0-9.]/g, '');
+                  handleChange('currentHousingPayment', value);
+                }}
+                onBlur={(e) => {
+                  const value = e.target.value.replace(/[^0-9.]/g, '');
+                  if (value) {
+                    setFormData((prev) => ({ ...prev, currentHousingPayment: parseFloat(value) }));
+                  }
+                }}
               />
             </div>
             {errors.currentHousingPayment && <span className="error-text">{errors.currentHousingPayment}</span>}
             <span className="form-help-text">
-              Total rent or mortgage (will be excluded from cash flow analysis)
+              Include P&I + taxes + insurance + HOA (used to exclude housing costs from cash flow)
             </span>
           </div>
         </div>
