@@ -196,3 +196,64 @@ export function formatCurrency(amount: number): string {
     maximumFractionDigits: 0,
   }).format(amount);
 }
+
+/**
+ * Weekly breakdown entry for detailed amortization
+ */
+export interface WeeklyBreakdownEntry {
+  week: number;
+  balance: number;
+  effectivePrincipal: number;
+  interest: number;
+  principalReduced: number;
+}
+
+/**
+ * Generate week-by-week breakdown for AIO loan
+ */
+export function generateWeeklyBreakdown(
+  loanAmount: number,
+  annualRate: number,
+  averageMonthlyBalance: number,
+  monthlyNetCashFlow: number
+): WeeklyBreakdownEntry[] {
+  const weeklyRate = annualRate / 52;
+  const weeklyNetCashFlow = monthlyNetCashFlow / 4.33; // Average weeks per month
+
+  let balance = loanAmount;
+  const breakdown: WeeklyBreakdownEntry[] = [];
+  let week = 0;
+  const maxWeeks = 30 * 52; // Max 30 years
+
+  while (balance > 0.01 && week < maxWeeks) {
+    week++;
+
+    // Effective principal is reduced by average balance floating in account
+    const effectivePrincipal = Math.max(0, balance - averageMonthlyBalance);
+
+    // Interest is calculated on effective principal only
+    const interest = effectivePrincipal * weeklyRate;
+
+    // Principal reduction is net cash flow minus interest
+    const principalReduced = weeklyNetCashFlow - interest;
+
+    // Update balance
+    balance -= principalReduced;
+
+    // Ensure balance doesn't go negative
+    if (balance < 0) balance = 0;
+
+    breakdown.push({
+      week,
+      balance: Math.max(0, balance),
+      effectivePrincipal,
+      interest,
+      principalReduced: Math.max(0, principalReduced),
+    });
+
+    // Break if paid off
+    if (balance <= 0.01) break;
+  }
+
+  return breakdown;
+}
