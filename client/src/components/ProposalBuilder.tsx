@@ -83,11 +83,16 @@ function SortableItem({ id, component, onToggle }: {
   );
 }
 
+type WizardStep = 1 | 2 | 3 | 4;
+
 export default function ProposalBuilder({
   simulation,
   mortgageDetails,
   onBack,
 }: ProposalBuilderProps) {
+  // Wizard state
+  const [currentStep, setCurrentStep] = useState<WizardStep>(1);
+
   // Personalization state
   const [clientName, setClientName] = useState('');
   const [clientEmail, setClientEmail] = useState('');
@@ -207,6 +212,41 @@ export default function ProposalBuilder({
     }, 100);
   };
 
+  // Wizard navigation
+  const steps = [
+    { number: 1, title: 'Client Info', description: 'Enter client details' },
+    { number: 2, title: 'AI Sales Pitch', description: 'Generate personalized pitch' },
+    { number: 3, title: 'Select Components', description: 'Choose sections to include' },
+    { number: 4, title: 'Preview & Download', description: 'Review and generate PDF' },
+  ];
+
+  const canProceedToNextStep = (): boolean => {
+    switch (currentStep) {
+      case 1:
+        return clientName.trim().length > 0;
+      case 2:
+        return aiPitch.trim().length > 0;
+      case 3:
+        return true; // Always can proceed from component selection
+      case 4:
+        return true;
+      default:
+        return false;
+    }
+  };
+
+  const handleNextStep = () => {
+    if (canProceedToNextStep() && currentStep < 4) {
+      setCurrentStep((currentStep + 1) as WizardStep);
+    }
+  };
+
+  const handlePreviousStep = () => {
+    if (currentStep > 1) {
+      setCurrentStep((currentStep - 1) as WizardStep);
+    }
+  };
+
   const handleGeneratePDF = async () => {
     if (!pdfContentRef.current) return;
 
@@ -254,43 +294,74 @@ export default function ProposalBuilder({
           </svg>
         </div>
         <h1>Proposal Builder</h1>
-        <p>Customize your client presentation and generate a professional PDF</p>
+        <p>Step-by-step wizard to create your client proposal</p>
+      </div>
+
+      {/* Step Indicator */}
+      <div className="wizard-steps">
+        {steps.map((step) => (
+          <div
+            key={step.number}
+            className={`wizard-step ${currentStep === step.number ? 'active' : ''} ${currentStep > step.number ? 'completed' : ''}`}
+          >
+            <div className="step-number">
+              {currentStep > step.number ? (
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              ) : (
+                step.number
+              )}
+            </div>
+            <div className="step-info">
+              <div className="step-title">{step.title}</div>
+              <div className="step-description">{step.description}</div>
+            </div>
+          </div>
+        ))}
       </div>
 
       <div className="proposal-content">
-        {/* Personalization Section */}
-        <div className="section-card">
-          <h2>Client Information</h2>
-          <p className="section-description">Personalize the proposal for your client</p>
+        {/* Step 1: Client Information */}
+        {currentStep === 1 && (
+          <div className="section-card">
+            <h2>Client Information</h2>
+            <p className="section-description">Personalize the proposal for your client</p>
 
-          <div className="form-row">
-            <div className="form-group">
-              <label htmlFor="clientName">Client Name</label>
-              <input
-                id="clientName"
-                type="text"
-                className="form-input"
-                placeholder="Enter client's name"
-                value={clientName}
-                onChange={(e) => setClientName(e.target.value)}
-              />
+            <div className="form-row">
+              <div className="form-group">
+                <label htmlFor="clientName">Client Name *</label>
+                <input
+                  id="clientName"
+                  type="text"
+                  className="form-input"
+                  placeholder="Enter client's name"
+                  value={clientName}
+                  onChange={(e) => setClientName(e.target.value)}
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="clientEmail">Client Email (optional)</label>
+                <input
+                  id="clientEmail"
+                  type="email"
+                  className="form-input"
+                  placeholder="client@example.com"
+                  value={clientEmail}
+                  onChange={(e) => setClientEmail(e.target.value)}
+                />
+              </div>
             </div>
 
-            <div className="form-group">
-              <label htmlFor="clientEmail">Client Email (optional)</label>
-              <input
-                id="clientEmail"
-                type="email"
-                className="form-input"
-                placeholder="client@example.com"
-                value={clientEmail}
-                onChange={(e) => setClientEmail(e.target.value)}
-              />
-            </div>
+            {!clientName.trim() && (
+              <p className="validation-hint">* Client name is required to proceed</p>
+            )}
           </div>
-        </div>
+        )}
 
-        {/* AI Pitch Generation */}
+        {/* Step 2: AI Pitch Generation */}
+        {currentStep === 2 && (
         <div className="section-card">
           <div className="section-header-with-action">
             <div>
@@ -354,8 +425,10 @@ export default function ProposalBuilder({
             </div>
           )}
         </div>
+        )}
 
-        {/* Component Selection & Ordering */}
+        {/* Step 3: Component Selection & Ordering */}
+        {currentStep === 3 && (
         <div className="section-card">
           <h2>Select Components</h2>
           <p className="section-description">
@@ -406,35 +479,157 @@ export default function ProposalBuilder({
             </label>
           </div>
         </div>
+        )}
 
-        {/* Action Buttons */}
-        <div className="proposal-actions">
-          <button className="btn-secondary" onClick={onBack}>
+        {/* Step 4: Preview & Download */}
+        {currentStep === 4 && (
+          <div className="section-card">
+            <h2>Preview Your Proposal</h2>
+            <p className="section-description">
+              Review the proposal below, then download as PDF
+            </p>
+
+            <div className="proposal-preview">
+              <div className="preview-content">
+                {/* Header */}
+                <div className="preview-header">
+                  <h1>All-In-One Loan Proposal</h1>
+                  {clientName && <h2>Prepared for {clientName}</h2>}
+                  <p>{new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                </div>
+
+                {/* AI Pitch */}
+                {aiPitch && (
+                  <div className="preview-section pitch-section">
+                    <h3>Why the All-In-One Loan is Right for You</h3>
+                    <div className="preview-pitch">{aiPitch}</div>
+                  </div>
+                )}
+
+                {/* Savings Highlight */}
+                {components.find((c) => c.id === 'savings-highlight')?.enabled && (
+                  <div className="preview-section savings-section">
+                    <h3>Total Interest Savings</h3>
+                    <div className="preview-savings-amount">{formatCurrency(simulation.comparison.interestSavings)}</div>
+                    <div className="preview-stats">
+                      <div>
+                        <strong>Time Saved:</strong> {yearsMonthsFromMonths(simulation.comparison.timeSavedMonths)}
+                      </div>
+                      <div>
+                        <strong>Interest Reduction:</strong> {simulation.comparison.percentageSavings.toFixed(1)}%
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Comparison Table */}
+                {components.find((c) => c.id === 'comparison-cards')?.enabled && (
+                  <div className="preview-section">
+                    <h3>Side-by-Side Comparison</h3>
+                    <table className="preview-table">
+                      <thead>
+                        <tr>
+                          <th>Metric</th>
+                          <th>Traditional Mortgage</th>
+                          <th>All-In-One Loan</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td>Monthly Payment</td>
+                          <td>{formatCurrency(simulation.traditionalLoan.monthlyPayment)}</td>
+                          <td>{formatCurrency(simulation.allInOneLoan.monthlyPayment)}</td>
+                        </tr>
+                        <tr>
+                          <td>Total Interest</td>
+                          <td>{formatCurrency(simulation.traditionalLoan.totalInterestPaid)}</td>
+                          <td className="savings-cell">{formatCurrency(simulation.allInOneLoan.totalInterestPaid)}</td>
+                        </tr>
+                        <tr>
+                          <td>Payoff Timeline</td>
+                          <td>{yearsMonthsFromMonths(simulation.traditionalLoan.payoffMonths)}</td>
+                          <td className="savings-cell">{yearsMonthsFromMonths(simulation.allInOneLoan.payoffMonths)}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+                {/* How It Works */}
+                {components.find((c) => c.id === 'how-it-works')?.enabled && (
+                  <div className="preview-section">
+                    <h3>How the All-In-One Loan Works</h3>
+                    <div className="preview-benefits">
+                      <div className="benefit-item">
+                        <h4>💰 Cash Flow Offset</h4>
+                        <p>Your positive cash flow sits in the loan account, reducing the balance used for interest calculations.</p>
+                      </div>
+                      <div className="benefit-item">
+                        <h4>📈 Accelerated Payoff</h4>
+                        <p>You'll pay off your mortgage {yearsMonthsFromMonths(simulation.comparison.timeSavedMonths)} faster.</p>
+                      </div>
+                      <div className="benefit-item">
+                        <h4>🔓 Full Flexibility</h4>
+                        <p>Access your funds anytime while they work to reduce your interest.</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Footer */}
+                {includeFooter && (
+                  <div className="preview-footer">
+                    <p>This proposal was generated using professional loan analysis software.</p>
+                    <p>For questions or to proceed, please contact your loan officer.</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="download-actions">
+              <button
+                className="btn-primary btn-large"
+                onClick={handleGeneratePDF}
+                disabled={isGeneratingPDF}
+              >
+                {isGeneratingPDF ? (
+                  <>
+                    <div className="spinner-small"></div>
+                    Generating PDF...
+                  </>
+                ) : (
+                  <>
+                    <svg className="btn-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    Download PDF Proposal
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Wizard Navigation Buttons */}
+        <div className="wizard-actions">
+          <button className="btn-secondary" onClick={currentStep === 1 ? onBack : handlePreviousStep}>
             <svg className="btn-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
-            Back to Results
+            {currentStep === 1 ? 'Back to Results' : 'Previous Step'}
           </button>
-          <button
-            className="btn-primary"
-            onClick={handleGeneratePDF}
-            disabled={!aiPitch || isGeneratingPDF}
-            title={!aiPitch ? 'Generate AI pitch first' : ''}
-          >
-            {isGeneratingPDF ? (
-              <>
-                <div className="spinner-small"></div>
-                Generating PDF...
-              </>
-            ) : (
-              <>
-                <svg className="btn-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                Generate PDF Proposal
-              </>
-            )}
-          </button>
+          {currentStep < 4 && (
+            <button
+              className="btn-primary"
+              onClick={handleNextStep}
+              disabled={!canProceedToNextStep()}
+            >
+              Next Step
+              <svg className="btn-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          )}
         </div>
       </div>
 
