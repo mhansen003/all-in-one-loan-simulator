@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { SimulationResult, MortgageDetails, CashFlowAnalysis } from '../types';
 import CashFlowReview from './CashFlowReview';
 import ProposalBuilder from './ProposalBuilder';
+import { SignatureGenerator } from './SignatureGenerator';
 import './SimulationResults.css';
 
 interface SimulationResultsProps {
@@ -15,7 +16,7 @@ interface SimulationResultsProps {
   onCashFlowUpdate?: (cashFlow: CashFlowAnalysis) => void;
 }
 
-type TabView = 'results' | 'cashflow' | 'charts' | 'proposal';
+type TabView = 'results' | 'cashflow' | 'charts' | 'proposal' | 'signature';
 
 export default function SimulationResults({
   simulation,
@@ -100,6 +101,15 @@ export default function SimulationResults({
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
             Create Proposal
+          </button>
+          <button
+            className={`results-tab ${activeTab === 'signature' ? 'active' : ''}`}
+            onClick={() => setActiveTab('signature')}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+            </svg>
+            Email Signature
           </button>
         </div>
       )}
@@ -503,6 +513,13 @@ export default function SimulationResults({
             mortgageDetails={mortgageDetails}
             onBack={() => setActiveTab('results')}
           />
+        </div>
+      )}
+
+      {/* Email Signature Generator Tab */}
+      {activeTab === 'signature' && (
+        <div className="signature-tab-content">
+          <SignatureGenerator />
         </div>
       )}
     </div>

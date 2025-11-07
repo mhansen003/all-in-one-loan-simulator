@@ -1,0 +1,133 @@
+.signature-generator {
+  max-width: 100%;
+  margin: 0 auto;
+}
+
+.signature-form-section {
+  background: white;
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 2rem;
+}
+
+.signature-form-section h3 {
+  margin: 0 0 0.5rem 0;
+  color: #2d3748;
+  font-size: 1.5rem;
+}
+
+.signature-help-text {
+  color: #718096;
+  font-size: 0.95rem;
+  margin: 0 0 1.5rem 0;
+}
+
+.signature-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.signature-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+}
+
+@media (max-width: 768px) {
+  .signature-form-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.signature-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.signature-actions button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.signature-preview-section {
+  background: white;
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.signature-preview-section h3 {
+  margin: 0 0 0.5rem 0;
+  color: #2d3748;
+  font-size: 1.5rem;
+}
+
+.signature-preview-box {
+  background: #f7fafc;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 2rem;
+  margin-top: 1rem;
+  overflow-x: auto;
+}
+
+.signature-instructions {
+  margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 2px solid #e2e8f0;
+}
+
+.signature-instructions h4 {
+  margin: 0 0 1rem 0;
+  color: #2d3748;
+  font-size: 1.15rem;
+}
+
+.instructions-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+.instruction-item {
+  background: #f0f9ff;
+  padding: 1.25rem;
+  border-radius: 8px;
+  border-left: 4px solid #9bc53d;
+}
+
+.instruction-item strong {
+  display: block;
+  color: #2d3748;
+  font-size: 1.05rem;
+  margin-bottom: 0.75rem;
+}
+
+.instruction-item ol {
+  margin: 0;
+  padding-left: 1.25rem;
+  font-size: 0.9rem;
+  color: #4a5568;
+  line-height: 1.6;
+}
+
+.instruction-item ol li {
+  margin-bottom: 0.4rem;
+}
+
+/* Copy success animation */
+@keyframes successPulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+.btn-primary:not(:disabled).success {
+  animation: successPulse 0.3s ease-in-out;
+}

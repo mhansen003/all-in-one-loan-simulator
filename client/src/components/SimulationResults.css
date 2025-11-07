@@ -440,3 +440,10 @@
     font-size: 1.1rem;
   }
 }
+
+/* Signature Generator Tab */
+.signature-tab-content {
+  padding: 2rem 0;
+  max-width: 1200px;
+  margin: 0 auto;
+}
