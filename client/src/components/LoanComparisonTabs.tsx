@@ -486,7 +486,8 @@ function MathTab({
 }
 
 // Visualize Tab Component (placeholder for now, will add charts)
-function VisualizeTab({ comparison, weeklyBreakdown, loanAmount }: any) {
+function VisualizeTab(_props: any) {
+  // Props: comparison, weeklyBreakdown, loanAmount (for future chart implementation)
   return (
     <div className="visualize-tab">
       <h2>📈 Visual Analysis</h2>
