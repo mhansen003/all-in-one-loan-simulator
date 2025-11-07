@@ -1,11 +1,13 @@
 // Mortgage and loan types
 export interface MortgageDetails {
   currentBalance: number;
-  interestRate: number;
+  interestRate: number; // Traditional mortgage rate
+  aioInterestRate: number; // All-In-One loan rate
   monthlyPayment: number;
   remainingTermMonths: number;
   propertyValue: number;
   currentHousingPayment: number;
+  loanBalance?: number; // Alias for currentBalance (for backwards compatibility)
 }
 
 export interface Transaction {

@@ -16,6 +16,7 @@ export default function MortgageDetailsForm({
   const [formData, setFormData] = useState<Partial<MortgageDetails>>({
     currentBalance: initialData.currentBalance || undefined,
     interestRate: initialData.interestRate || undefined,
+    aioInterestRate: initialData.aioInterestRate || undefined,
     monthlyPayment: initialData.monthlyPayment || undefined,
     remainingTermMonths: initialData.remainingTermMonths || undefined,
     propertyValue: initialData.propertyValue || undefined,
@@ -33,6 +34,9 @@ export default function MortgageDetailsForm({
   // State for raw input values (to preserve decimal points while typing)
   const [interestRateInput, setInterestRateInput] = useState<string>(
     initialData.interestRate !== undefined ? String(initialData.interestRate) : ''
+  );
+  const [aioInterestRateInput, setAioInterestRateInput] = useState<string>(
+    initialData.aioInterestRate !== undefined ? String(initialData.aioInterestRate) : ''
   );
   const [currentBalanceInput, setCurrentBalanceInput] = useState<string>(
     initialData.currentBalance !== undefined ? String(initialData.currentBalance) : ''
@@ -69,6 +73,7 @@ export default function MortgageDetailsForm({
     setFormData({
       currentBalance: 350000,
       interestRate: 6.5,
+      aioInterestRate: 5.75, // Typically lower than traditional
       monthlyPayment: testMonthlyPayment,
       remainingTermMonths: 300,
       propertyValue: 500000,
@@ -76,6 +81,7 @@ export default function MortgageDetailsForm({
     });
     setCurrentBalanceInput('350000');
     setInterestRateInput('6.5');
+    setAioInterestRateInput('5.75');
     setMonthlyPaymentInput('2200');
     setPropertyValueInput('500000');
     setAdditionalExpensesInput('600');
@@ -94,6 +100,10 @@ export default function MortgageDetailsForm({
 
     if (!formData.interestRate || formData.interestRate <= 0 || formData.interestRate > 20) {
       newErrors.interestRate = 'Please enter a valid interest rate (0-20%)';
+    }
+
+    if (!formData.aioInterestRate || formData.aioInterestRate <= 0 || formData.aioInterestRate > 20) {
+      newErrors.aioInterestRate = 'Please enter a valid AIO interest rate (0-20%)';
     }
 
     if (!formData.monthlyPayment || formData.monthlyPayment <= 0) {
@@ -291,7 +301,7 @@ export default function MortgageDetailsForm({
           {/* Interest Rate */}
           <div className="form-group">
             <label htmlFor="interestRate" className="form-label required">
-              Interest Rate
+              Traditional Mortgage Interest Rate
             </label>
             <div className="input-wrapper">
               <input
@@ -335,6 +345,57 @@ export default function MortgageDetailsForm({
               <span className="input-suffix">%</span>
             </div>
             {errors.interestRate && <span className="error-text">{errors.interestRate}</span>}
+            <span className="form-help-text">Current rate on their existing mortgage</span>
+          </div>
+
+          {/* AIO Interest Rate */}
+          <div className="form-group">
+            <label htmlFor="aioInterestRate" className="form-label required">
+              All-In-One Loan Interest Rate
+            </label>
+            <div className="input-wrapper">
+              <input
+                type="text"
+                inputMode="decimal"
+                id="aioInterestRate"
+                className={`form-input ${errors.aioInterestRate ? 'input-error' : ''}`}
+                placeholder="5.750"
+                value={aioInterestRateInput}
+                onChange={(e) => {
+                  const value = e.target.value.replace(/[^0-9.]/g, '');
+                  // Allow only one decimal point
+                  const parts = value.split('.');
+                  const sanitized = parts.length > 2
+                    ? parts[0] + '.' + parts.slice(1).join('')
+                    : value;
+                  setAioInterestRateInput(sanitized);
+
+                  // Update form data if we have a valid number
+                  const numValue = parseFloat(sanitized);
+                  if (!isNaN(numValue)) {
+                    setFormData((prev) => ({ ...prev, aioInterestRate: numValue }));
+                  }
+
+                  // Clear error for this field
+                  if (errors.aioInterestRate) {
+                    setErrors((prev) => ({ ...prev, aioInterestRate: undefined }));
+                  }
+                }}
+                onBlur={(e) => {
+                  const value = e.target.value.replace(/[^0-9.]/g, '');
+                  if (value) {
+                    const num = parseFloat(value);
+                    if (!isNaN(num)) {
+                      setFormData((prev) => ({ ...prev, aioInterestRate: num }));
+                      setAioInterestRateInput(String(num));
+                    }
+                  }
+                }}
+              />
+              <span className="input-suffix">%</span>
+            </div>
+            {errors.aioInterestRate && <span className="error-text">{errors.aioInterestRate}</span>}
+            <span className="form-help-text">Rate for the new AIO loan (typically 0.5-1% lower)</span>
           </div>
 
           {/* Remaining Term - Years/Months */}

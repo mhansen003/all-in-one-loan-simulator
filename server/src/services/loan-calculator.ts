@@ -138,13 +138,17 @@ function simulateMonthlyDailyBalances(
  * 1. Interest calculated DAILY, not monthly
  * 2. Available cash offsets the balance for interest calculation
  * 3. More accurate modeling of real-world cash flow patterns
+ * 4. Uses AIO-specific interest rate (typically lower than traditional)
  */
 function calculateAllInOneLoan(
   mortgage: MortgageDetails,
   cashFlow: CashFlowAnalysis
 ): LoanProjection {
-  const { currentBalance, interestRate, monthlyPayment } = mortgage;
+  const { currentBalance, aioInterestRate, monthlyPayment } = mortgage;
   const { totalIncome, totalExpenses, netCashFlow } = cashFlow;
+
+  // Use AIO interest rate if provided, fallback to traditional rate
+  const effectiveRate = aioInterestRate || mortgage.interestRate;
 
   let balance = currentBalance;
   let totalInterest = 0;
@@ -161,7 +165,7 @@ function calculateAllInOneLoan(
       monthlyPayment,
       totalIncome,
       totalExpenses,
-      interestRate,
+      effectiveRate,
       avgDaysPerMonth
     );
 
