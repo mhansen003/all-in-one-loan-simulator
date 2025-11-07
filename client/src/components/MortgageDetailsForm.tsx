@@ -24,6 +24,19 @@ export default function MortgageDetailsForm({
 
   const [errors, setErrors] = useState<Partial<Record<keyof MortgageDetails, string>>>({});
 
+  // Debug function to pre-populate form with test data
+  const fillTestData = () => {
+    setFormData({
+      currentBalance: 350000,
+      interestRate: 6.5,
+      monthlyPayment: 2200,
+      remainingTermMonths: 300,
+      propertyValue: 500000,
+      currentHousingPayment: 2200,
+    });
+    setErrors({});
+  };
+
   const validateForm = (): boolean => {
     const newErrors: Partial<Record<keyof MortgageDetails, string>> = {};
 
@@ -79,8 +92,25 @@ export default function MortgageDetailsForm({
   return (
     <div className="mortgage-form-container">
       <div className="form-header">
-        <h2>Current Mortgage Details</h2>
-        <p>Enter information about the borrower's existing mortgage loan</p>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <h2>Current Mortgage Details</h2>
+            <p>Enter information about the borrower's existing mortgage loan</p>
+          </div>
+          <button
+            type="button"
+            onClick={fillTestData}
+            className="btn-secondary"
+            style={{
+              fontSize: '0.85rem',
+              padding: '0.5rem 1rem',
+              whiteSpace: 'nowrap'
+            }}
+            title="Fill with test data for quick testing"
+          >
+            🔧 Fill Test Data
+          </button>
+        </div>
       </div>
 
       <form onSubmit={handleSubmit} className="mortgage-form">
