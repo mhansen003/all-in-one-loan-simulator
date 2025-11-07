@@ -2,6 +2,7 @@ import OpenAI from 'openai';
 import fs from 'fs/promises';
 import path from 'path';
 import xlsx from 'xlsx';
+import { convert } from 'pdf-img-convert';
 import type { CashFlowAnalysis, Transaction, OpenAIAnalysisResult } from '../types.js';
 
 const openai = new OpenAI({
@@ -9,28 +10,46 @@ const openai = new OpenAI({
 });
 
 /**
- * Extract text from PDF file using GPT-4 Vision
+ * Extract text from PDF by converting to images and using GPT-4 Vision
  * This is the most reliable method for serverless environments
  * Works with both text-based and scanned/image-based PDFs
  */
 async function extractTextFromPDF(filePath: string): Promise<string> {
   try {
-    console.log('Extracting text from PDF using GPT-4 Vision...');
+    console.log('Converting PDF to images for GPT-4 Vision processing...');
 
     // Read the PDF file
-    const fileBuffer = await fs.readFile(filePath);
-    const base64Pdf = fileBuffer.toString('base64');
+    const pdfBuffer = await fs.readFile(filePath);
 
-    // Use GPT-4 Vision to extract transaction data
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4o',
-      messages: [
-        {
-          role: 'user',
-          content: [
-            {
-              type: 'text',
-              text: `Extract ALL transaction data from this bank statement PDF.
+    // Convert PDF pages to PNG images
+    const imageBuffers = await convert(pdfBuffer, {
+      width: 2000, // High resolution for better text recognition
+      height: 2000,
+      page_numbers: [1, 2, 3, 4, 5], // Process up to 5 pages
+    });
+
+    console.log(`Converted PDF to ${imageBuffers.length} images`);
+
+    let allTransactions = '';
+
+    // Process each page with GPT-4 Vision
+    for (let i = 0; i < imageBuffers.length; i++) {
+      const pageNum = i + 1;
+      console.log(`Processing page ${pageNum}/${imageBuffers.length}...`);
+
+      // Convert buffer to base64
+      const base64Image = Buffer.from(imageBuffers[i]).toString('base64');
+
+      // Use GPT-4 Vision to extract transaction data
+      const response = await openai.chat.completions.create({
+        model: 'gpt-4o',
+        messages: [
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'text',
+                text: `Extract ALL transaction data from this bank statement page ${pageNum}.
 
 For each transaction, provide:
 - Date (YYYY-MM-DD format)
@@ -46,23 +65,27 @@ Format each transaction on a new line like:
 2024-08-15 | Paycheck Deposit | +3500.00
 2024-08-16 | Grocery Store | -125.50
 
-Be thorough and extract EVERY transaction visible in the PDF.`,
-            },
-            {
-              type: 'image_url',
-              image_url: {
-                url: `data:application/pdf;base64,${base64Pdf}`,
+Be thorough and extract EVERY transaction visible on this page.`,
               },
-            },
-          ],
-        },
-      ],
-      max_tokens: 4096,
-    });
+              {
+                type: 'image_url',
+                image_url: {
+                  url: `data:image/png;base64,${base64Image}`,
+                },
+              },
+            ],
+          },
+        ],
+        max_tokens: 4096,
+      });
 
-    const extractedText = response.choices[0]?.message?.content || '';
-    console.log(`Successfully extracted transaction data from PDF`);
-    return extractedText;
+      const pageTransactions = response.choices[0]?.message?.content || '';
+      allTransactions += pageTransactions + '\n\n';
+      console.log(`Extracted transactions from page ${pageNum}`);
+    }
+
+    console.log(`Successfully extracted transaction data from all ${imageBuffers.length} pages`);
+    return allTransactions;
   } catch (error) {
     console.error('Error extracting PDF text:', error);
     throw new Error('Failed to extract text from PDF');
