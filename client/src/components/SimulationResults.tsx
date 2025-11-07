@@ -6,6 +6,7 @@ interface SimulationResultsProps {
   mortgageDetails: MortgageDetails;
   onReset: () => void;
   onGenerateReport?: () => void;
+  onCreateProposal?: () => void;
 }
 
 export default function SimulationResults({
@@ -13,6 +14,7 @@ export default function SimulationResults({
   mortgageDetails: _mortgageDetails,
   onReset,
   onGenerateReport,
+  onCreateProposal,
 }: SimulationResultsProps) {
   const formatCurrency = (amount: number): string => {
     return new Intl.NumberFormat('en-US', {
@@ -190,6 +192,14 @@ export default function SimulationResults({
 
       {/* Action Buttons */}
       <div className="results-actions">
+        {onCreateProposal && (
+          <button className="btn-primary" onClick={onCreateProposal}>
+            <svg className="btn-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            Create Client Proposal
+          </button>
+        )}
         {onGenerateReport && (
           <button className="btn-secondary" onClick={onGenerateReport}>
             <svg className="btn-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -198,7 +208,7 @@ export default function SimulationResults({
             Download Report (Coming Soon)
           </button>
         )}
-        <button className="btn-primary" onClick={onReset}>
+        <button className="btn-secondary" onClick={onReset}>
           <svg className="btn-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
           </svg>

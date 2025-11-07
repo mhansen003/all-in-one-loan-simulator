@@ -8,6 +8,7 @@ import FileUpload from './components/FileUpload';
 // import LoanComparisonTabs from './components/LoanComparisonTabs';
 import CashFlowReview from './components/CashFlowReview';
 import SimulationResults from './components/SimulationResults';
+import ProposalBuilder from './components/ProposalBuilder';
 import FAQSlideout from './components/FAQSlideout';
 import PitchGuideModal from './components/PitchGuideModal';
 import { analyzeStatements, checkEligibility, simulateLoan } from './api';
@@ -333,6 +334,17 @@ function App() {
                 simulation={simulationResult}
                 mortgageDetails={mortgageDetails as MortgageDetails}
                 onReset={handleReset}
+                onCreateProposal={() => setStep('proposal-builder')}
+              />
+            </div>
+          )}
+
+          {step === 'proposal-builder' && simulationResult && (
+            <div className="section-card">
+              <ProposalBuilder
+                simulation={simulationResult}
+                mortgageDetails={mortgageDetails as MortgageDetails}
+                onBack={() => setStep('results')}
               />
             </div>
           )}

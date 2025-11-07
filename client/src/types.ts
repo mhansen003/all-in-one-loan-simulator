@@ -105,7 +105,8 @@ export type AppStep =
   | 'cash-flow-review'
   | 'eligibility'
   | 'simulation'
-  | 'results';
+  | 'results'
+  | 'proposal-builder';
 
 export interface AppState {
   currentStep: AppStep;

@@ -415,4 +415,105 @@ Be conversational, professional, and persuasive. Focus on the "why" not just the
   }
 });
 
+// Generate AI Sales Pitch for Proposal
+router.post('/generate-pitch', async (req, res) => {
+  try {
+    const { simulation, mortgageDetails, clientName } = req.body;
+
+    if (!simulation || !mortgageDetails) {
+      return res.status(400).json({
+        error: 'Missing required data',
+        message: 'Please provide simulation results and mortgage details',
+      });
+    }
+
+    const USE_OPENROUTER = process.env.USE_OPENROUTER === 'true';
+    const { default: OpenAI } = await import('openai');
+
+    const openai = USE_OPENROUTER
+      ? new OpenAI({
+          apiKey: process.env.OPENROUTER_API_KEY,
+          baseURL: 'https://openrouter.ai/api/v1',
+          defaultHeaders: {
+            'HTTP-Referer': process.env.YOUR_SITE_URL || 'https://aio-simulator.cmgfinancial.ai',
+            'X-Title': 'All-In-One Look Back Simulator',
+          },
+        })
+      : new OpenAI({
+          apiKey: process.env.OPENAI_API_KEY,
+        });
+
+    const MODEL = USE_OPENROUTER ? 'anthropic/claude-sonnet-4.5' : 'gpt-4o';
+
+    // Build context for the AI
+    const formatCurrency = (amount: number) =>
+      new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+      }).format(amount);
+
+    const yearsMonths = (months: number) => {
+      const years = Math.floor(months / 12);
+      const mos = months % 12;
+      return years > 0 ? `${years} year${years > 1 ? 's' : ''}${mos > 0 ? ` ${mos} months` : ''}` : `${mos} months`;
+    };
+
+    const interestSavings = formatCurrency(simulation.comparison.interestSavings);
+    const timeSaved = yearsMonths(simulation.comparison.timeSavedMonths);
+    const loanBalance = formatCurrency(mortgageDetails.currentBalance);
+    const percentageSavings = simulation.comparison.percentageSavings.toFixed(1);
+
+    const prompt = `You are a professional mortgage loan officer at CMG Financial. Write a compelling, personalized sales pitch for ${clientName} about the All-In-One loan product based on their specific financial situation.
+
+KEY BENEFITS TO HIGHLIGHT:
+- They will save ${interestSavings} in total interest (${percentageSavings}% reduction)
+- They will pay off their mortgage ${timeSaved} faster
+- Current loan balance: ${loanBalance}
+- The All-In-One works like a checking account - deposits reduce interest immediately
+- Full flexibility - funds remain accessible unlike traditional extra payments
+- No prepayment penalties
+
+TONE:
+- Professional but conversational
+- Enthusiastic about the savings opportunity
+- Focus on the "why" not just the numbers
+- Address ${clientName} directly
+- Keep it concise (2-3 paragraphs, around 150-200 words)
+
+Write a compelling pitch that would excite ${clientName} about this opportunity. Focus on the life-changing impact of saving ${interestSavings} and paying off the mortgage ${timeSaved} earlier.`;
+
+    const completion = await openai.chat.completions.create({
+      model: MODEL,
+      messages: [
+        {
+          role: 'system',
+          content:
+            'You are an expert loan officer specializing in All-In-One mortgages. Write compelling, personalized sales pitches that help clients understand the transformational benefits of this product.',
+        },
+        {
+          role: 'user',
+          content: prompt,
+        },
+      ],
+      temperature: 0.7,
+      max_tokens: 500,
+    });
+
+    const pitch = completion.choices[0]?.message?.content || 'Unable to generate pitch. Please try again.';
+
+    res.json({
+      pitch,
+      message: 'Sales pitch generated successfully',
+    });
+  } catch (error: any) {
+    console.error('Error generating pitch:', error);
+    res.status(500).json({
+      error: 'Pitch generation failed',
+      message: error.message || 'Failed to generate sales pitch',
+    });
+  }
+});
+
 export default router;
