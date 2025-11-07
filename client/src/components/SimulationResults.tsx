@@ -1,21 +1,32 @@
-import type { SimulationResult, MortgageDetails } from '../types';
+import { useState } from 'react';
+import type { SimulationResult, MortgageDetails, CashFlowAnalysis } from '../types';
+import CashFlowReview from './CashFlowReview';
 import './SimulationResults.css';
 
 interface SimulationResultsProps {
   simulation: SimulationResult;
   mortgageDetails: MortgageDetails;
+  cashFlow?: CashFlowAnalysis;
+  depositFrequency?: 'monthly' | 'biweekly' | 'weekly';
   onReset: () => void;
   onGenerateReport?: () => void;
   onCreateProposal?: () => void;
+  onCashFlowUpdate?: (cashFlow: CashFlowAnalysis) => void;
 }
+
+type TabView = 'results' | 'cashflow';
 
 export default function SimulationResults({
   simulation,
   mortgageDetails: _mortgageDetails,
+  cashFlow,
+  depositFrequency = 'monthly',
   onReset,
   onGenerateReport,
   onCreateProposal,
+  onCashFlowUpdate,
 }: SimulationResultsProps) {
+  const [activeTab, setActiveTab] = useState<TabView>('results');
   const formatCurrency = (amount: number): string => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -50,22 +61,64 @@ export default function SimulationResults({
         <p>Compare traditional mortgage vs All-In-One loan with cash flow offset</p>
       </div>
 
-      {/* Savings Highlight */}
+      {/* Tab Navigation */}
+      {cashFlow && (
+        <div className="results-tabs">
+          <button
+            className={`results-tab ${activeTab === 'results' ? 'active' : ''}`}
+            onClick={() => setActiveTab('results')}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            </svg>
+            Loan Comparison
+          </button>
+          <button
+            className={`results-tab ${activeTab === 'cashflow' ? 'active' : ''}`}
+            onClick={() => setActiveTab('cashflow')}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            Cash Flow Analysis
+          </button>
+        </div>
+      )}
+
+      {/* Primary CTA - Create Proposal */}
+      {onCreateProposal && (
+        <div className="primary-cta-container">
+          <button className="btn-primary-cta" onClick={onCreateProposal}>
+            <svg className="btn-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            Create Client Proposal
+            <svg className="btn-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+        </div>
+      )}
+
+      {/* Tab Content */}
+      {activeTab === 'results' && (
+        <>
+          {/* Savings Highlight */}
       <div className="savings-highlight">
         <div className="highlight-content">
           <div className="highlight-main">
             <div className="highlight-label">Total Interest Savings</div>
-            <div className="highlight-value">{formatCurrency(simulation.comparison.interestSavings)}</div>
+            <div className="highlight-value">{formatCurrency(Math.max(0, simulation.comparison.interestSavings))}</div>
           </div>
           <div className="highlight-stats">
             <div className="stat-item">
               <span className="stat-label">Time Saved</span>
-              <span className="stat-value">{yearsMonthsFromMonths(simulation.comparison.timeSavedMonths)}</span>
+              <span className="stat-value">{yearsMonthsFromMonths(Math.max(0, simulation.comparison.timeSavedMonths))}</span>
             </div>
             <div className="stat-divider"></div>
             <div className="stat-item">
               <span className="stat-label">Interest Reduction</span>
-              <span className="stat-value">{simulation.comparison.percentageSavings.toFixed(1)}%</span>
+              <span className="stat-value">{Math.max(0, simulation.comparison.percentageSavings).toFixed(1)}%</span>
             </div>
           </div>
         </div>
@@ -123,7 +176,7 @@ export default function SimulationResults({
                 <span className="metric-label">Total Interest Paid</span>
                 <span className="metric-value savings">
                   {formatCurrency(simulation.allInOneLoan.totalInterestPaid)}
-                  <span className="savings-badge">Save {formatCurrency(simulation.allInOneLoan.interestSavings!)}</span>
+                  <span className="savings-badge">Save {formatCurrency(Math.max(0, simulation.allInOneLoan.interestSavings || 0))}</span>
                 </span>
               </div>
 
@@ -131,7 +184,7 @@ export default function SimulationResults({
                 <span className="metric-label">Payoff Timeline</span>
                 <span className="metric-value savings">
                   {yearsMonthsFromMonths(simulation.allInOneLoan.payoffMonths)}
-                  <span className="savings-badge">{yearsMonthsFromMonths(simulation.allInOneLoan.monthsSaved!)} faster</span>
+                  <span className="savings-badge">{yearsMonthsFromMonths(Math.max(0, simulation.allInOneLoan.monthsSaved || 0))} faster</span>
                 </span>
               </div>
 
@@ -171,7 +224,7 @@ export default function SimulationResults({
             <h3>Accelerated Payoff</h3>
             <p>
               Every dollar that stays in your account works to reduce interest. You'll
-              pay off your mortgage {yearsMonthsFromMonths(simulation.comparison.timeSavedMonths)} faster.
+              pay off your mortgage {yearsMonthsFromMonths(Math.max(0, simulation.comparison.timeSavedMonths))} faster.
             </p>
           </div>
 
@@ -190,16 +243,8 @@ export default function SimulationResults({
         </div>
       </div>
 
-      {/* Action Buttons */}
+      {/* Secondary Action Buttons */}
       <div className="results-actions">
-        {onCreateProposal && (
-          <button className="btn-primary" onClick={onCreateProposal}>
-            <svg className="btn-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-            Create Client Proposal
-          </button>
-        )}
         {onGenerateReport && (
           <button className="btn-secondary" onClick={onGenerateReport}>
             <svg className="btn-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -215,6 +260,21 @@ export default function SimulationResults({
           New Simulation
         </button>
       </div>
+        </>
+      )}
+
+      {/* Cash Flow Analysis Tab */}
+      {activeTab === 'cashflow' && cashFlow && (
+        <div className="cashflow-tab-content">
+          <CashFlowReview
+            cashFlow={cashFlow}
+            depositFrequency={depositFrequency}
+            onContinue={() => setActiveTab('results')}
+            onBack={() => setActiveTab('results')}
+            onCashFlowUpdate={onCashFlowUpdate}
+          />
+        </div>
+      )}
     </div>
   );
 }

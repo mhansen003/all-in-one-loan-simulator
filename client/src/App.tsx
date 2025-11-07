@@ -339,8 +339,11 @@ function App() {
               <SimulationResults
                 simulation={simulationResult}
                 mortgageDetails={mortgageDetails as MortgageDetails}
+                cashFlow={cashFlowAnalysis || undefined}
+                depositFrequency={depositFrequency}
                 onReset={handleReset}
                 onCreateProposal={() => setStep('proposal-builder')}
+                onCashFlowUpdate={setCashFlowAnalysis}
               />
             </div>
           )}

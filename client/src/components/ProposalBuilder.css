@@ -48,8 +48,19 @@
 }
 
 /* Personalization Section */
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  margin-bottom: 1.25rem;
+}
+
 .form-group {
   margin-bottom: 1.25rem;
+}
+
+.form-row .form-group {
+  margin-bottom: 0;
 }
 
 .form-group:last-child {
@@ -304,6 +315,11 @@
 @media (max-width: 768px) {
   .proposal-builder {
     padding: 1rem;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+    gap: 1rem;
   }
 
   .section-header-with-action {

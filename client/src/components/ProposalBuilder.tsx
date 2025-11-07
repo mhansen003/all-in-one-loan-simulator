@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import {
   DndContext,
   closestCenter,
@@ -16,6 +16,7 @@ import {
   useSortable,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import html2pdf from 'html2pdf.js';
 import type { SimulationResult, MortgageDetails } from '../types';
 import './ProposalBuilder.css';
 
@@ -94,6 +95,10 @@ export default function ProposalBuilder({
   // AI Pitch state
   const [aiPitch, setAiPitch] = useState('');
   const [isGeneratingPitch, setIsGeneratingPitch] = useState(false);
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+
+  // PDF content ref
+  const pdfContentRef = useRef<HTMLDivElement>(null);
 
   // Available components (pitch is mandatory and always at top)
   const [components, setComponents] = useState<ProposalComponent[]>([
@@ -182,9 +187,27 @@ export default function ProposalBuilder({
     }
   };
 
-  const handleGeneratePDF = () => {
-    // TODO: Implement PDF generation with html2pdf.js
-    alert('PDF generation coming soon!');
+  const handleGeneratePDF = async () => {
+    if (!pdfContentRef.current) return;
+
+    setIsGeneratingPDF(true);
+
+    try {
+      const opt = {
+        margin: 0.5,
+        filename: `${clientName || 'Client'}-AIO-Proposal.pdf`,
+        image: { type: 'jpeg' as const, quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+        jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' as const },
+      };
+
+      await html2pdf().set(opt).from(pdfContentRef.current).save();
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      alert('Failed to generate PDF. Please try again.');
+    } finally {
+      setIsGeneratingPDF(false);
+    }
   };
 
   const formatCurrency = (amount: number): string => {
@@ -220,28 +243,30 @@ export default function ProposalBuilder({
           <h2>Client Information</h2>
           <p className="section-description">Personalize the proposal for your client</p>
 
-          <div className="form-group">
-            <label htmlFor="clientName">Client Name</label>
-            <input
-              id="clientName"
-              type="text"
-              className="form-input"
-              placeholder="Enter client's name"
-              value={clientName}
-              onChange={(e) => setClientName(e.target.value)}
-            />
-          </div>
+          <div className="form-row">
+            <div className="form-group">
+              <label htmlFor="clientName">Client Name</label>
+              <input
+                id="clientName"
+                type="text"
+                className="form-input"
+                placeholder="Enter client's name"
+                value={clientName}
+                onChange={(e) => setClientName(e.target.value)}
+              />
+            </div>
 
-          <div className="form-group">
-            <label htmlFor="clientEmail">Client Email (optional)</label>
-            <input
-              id="clientEmail"
-              type="email"
-              className="form-input"
-              placeholder="client@example.com"
-              value={clientEmail}
-              onChange={(e) => setClientEmail(e.target.value)}
-            />
+            <div className="form-group">
+              <label htmlFor="clientEmail">Client Email (optional)</label>
+              <input
+                id="clientEmail"
+                type="email"
+                className="form-input"
+                placeholder="client@example.com"
+                value={clientEmail}
+                onChange={(e) => setClientEmail(e.target.value)}
+              />
+            </div>
           </div>
         </div>
 
@@ -362,14 +387,124 @@ export default function ProposalBuilder({
           <button
             className="btn-primary"
             onClick={handleGeneratePDF}
-            disabled={!aiPitch}
+            disabled={!aiPitch || isGeneratingPDF}
             title={!aiPitch ? 'Generate AI pitch first' : ''}
           >
-            <svg className="btn-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-            Generate PDF Proposal
+            {isGeneratingPDF ? (
+              <>
+                <div className="spinner-small"></div>
+                Generating PDF...
+              </>
+            ) : (
+              <>
+                <svg className="btn-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                Generate PDF Proposal
+              </>
+            )}
           </button>
+        </div>
+      </div>
+
+      {/* Hidden PDF Content */}
+      <div ref={pdfContentRef} className="pdf-content" style={{ position: 'absolute', left: '-9999px', width: '8.5in' }}>
+        <div style={{ padding: '0.75in', fontFamily: 'Arial, sans-serif', color: '#333' }}>
+          {/* Header */}
+          <div style={{ textAlign: 'center', marginBottom: '2rem', borderBottom: '3px solid #9bc53d', paddingBottom: '1rem' }}>
+            <h1 style={{ margin: 0, fontSize: '2rem', color: '#2d3748' }}>All-In-One Loan Proposal</h1>
+            {clientName && <h2 style={{ margin: '0.5rem 0 0 0', fontSize: '1.5rem', color: '#718096', fontWeight: 'normal' }}>Prepared for {clientName}</h2>}
+            <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.9rem', color: '#a0aec0' }}>{new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+          </div>
+
+          {/* AI Pitch */}
+          {aiPitch && (
+            <div style={{ marginBottom: '2rem', padding: '1.5rem', background: '#f0f9ff', border: '2px solid #9bc53d', borderRadius: '8px' }}>
+              <h3 style={{ margin: '0 0 1rem 0', color: '#2d3748', fontSize: '1.25rem' }}>Why the All-In-One Loan is Right for You</h3>
+              <div style={{ whiteSpace: 'pre-wrap', lineHeight: '1.6', fontSize: '0.95rem' }}>{aiPitch}</div>
+            </div>
+          )}
+
+          {/* Savings Highlight */}
+          {components.find((c) => c.id === 'savings-highlight')?.enabled && (
+            <div style={{ marginBottom: '2rem', padding: '2rem', background: 'linear-gradient(135deg, #9bc53d 0%, #8ab62f 100%)', borderRadius: '12px', color: 'white', textAlign: 'center' }}>
+              <div style={{ fontSize: '1rem', fontWeight: 600, opacity: 0.9, marginBottom: '0.5rem', textTransform: 'uppercase' }}>Total Interest Savings</div>
+              <div style={{ fontSize: '3rem', fontWeight: 700 }}>{formatCurrency(simulation.comparison.interestSavings)}</div>
+              <div style={{ display: 'flex', justifyContent: 'center', gap: '3rem', marginTop: '1.5rem' }}>
+                <div>
+                  <div style={{ fontSize: '0.85rem', opacity: 0.9 }}>Time Saved</div>
+                  <div style={{ fontSize: '1.4rem', fontWeight: 700 }}>{yearsMonthsFromMonths(simulation.comparison.timeSavedMonths)}</div>
+                </div>
+                <div style={{ borderLeft: '2px solid rgba(255,255,255,0.3)', paddingLeft: '3rem' }}>
+                  <div style={{ fontSize: '0.85rem', opacity: 0.9 }}>Interest Reduction</div>
+                  <div style={{ fontSize: '1.4rem', fontWeight: 700 }}>{simulation.comparison.percentageSavings.toFixed(1)}%</div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Comparison Cards */}
+          {components.find((c) => c.id === 'comparison-cards')?.enabled && (
+            <div style={{ marginBottom: '2rem' }}>
+              <h3 style={{ fontSize: '1.5rem', marginBottom: '1.5rem', textAlign: 'center', color: '#2d3748' }}>Side-by-Side Comparison</h3>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr style={{ background: '#f7fafc' }}>
+                    <th style={{ padding: '1rem', border: '2px solid #e2e8f0', textAlign: 'left' }}>Metric</th>
+                    <th style={{ padding: '1rem', border: '2px solid #e2e8f0', textAlign: 'left' }}>Traditional Mortgage</th>
+                    <th style={{ padding: '1rem', border: '2px solid #e2e8f0', textAlign: 'left', background: '#f0f9ff' }}>All-In-One Loan</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0', fontWeight: 600 }}>Monthly Payment</td>
+                    <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0' }}>{formatCurrency(simulation.traditionalLoan.monthlyPayment)}</td>
+                    <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0' }}>{formatCurrency(simulation.allInOneLoan.monthlyPayment)}</td>
+                  </tr>
+                  <tr>
+                    <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0', fontWeight: 600 }}>Total Interest Paid</td>
+                    <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0' }}>{formatCurrency(simulation.traditionalLoan.totalInterestPaid)}</td>
+                    <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0', background: '#f0f8e9', color: '#48bb78', fontWeight: 700 }}>{formatCurrency(simulation.allInOneLoan.totalInterestPaid)}</td>
+                  </tr>
+                  <tr>
+                    <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0', fontWeight: 600 }}>Payoff Timeline</td>
+                    <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0' }}>{yearsMonthsFromMonths(simulation.traditionalLoan.payoffMonths)}</td>
+                    <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0', background: '#f0f8e9', color: '#48bb78', fontWeight: 700 }}>{yearsMonthsFromMonths(simulation.allInOneLoan.payoffMonths)}</td>
+                  </tr>
+                  <tr>
+                    <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0', fontWeight: 600 }}>Payoff Date</td>
+                    <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0' }}>{new Date(simulation.traditionalLoan.payoffDate).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</td>
+                    <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0', background: '#f0f8e9', color: '#48bb78', fontWeight: 700 }}>{new Date(simulation.allInOneLoan.payoffDate).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {/* How It Works */}
+          {components.find((c) => c.id === 'how-it-works')?.enabled && (
+            <div style={{ marginBottom: '2rem' }}>
+              <h3 style={{ fontSize: '1.5rem', marginBottom: '1.5rem', textAlign: 'center', color: '#2d3748' }}>How the All-In-One Loan Works</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                <div style={{ padding: '1.5rem', border: '2px solid #e2e8f0', borderRadius: '8px' }}>
+                  <h4 style={{ margin: '0 0 0.75rem 0', color: '#2d3748' }}>💰 Cash Flow Offset</h4>
+                  <p style={{ margin: 0, fontSize: '0.9rem', lineHeight: '1.6' }}>Your positive cash flow sits in the loan account, reducing the balance used for interest calculations. This creates massive savings over time.</p>
+                </div>
+                <div style={{ padding: '1.5rem', border: '2px solid #e2e8f0', borderRadius: '8px' }}>
+                  <h4 style={{ margin: '0 0 0.75rem 0', color: '#2d3748' }}>📈 Accelerated Payoff</h4>
+                  <p style={{ margin: 0, fontSize: '0.9rem', lineHeight: '1.6' }}>Every dollar that stays in your account works to reduce interest. You'll pay off your mortgage {yearsMonthsFromMonths(simulation.comparison.timeSavedMonths)} faster.</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Footer */}
+          {includeFooter && (
+            <div style={{ marginTop: '3rem', paddingTop: '1.5rem', borderTop: '2px solid #e2e8f0', textAlign: 'center', fontSize: '0.85rem', color: '#718096' }}>
+              <p style={{ margin: 0 }}>This proposal was generated using professional loan analysis software.</p>
+              <p style={{ margin: '0.5rem 0 0 0' }}>For questions or to proceed, please contact your loan officer.</p>
+            </div>
+          )}
         </div>
       </div>
     </div>

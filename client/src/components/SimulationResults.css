@@ -38,6 +38,93 @@
   font-size: 1.1rem;
 }
 
+/* Tab Navigation */
+.results-tabs {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 2rem;
+  border-bottom: 3px solid #e2e8f0;
+  justify-content: center;
+}
+
+.results-tab {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem 2rem;
+  background: none;
+  border: none;
+  border-bottom: 4px solid transparent;
+  color: #718096;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-bottom: -3px;
+}
+
+.results-tab svg {
+  width: 20px;
+  height: 20px;
+}
+
+.results-tab:hover {
+  color: #2d3748;
+  background: #f7fafc;
+}
+
+.results-tab.active {
+  color: #3b82f6;
+  border-bottom-color: #3b82f6;
+}
+
+/* Cash Flow Tab Content */
+.cashflow-tab-content {
+  padding-top: 1rem;
+}
+
+/* Primary CTA */
+.primary-cta-container {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 2.5rem;
+}
+
+.btn-primary-cta {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: white;
+  border: none;
+  padding: 1.25rem 3rem;
+  border-radius: 12px;
+  font-size: 1.25rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  box-shadow: 0 10px 30px rgba(59, 130, 246, 0.4);
+  transition: all 0.3s ease;
+  text-transform: none;
+  letter-spacing: 0.3px;
+}
+
+.btn-primary-cta:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 15px 40px rgba(59, 130, 246, 0.5);
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+}
+
+.btn-primary-cta:active {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px rgba(59, 130, 246, 0.4);
+}
+
+.btn-primary-cta .btn-icon {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
 /* Savings Highlight */
 .savings-highlight {
   background: linear-gradient(135deg, #9bc53d 0%, #8ab62f 100%);
@@ -345,5 +432,11 @@
 
   .results-actions button {
     width: 100%;
+  }
+
+  .btn-primary-cta {
+    width: 100%;
+    padding: 1rem 1.5rem;
+    font-size: 1.1rem;
   }
 }

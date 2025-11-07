@@ -183,6 +183,9 @@ function calculateAllInOneLoan(
   let intAccrual = 0; // Running interest accrual
   let monthlyStartBal = currentBalance; // Balance at start of month
 
+  // Track posted interest to be paid 21 days later
+  const postedInterest: Map<number, number> = new Map(); // Maps day index to interest amount
+
   let payoffDay = -1;
 
   for (let t = 0; t < calendar.length; t++) {
@@ -215,12 +218,14 @@ function calculateAllInOneLoan(
     let intPosted = 0;
     if (day.lastDayOfMonth) {
       intPosted = intAccrual;
+      // Schedule this interest to be paid 21 days from now
+      postedInterest.set(t + 21, intPosted);
     }
 
     // Interest payment (21 days after posting - matches AIO Widget line 780-782)
     let intPaid = 0;
-    if (day.dayOfMonth === 21 && t >= 21 && calendar[t - 21]?.lastDayOfMonth) {
-      intPaid = calendar[t - 21] ? intAccrual : 0; // Pay interest from 21 days ago
+    if (postedInterest.has(t)) {
+      intPaid = postedInterest.get(t) || 0;
     }
 
     // Ending balance for the day
@@ -251,9 +256,9 @@ function calculateAllInOneLoan(
   // Calculate payoff date
   const payoffDate = payoffDay >= 0 ? calendar[payoffDay].date : new Date(startDate.getTime() + maxMonths * 30.44 * 24 * 60 * 60 * 1000);
 
-  // Calculate months to payoff
+  // Calculate months to payoff - use actual month count from calendar
   const payoffMonths = payoffDay >= 0
-    ? Math.ceil(payoffDay / 30.44)
+    ? calendar[payoffDay].monthNum + 1  // +1 because monthNum is 0-indexed
     : maxMonths;
 
   return {
