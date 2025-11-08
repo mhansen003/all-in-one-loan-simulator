@@ -972,3 +972,123 @@
     padding: 0.75rem;
   }
 }
+
+/* Existing Analysis Banner */
+.existing-analysis-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.25rem;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+  border: 3px solid #10b981;
+  border-radius: 12px;
+  margin-bottom: 2rem;
+  animation: fadeInSlide 0.4s ease;
+}
+
+@keyframes fadeInSlide {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.existing-analysis-banner .banner-icon {
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  background: #10b981;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.existing-analysis-banner .banner-icon svg {
+  width: 28px;
+  height: 28px;
+}
+
+.existing-analysis-banner .banner-content {
+  flex: 1;
+}
+
+.existing-analysis-banner h3 {
+  margin: 0 0 0.5rem 0;
+  color: #065f46;
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.existing-analysis-banner p {
+  margin: 0 0 1rem 0;
+  color: #047857;
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+.existing-analysis-banner .banner-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+
+.btn-continue-review {
+  padding: 0.875rem 1.75rem;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.btn-continue-review:hover {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+}
+
+.btn-continue-review .btn-icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.banner-divider {
+  font-size: 0.875rem;
+  color: #047857;
+  font-style: italic;
+}
+
+@media (max-width: 768px) {
+  .existing-analysis-banner {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 1.25rem;
+  }
+
+  .existing-analysis-banner .banner-actions {
+    width: 100%;
+    align-items: center;
+  }
+
+  .btn-continue-review {
+    width: 100%;
+    justify-content: center;
+  }
+}

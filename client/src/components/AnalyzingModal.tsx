@@ -126,34 +126,6 @@ export default function AnalyzingModal({ fileCount }: AnalyzingModalProps) {
             </div>
           </div>
 
-          {/* Features List */}
-          <div className="analyzing-features">
-            <div className="feature-item">
-              <svg className="feature-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <span>Extracting all transactions</span>
-            </div>
-            <div className="feature-item">
-              <svg className="feature-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <span>Categorizing income & expenses</span>
-            </div>
-            <div className="feature-item">
-              <svg className="feature-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <span>Detecting irregular transactions</span>
-            </div>
-            <div className="feature-item">
-              <svg className="feature-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <span>Calculating monthly averages</span>
-            </div>
-          </div>
-
           {/* FAQ Tips Carousel */}
           <div className="tips-carousel">
             <div className="tip-content-wrapper">

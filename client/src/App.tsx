@@ -296,6 +296,8 @@ function App() {
                 onSubmit={handleAnalyzeStatements}
                 onBack={() => setStep('mortgage-details')}
                 isAnalyzing={isAnalyzing}
+                existingAnalysis={cashFlowAnalysis}
+                onSkipToReview={() => setStep('cash-flow-review')}
               />
             </div>
           )}

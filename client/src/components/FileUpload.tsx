@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
+import type { CashFlowAnalysis } from '../types';
 import './FileUpload.css';
 
 interface FileUploadProps {
@@ -8,6 +9,8 @@ interface FileUploadProps {
   onSubmit: () => void;
   onBack?: () => void;
   isAnalyzing?: boolean;
+  existingAnalysis?: CashFlowAnalysis | null;
+  onSkipToReview?: () => void;
 }
 
 export default function FileUpload({
@@ -16,6 +19,8 @@ export default function FileUpload({
   onSubmit,
   onBack,
   isAnalyzing = false,
+  existingAnalysis,
+  onSkipToReview,
 }: FileUploadProps) {
   const [selectedFiles, setSelectedFiles] = useState<File[]>(files);
   const [isProcessingPdf, setIsProcessingPdf] = useState(false);
@@ -98,6 +103,37 @@ export default function FileUpload({
           PDFs are automatically converted to images for processing.
         </p>
       </div>
+
+      {/* Existing Analysis Banner */}
+      {existingAnalysis && onSkipToReview && (
+        <div className="existing-analysis-banner">
+          <div className="banner-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <div className="banner-content">
+            <h3>Analysis Already Complete</h3>
+            <p>
+              You've already analyzed your bank statements ({existingAnalysis.transactions?.length || 0} transactions found).
+              You can continue to review or upload new files to re-analyze.
+            </p>
+            <div className="banner-actions">
+              <button
+                type="button"
+                className="btn-continue-review"
+                onClick={onSkipToReview}
+              >
+                <svg className="btn-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+                Continue to Review
+              </button>
+              <span className="banner-divider">or upload new files below to re-analyze</span>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div
         {...getRootProps()}
