@@ -14,15 +14,25 @@ import type { MortgageDetails, CashFlowAnalysis, SimulationResult, LoanProjectio
  *
  * This daily calculation creates significant interest savings compared to
  * traditional mortgages where interest is calculated monthly on full balance.
+ *
+ * ⚠️ IMPORTANT - CALCULATION VALIDATION REQUIRED ⚠️
+ * ====================================================
+ * These calculations MUST match the existing CMG All-In-One simulator EXACTLY.
+ *
+ * TODO: Obtain C# source code from existing production simulator to ensure:
+ * 1. Traditional loan amortization formula matches exactly
+ * 2. All-In-One daily interest calculation matches exactly
+ * 3. Cash flow offset logic matches exactly
+ * 4. Payoff projections match exactly
+ * 5. Interest savings calculations match exactly
+ *
+ * Per Paul's requirement: "What I don't wanna have happen Mark, is that on the
+ * simulator you get a different response than in here, so it needs to be the
+ * exact calculation."
+ *
+ * Contact: Paul Akinmade or CMG Dev Team for C# source code
+ * ====================================================
  */
-
-interface DailyBalance {
-  date: Date;
-  loanBalance: number;
-  cashAvailable: number;
-  effectiveBalance: number;
-  dailyInterest: number;
-}
 
 interface MonthlySnapshot {
   month: number;
@@ -78,25 +88,43 @@ function calculateTraditionalLoan(mortgage: MortgageDetails): LoanProjection {
  * - Deposits at beginning of month (income)
  * - Withdrawals throughout month (expenses)
  * - Cash sits in account reducing effective balance
+ * - Interest accrues daily on effective balance
+ * - Net cash flow permanently reduces principal at month end
+ *
+ * Formula (per CMG spreadsheet):
+ * New Balance = Starting Balance + Interest Accrued - Net Cash Flow
+ * where Net Cash Flow = Monthly Income - Monthly Expenses
  */
 function simulateMonthlyDailyBalances(
   startingBalance: number,
-  monthlyPayment: number,
   monthlyIncome: number,
   monthlyExpenses: number,
   annualRate: number,
-  daysInMonth: number
-): { totalInterest: number; endBalance: number; avgCashOffset: number } {
+  daysInMonth: number,
+  monthNumber: number = 0,
+  debugMode: boolean = false
+): { totalInterest: number; endBalance: number; avgCashOffset: number; principalReduction: number; netCashFlow: number } {
   const dailyRate = annualRate / 100 / 365;
+  const netCashFlow = monthlyIncome - monthlyExpenses;
 
   let loanBalance = startingBalance;
   let totalInterest = 0;
   let totalCashOffset = 0;
 
-  // Simulate cash flow pattern:
+  if (debugMode && monthNumber <= 12) {
+    console.log(`\n  📅 Month ${monthNumber} Daily Simulation:`);
+    console.log(`     Starting Balance: $${startingBalance.toFixed(2)}`);
+    console.log(`     Monthly Income: $${monthlyIncome.toFixed(2)}`);
+    console.log(`     Monthly Expenses: $${monthlyExpenses.toFixed(2)}`);
+    console.log(`     Net Cash Flow: $${netCashFlow.toFixed(2)}`);
+    console.log(`     Annual Rate: ${annualRate.toFixed(3)}%`);
+    console.log(`     Daily Rate: ${(dailyRate * 100).toFixed(6)}%`);
+  }
+
+  // Simulate daily cash flow pattern:
   // - Income deposits at start of month
   // - Expenses withdrawn gradually throughout month
-  // - Monthly payment applied at end of month
+  // - Cash sitting in account offsets balance for interest calculation
 
   for (let day = 1; day <= daysInMonth; day++) {
     // Calculate cash available in account (deposits - expenses so far)
@@ -115,19 +143,38 @@ function simulateMonthlyDailyBalances(
 
     totalInterest += dailyInterest;
     totalCashOffset += cashAvailable;
+
+    // Debug logging for first few days of first few months
+    if (debugMode && monthNumber <= 3 && day <= 5) {
+      console.log(`     Day ${day}: Cash=$${cashAvailable.toFixed(2)}, Effective=$${effectiveBalance.toFixed(2)}, Interest=$${dailyInterest.toFixed(2)}`);
+    }
   }
 
-  // At month end: Apply monthly payment
+  // At month end: Apply the AIO formula from spreadsheet
+  // New Balance = Starting Balance + Interest - Net Cash Flow
   const interestCharged = totalInterest;
-  const principalReduction = monthlyPayment - interestCharged;
-
-  const endBalance = Math.max(0, loanBalance - principalReduction);
+  const endBalance = Math.max(0, startingBalance + interestCharged - netCashFlow);
+  const principalReduction = startingBalance - endBalance;
   const avgCashOffset = totalCashOffset / daysInMonth;
+
+  if (debugMode && monthNumber <= 12) {
+    console.log(`     ─────────────────────────────────────────────`);
+    console.log(`     📊 Month ${monthNumber} Summary:`);
+    console.log(`     Starting Balance: $${startingBalance.toFixed(2)}`);
+    console.log(`     + Interest Accrued: $${interestCharged.toFixed(2)}`);
+    console.log(`     - Net Cash Flow: $${netCashFlow.toFixed(2)}`);
+    console.log(`     = Ending Balance: $${endBalance.toFixed(2)}`);
+    console.log(`     Principal Reduction: $${principalReduction.toFixed(2)}`);
+    console.log(`     Avg Cash Offset: $${avgCashOffset.toFixed(2)}`);
+    console.log(`     ─────────────────────────────────────────────`);
+  }
 
   return {
     totalInterest: interestCharged,
     endBalance,
     avgCashOffset,
+    principalReduction,
+    netCashFlow,
   };
 }
 
@@ -138,17 +185,27 @@ function simulateMonthlyDailyBalances(
  * 1. Interest calculated DAILY, not monthly
  * 2. Available cash offsets the balance for interest calculation
  * 3. More accurate modeling of real-world cash flow patterns
- * 4. Uses AIO-specific interest rate (typically lower than traditional)
  */
 function calculateAllInOneLoan(
   mortgage: MortgageDetails,
   cashFlow: CashFlowAnalysis
 ): LoanProjection {
-  const { currentBalance, aioInterestRate, monthlyPayment } = mortgage;
-  const { totalIncome, totalExpenses, netCashFlow } = cashFlow;
+  const { currentBalance, interestRate } = mortgage;
+  const { totalIncome, totalExpenses, monthlyBreakdown } = cashFlow;
 
-  // Use AIO interest rate if provided, fallback to traditional rate
-  const effectiveRate = aioInterestRate || mortgage.interestRate;
+  // ⚠️ CRITICAL FIX: Calculate MONTHLY averages from totals
+  // The cashFlow object has TOTALS across all months of data
+  // We need MONTHLY averages for the simulation
+  const monthsOfData = monthlyBreakdown?.length || 1;
+  const monthlyIncome = totalIncome / monthsOfData;
+  const monthlyExpenses = totalExpenses / monthsOfData;
+
+  console.log(`\n🧮 [AIO CALC] Cash Flow Analysis:`);
+  console.log(`   Total Income (${monthsOfData} months): $${totalIncome.toFixed(2)}`);
+  console.log(`   Total Expenses (${monthsOfData} months): $${totalExpenses.toFixed(2)}`);
+  console.log(`   MONTHLY Income: $${monthlyIncome.toFixed(2)}`);
+  console.log(`   MONTHLY Expenses: $${monthlyExpenses.toFixed(2)}`);
+  console.log(`   MONTHLY Net Cash Flow: $${(monthlyIncome - monthlyExpenses).toFixed(2)}`);
 
   let balance = currentBalance;
   let totalInterest = 0;
@@ -158,37 +215,58 @@ function calculateAllInOneLoan(
   // Average days per month
   const avgDaysPerMonth = 30.42;
 
+  // Enable debug mode for first 3 months
+  const debugMode = true;
+
+  console.log(`\n🔄 [AIO CALC] Starting Monthly Simulation...`);
+  console.log(`   Formula: New Balance = Starting Balance + Interest - Net Cash Flow`);
+
   while (balance > 0.01 && monthsToPayoff < maxMonths) {
     // Simulate this month with daily calculations
     const monthResult = simulateMonthlyDailyBalances(
       balance,
-      monthlyPayment,
-      totalIncome,
-      totalExpenses,
-      effectiveRate,
-      avgDaysPerMonth
+      monthlyIncome,    // FIXED: Using monthly average, not total
+      monthlyExpenses,  // FIXED: Using monthly average, not total
+      interestRate,
+      avgDaysPerMonth,
+      monthsToPayoff + 1,
+      debugMode
     );
 
     totalInterest += monthResult.totalInterest;
     balance = monthResult.endBalance;
     monthsToPayoff++;
 
-    // Safety check
-    if (monthResult.totalInterest > monthlyPayment * 0.99) {
-      // Payment barely covers interest - would take too long
-      if (monthsToPayoff > 180) {
-        // After 15 years, if still not making progress, cap it
-        break;
-      }
+    // Safety check: If net cash flow is negative or zero, loan will never pay off
+    if (monthResult.netCashFlow <= 0) {
+      console.log(`   ⚠️  Stopping at month ${monthsToPayoff}: Net cash flow is not positive ($${monthResult.netCashFlow.toFixed(2)})`);
+      console.log(`   ⚠️  Income ($${monthlyIncome.toFixed(2)}) must exceed expenses ($${monthlyExpenses.toFixed(2)}) for loan to pay off`);
+      break;
+    }
+
+    // If principal reduction is very small, warn after 180 months
+    if (monthResult.principalReduction < 10 && monthsToPayoff > 180) {
+      console.log(`   ⚠️  Stopping at month ${monthsToPayoff}: Minimal principal reduction ($${monthResult.principalReduction.toFixed(2)}/month)`);
+      break;
     }
   }
+
+  console.log(`\n✅ [AIO CALC] Simulation Complete:`);
+  console.log(`   Months to Payoff: ${monthsToPayoff}`);
+  console.log(`   Total Interest Paid: $${totalInterest.toFixed(2)}`);
+  console.log(`   Final Balance: $${balance.toFixed(2)}`);
+  console.log(`   Average Monthly Net Cash Flow: $${(monthlyIncome - monthlyExpenses).toFixed(2)}`);
 
   const payoffDate = new Date();
   payoffDate.setMonth(payoffDate.getMonth() + monthsToPayoff);
 
+  // For AIO loans, the "monthly payment" is effectively the net cash flow
+  // (income - expenses) that reduces the balance each month
+  const effectiveMonthlyPayment = monthlyIncome - monthlyExpenses;
+
   return {
     type: 'all-in-one',
-    monthlyPayment,
+    monthlyPayment: effectiveMonthlyPayment,
     totalInterestPaid: totalInterest,
     payoffDate,
     payoffMonths: monthsToPayoff,
@@ -215,14 +293,36 @@ export function simulateLoan(
     throw new Error('Loan balance must be greater than zero');
   }
 
+  // Debug logging for inputs
+  console.log('💰 [LOAN CALC] Simulation Inputs:');
+  console.log(`  Loan Balance: $${mortgage.currentBalance.toFixed(2)}`);
+  console.log(`  Interest Rate: ${mortgage.interestRate.toFixed(3)}%`);
+  console.log(`  Monthly Payment: $${mortgage.monthlyPayment.toFixed(2)}`);
+  console.log(`  Total Income: $${cashFlow.totalIncome.toFixed(2)}`);
+  console.log(`  Total Expenses: $${cashFlow.totalExpenses.toFixed(2)}`);
+  console.log(`  Net Cash Flow: $${cashFlow.netCashFlow.toFixed(2)}`);
+  console.log(`  Avg Monthly Balance: $${cashFlow.averageMonthlyBalance.toFixed(2)}`);
+
   // Calculate both scenarios
   const traditionalLoan = calculateTraditionalLoan(mortgage);
+  console.log('📊 [LOAN CALC] Traditional Loan Results:');
+  console.log(`  Payoff Months: ${traditionalLoan.payoffMonths}`);
+  console.log(`  Total Interest: $${traditionalLoan.totalInterestPaid.toFixed(2)}`);
+
   const allInOneLoan = calculateAllInOneLoan(mortgage, cashFlow);
+  console.log('📊 [LOAN CALC] All-In-One Loan Results:');
+  console.log(`  Payoff Months: ${allInOneLoan.payoffMonths}`);
+  console.log(`  Total Interest: $${allInOneLoan.totalInterestPaid.toFixed(2)}`);
 
   // Calculate savings
   const interestSavings = traditionalLoan.totalInterestPaid - allInOneLoan.totalInterestPaid;
   const timeSavedMonths = traditionalLoan.payoffMonths - allInOneLoan.payoffMonths;
   const percentageSavings = (interestSavings / traditionalLoan.totalInterestPaid) * 100;
+
+  console.log('💡 [LOAN CALC] Comparison Results:');
+  console.log(`  Interest Savings: $${interestSavings.toFixed(2)}`);
+  console.log(`  Time Saved: ${timeSavedMonths} months`);
+  console.log(`  Percentage Savings: ${percentageSavings.toFixed(2)}%`);
 
   // Add savings data to All-In-One projection
   allInOneLoan.interestSavings = interestSavings;
@@ -247,8 +347,13 @@ export function getDetailedAmortization(
   cashFlow: CashFlowAnalysis,
   months: number = 12
 ): MonthlySnapshot[] {
-  const { currentBalance, interestRate, monthlyPayment } = mortgage;
-  const { totalIncome, totalExpenses } = cashFlow;
+  const { currentBalance, interestRate } = mortgage;
+  const { totalIncome, totalExpenses, monthlyBreakdown } = cashFlow;
+
+  // Calculate monthly averages
+  const monthsOfData = monthlyBreakdown?.length || 1;
+  const monthlyIncome = totalIncome / monthsOfData;
+  const monthlyExpenses = totalExpenses / monthsOfData;
 
   const snapshots: MonthlySnapshot[] = [];
   let balance = currentBalance;
@@ -258,22 +363,22 @@ export function getDetailedAmortization(
   for (let month = 1; month <= Math.min(months, 360); month++) {
     const monthResult = simulateMonthlyDailyBalances(
       balance,
-      monthlyPayment,
-      totalIncome,
-      totalExpenses,
+      monthlyIncome,    // FIXED: Using monthly average
+      monthlyExpenses,  // FIXED: Using monthly average
       interestRate,
-      avgDaysPerMonth
+      avgDaysPerMonth,
+      month,
+      false  // No debug for amortization table
     );
 
     cumulativeInterest += monthResult.totalInterest;
-    const principalPaid = monthlyPayment - monthResult.totalInterest;
     balance = monthResult.endBalance;
 
     snapshots.push({
       month,
       loanBalance: balance,
       totalInterestPaid: cumulativeInterest,
-      principalPaid,
+      principalPaid: monthResult.principalReduction,
       cashFlowOffset: monthResult.avgCashOffset,
     });
 
