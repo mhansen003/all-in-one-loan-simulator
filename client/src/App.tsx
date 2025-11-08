@@ -334,7 +334,6 @@ function App() {
                 mortgageDetails={mortgageDetails as MortgageDetails}
                 cashFlow={cashFlowAnalysis || undefined}
                 onReset={handleReset}
-                onCashFlowUpdate={setCashFlowAnalysis}
               />
             </div>
           )}
