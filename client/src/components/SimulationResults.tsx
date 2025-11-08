@@ -12,6 +12,7 @@ interface SimulationResultsProps {
 }
 
 type TabView = 'results' | 'paydown' | 'charts' | 'duplicates';
+type PaydownView = 'monthly' | 'yearly';
 
 export default function SimulationResults({
   simulation,
@@ -22,6 +23,7 @@ export default function SimulationResults({
   onCreateProposal,
 }: SimulationResultsProps) {
   const [activeTab, setActiveTab] = useState<TabView>('results');
+  const [paydownView, setPaydownView] = useState<PaydownView>('yearly');
   const formatCurrency = (amount: number): string => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -372,20 +374,58 @@ export default function SimulationResults({
 
           {/* Amortization Table */}
           <div>
-            <h3 style={{ marginBottom: '1.5rem', color: '#334155', fontSize: '1.25rem' }}>Paydown Schedule (First 24 Months)</h3>
-            <div style={{ overflowX: 'auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+              <h3 style={{ color: '#334155', fontSize: '1.25rem', margin: 0 }}>Paydown Schedule</h3>
+              <div style={{ display: 'flex', gap: '0.5rem', background: '#f1f5f9', padding: '0.25rem', borderRadius: '8px' }}>
+                <button
+                  onClick={() => setPaydownView('yearly')}
+                  style={{
+                    padding: '0.5rem 1rem',
+                    border: 'none',
+                    borderRadius: '6px',
+                    background: paydownView === 'yearly' ? '#1e293b' : 'transparent',
+                    color: paydownView === 'yearly' ? 'white' : '#64748b',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  Yearly
+                </button>
+                <button
+                  onClick={() => setPaydownView('monthly')}
+                  style={{
+                    padding: '0.5rem 1rem',
+                    border: 'none',
+                    borderRadius: '6px',
+                    background: paydownView === 'monthly' ? '#1e293b' : 'transparent',
+                    color: paydownView === 'monthly' ? 'white' : '#64748b',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  Monthly
+                </button>
+              </div>
+            </div>
+
+            <div style={{ overflowX: 'auto', maxHeight: '600px', overflowY: 'auto' }}>
               <table style={{
                 width: '100%',
                 borderCollapse: 'collapse',
-                fontSize: '0.9rem'
+                fontSize: '0.85rem'
               }}>
-                <thead>
+                <thead style={{ position: 'sticky', top: 0, zIndex: 10 }}>
                   <tr style={{ background: '#1e293b', color: 'white' }}>
-                    <th style={{ padding: '1rem', textAlign: 'left', borderBottom: '2px solid #cbd5e1' }}>Month</th>
+                    <th style={{ padding: '1rem', textAlign: 'left', borderBottom: '2px solid #cbd5e1' }}>Year</th>
+                    {paydownView === 'monthly' && (
+                      <th style={{ padding: '1rem', textAlign: 'left', borderBottom: '2px solid #cbd5e1' }}>Month</th>
+                    )}
                     <th style={{ padding: '1rem', textAlign: 'right', borderBottom: '2px solid #cbd5e1' }}>Traditional Balance</th>
-                    <th style={{ padding: '1rem', textAlign: 'right', borderBottom: '2px solid #cbd5e1' }}>Traditional Interest</th>
+                    <th style={{ padding: '1rem', textAlign: 'right', borderBottom: '2px solid #cbd5e1' }}>Principal Paid</th>
                     <th style={{ padding: '1rem', textAlign: 'right', borderBottom: '2px solid #cbd5e1' }}>AIO Balance</th>
-                    <th style={{ padding: '1rem', textAlign: 'right', borderBottom: '2px solid #cbd5e1' }}>AIO Interest</th>
+                    <th style={{ padding: '1rem', textAlign: 'right', borderBottom: '2px solid #cbd5e1' }}>Principal Paid</th>
                     <th style={{ padding: '1rem', textAlign: 'right', borderBottom: '2px solid #cbd5e1' }}>Savings</th>
                   </tr>
                 </thead>
@@ -394,58 +434,183 @@ export default function SimulationResults({
                     const rows = [];
                     const { currentBalance, interestRate, aioInterestRate, monthlyPayment } = mortgageDetails;
                     const monthlyRate = interestRate / 100 / 12;
-                    const netCashFlow = cashFlow ? cashFlow.netCashFlow : 0;
+                    const netCashFlow = cashFlow?.monthlyLeftover || cashFlow?.netCashFlow || 0;
 
                     // Traditional loan tracking
                     let tradBalance = currentBalance;
                     let tradTotalInterest = 0;
+                    let tradTotalPrincipal = 0;
 
                     // AIO loan tracking
                     let aioBalance = currentBalance;
                     let aioTotalInterest = 0;
-                    const aioAnnualRate = aioInterestRate / 100;
+                    let aioTotalPrincipal = 0;
+                    const aioMonthlyRate = aioInterestRate / 100 / 12;
+                    const avgMonthlyBalance = cashFlow?.monthlyDeposits ? (cashFlow.monthlyDeposits + netCashFlow) / 2 : 0;
 
-                    for (let month = 1; month <= 24; month++) {
-                      // Traditional loan calculation
-                      const tradInterest = tradBalance * monthlyRate;
-                      const tradPrincipal = monthlyPayment - tradInterest;
-                      tradBalance = Math.max(0, tradBalance - tradPrincipal);
-                      tradTotalInterest += tradInterest;
+                    const maxMonths = Math.max(simulation.traditionalLoan.payoffMonths, simulation.allInOneLoan.payoffMonths);
 
-                      // AIO loan calculation (simplified monthly approximation)
-                      const avgDailyBalance = aioBalance - (netCashFlow / 2);
-                      const aioInterest = (avgDailyBalance * aioAnnualRate) / 12;
-                      aioBalance = Math.max(0, aioBalance - netCashFlow + aioInterest);
-                      aioTotalInterest += aioInterest;
+                    if (paydownView === 'yearly') {
+                      // Yearly view - show year-end balances and annual totals
+                      const maxYears = Math.ceil(maxMonths / 12);
 
-                      const savings = tradTotalInterest - aioTotalInterest;
+                      for (let year = 1; year <= maxYears; year++) {
+                        let yearTradPrincipal = 0;
+                        let yearAioPrincipal = 0;
 
-                      rows.push(
-                        <tr key={month} style={{
-                          background: month % 2 === 0 ? '#f8fafc' : 'white',
-                          borderBottom: '1px solid #e2e8f0'
-                        }}>
-                          <td style={{ padding: '0.75rem', fontWeight: '600', color: '#334155' }}>{month}</td>
-                          <td style={{ padding: '0.75rem', textAlign: 'right', color: '#4299e1', fontWeight: '600' }}>
-                            {formatCurrency(tradBalance)}
-                          </td>
-                          <td style={{ padding: '0.75rem', textAlign: 'right', color: '#718096' }}>
-                            {formatCurrency(tradInterest)}
-                          </td>
-                          <td style={{ padding: '0.75rem', textAlign: 'right', color: '#9bc53d', fontWeight: '600' }}>
-                            {formatCurrency(aioBalance)}
-                          </td>
-                          <td style={{ padding: '0.75rem', textAlign: 'right', color: '#718096' }}>
-                            {formatCurrency(aioInterest)}
-                          </td>
-                          <td style={{ padding: '0.75rem', textAlign: 'right', fontWeight: '700', color: savings > 0 ? '#10b981' : '#718096' }}>
-                            {formatCurrency(savings)}
-                          </td>
-                        </tr>
-                      );
+                        // Calculate 12 months for this year
+                        for (let m = 1; m <= 12; m++) {
+                          const month = (year - 1) * 12 + m;
+                          if (month > maxMonths) break;
 
-                      // Stop if both loans are paid off
-                      if (tradBalance <= 0 && aioBalance <= 0) break;
+                          // Traditional calculation
+                          if (tradBalance > 0.01) {
+                            const tradInterest = tradBalance * monthlyRate;
+                            const tradPrincipal = Math.min(monthlyPayment - tradInterest, tradBalance);
+                            tradBalance = Math.max(0, tradBalance - tradPrincipal);
+                            tradTotalInterest += tradInterest;
+                            tradTotalPrincipal += tradPrincipal;
+                            yearTradPrincipal += tradPrincipal;
+                          }
+
+                          // AIO calculation
+                          if (aioBalance > 0.01) {
+                            const effectivePrincipal = Math.max(0, aioBalance - avgMonthlyBalance);
+                            const aioInterest = effectivePrincipal * aioMonthlyRate;
+                            const aioPrincipal = Math.min(netCashFlow, aioBalance);
+                            aioBalance = Math.max(0, aioBalance - aioPrincipal);
+                            aioTotalInterest += aioInterest;
+                            aioTotalPrincipal += aioPrincipal;
+                            yearAioPrincipal += aioPrincipal;
+                          }
+                        }
+
+                        const savings = tradTotalInterest - aioTotalInterest;
+
+                        rows.push(
+                          <tr key={year} style={{
+                            background: year % 2 === 0 ? '#f8fafc' : 'white',
+                            borderBottom: '1px solid #e2e8f0'
+                          }}>
+                            <td style={{ padding: '0.75rem', fontWeight: '700', color: '#334155' }}>{year}</td>
+                            <td style={{ padding: '0.75rem', textAlign: 'right', color: '#4299e1', fontWeight: '600' }}>
+                              {formatCurrency(tradBalance)}
+                            </td>
+                            <td style={{ padding: '0.75rem', textAlign: 'right', color: '#718096' }}>
+                              {formatCurrency(yearTradPrincipal)}
+                            </td>
+                            <td style={{ padding: '0.75rem', textAlign: 'right', color: '#9bc53d', fontWeight: '600' }}>
+                              {aioBalance > 0.01 ? formatCurrency(aioBalance) : <span style={{ color: '#10b981', fontWeight: '700' }}>PAID OFF ✓</span>}
+                            </td>
+                            <td style={{ padding: '0.75rem', textAlign: 'right', color: '#718096' }}>
+                              {formatCurrency(yearAioPrincipal)}
+                            </td>
+                            <td style={{ padding: '0.75rem', textAlign: 'right', fontWeight: '700', color: '#10b981' }}>
+                              {formatCurrency(savings)}
+                            </td>
+                          </tr>
+                        );
+
+                        // Stop if both loans are paid off
+                        if (tradBalance <= 0.01 && aioBalance <= 0.01) break;
+                      }
+                    } else {
+                      // Monthly view - show each month with yearly subtotals
+                      let yearTradPrincipal = 0;
+                      let yearAioPrincipal = 0;
+                      let yearStartTradInterest = tradTotalInterest;
+                      let yearStartAioInterest = aioTotalInterest;
+
+                      for (let month = 1; month <= maxMonths; month++) {
+                        const year = Math.ceil(month / 12);
+                        const monthInYear = ((month - 1) % 12) + 1;
+
+                        // Traditional calculation
+                        let tradPrincipal = 0;
+                        if (tradBalance > 0.01) {
+                          const tradInterest = tradBalance * monthlyRate;
+                          tradPrincipal = Math.min(monthlyPayment - tradInterest, tradBalance);
+                          tradBalance = Math.max(0, tradBalance - tradPrincipal);
+                          tradTotalInterest += tradInterest;
+                          tradTotalPrincipal += tradPrincipal;
+                          yearTradPrincipal += tradPrincipal;
+                        }
+
+                        // AIO calculation
+                        let aioPrincipal = 0;
+                        if (aioBalance > 0.01) {
+                          const effectivePrincipal = Math.max(0, aioBalance - avgMonthlyBalance);
+                          const aioInterest = effectivePrincipal * aioMonthlyRate;
+                          aioPrincipal = Math.min(netCashFlow, aioBalance);
+                          aioBalance = Math.max(0, aioBalance - aioPrincipal);
+                          aioTotalInterest += aioInterest;
+                          aioTotalPrincipal += aioPrincipal;
+                          yearAioPrincipal += aioPrincipal;
+                        }
+
+                        const savings = tradTotalInterest - aioTotalInterest;
+
+                        rows.push(
+                          <tr key={`m${month}`} style={{
+                            background: 'white',
+                            borderBottom: '1px solid #e2e8f0'
+                          }}>
+                            <td style={{ padding: '0.75rem', color: '#94a3b8' }}>{year}</td>
+                            <td style={{ padding: '0.75rem', fontWeight: '600', color: '#334155' }}>{monthInYear}</td>
+                            <td style={{ padding: '0.75rem', textAlign: 'right', color: '#4299e1', fontWeight: '600' }}>
+                              {formatCurrency(tradBalance)}
+                            </td>
+                            <td style={{ padding: '0.75rem', textAlign: 'right', color: '#718096' }}>
+                              {formatCurrency(tradPrincipal)}
+                            </td>
+                            <td style={{ padding: '0.75rem', textAlign: 'right', color: '#9bc53d', fontWeight: '600' }}>
+                              {aioBalance > 0.01 ? formatCurrency(aioBalance) : <span style={{ color: '#10b981', fontWeight: '700', fontSize: '0.8rem' }}>PAID OFF ✓</span>}
+                            </td>
+                            <td style={{ padding: '0.75rem', textAlign: 'right', color: '#718096' }}>
+                              {formatCurrency(aioPrincipal)}
+                            </td>
+                            <td style={{ padding: '0.75rem', textAlign: 'right', fontWeight: '700', color: '#10b981' }}>
+                              {formatCurrency(savings)}
+                            </td>
+                          </tr>
+                        );
+
+                        // Add year subtotal row at end of each year
+                        if (monthInYear === 12 || month === maxMonths || (tradBalance <= 0.01 && aioBalance <= 0.01)) {
+                          const yearSavings = (tradTotalInterest - yearStartTradInterest) - (aioTotalInterest - yearStartAioInterest);
+
+                          rows.push(
+                            <tr key={`subtotal${year}`} style={{
+                              background: '#1e293b',
+                              color: 'white',
+                              fontWeight: '700',
+                              borderBottom: '2px solid #cbd5e1'
+                            }}>
+                              <td style={{ padding: '0.75rem' }} colSpan={2}>Year {year} Total</td>
+                              <td style={{ padding: '0.75rem', textAlign: 'right' }}>—</td>
+                              <td style={{ padding: '0.75rem', textAlign: 'right' }}>
+                                {formatCurrency(yearTradPrincipal)}
+                              </td>
+                              <td style={{ padding: '0.75rem', textAlign: 'right' }}>—</td>
+                              <td style={{ padding: '0.75rem', textAlign: 'right' }}>
+                                {formatCurrency(yearAioPrincipal)}
+                              </td>
+                              <td style={{ padding: '0.75rem', textAlign: 'right', color: '#10b981' }}>
+                                {formatCurrency(yearSavings)}
+                              </td>
+                            </tr>
+                          );
+
+                          // Reset year totals
+                          yearTradPrincipal = 0;
+                          yearAioPrincipal = 0;
+                          yearStartTradInterest = tradTotalInterest;
+                          yearStartAioInterest = aioTotalInterest;
+                        }
+
+                        // Stop if both loans are paid off
+                        if (tradBalance <= 0.01 && aioBalance <= 0.01) break;
+                      }
                     }
 
                     return rows;

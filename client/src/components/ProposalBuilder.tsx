@@ -85,7 +85,7 @@ function SortableItem({ id, component, onToggle }: {
   );
 }
 
-type WizardStep = 1 | 2 | 3 | 4;
+type WizardStep = 1 | 2 | 3 | 4 | 5;
 
 export default function ProposalBuilder({
   simulation,
@@ -244,7 +244,8 @@ export default function ProposalBuilder({
     { number: 1, title: 'Client Info', description: 'Enter client details' },
     { number: 2, title: 'AI Sales Pitch', description: 'Generate personalized pitch' },
     { number: 3, title: 'Select Components', description: 'Choose sections to include' },
-    { number: 4, title: 'Preview & Download', description: 'Review and generate PDF' },
+    { number: 4, title: 'Email Signature', description: 'Add your signature' },
+    { number: 5, title: 'Preview & Download', description: 'Review and generate PDF' },
   ];
 
   const canProceedToNextStep = (): boolean => {
@@ -256,6 +257,8 @@ export default function ProposalBuilder({
       case 3:
         return true; // Always can proceed from component selection
       case 4:
+        return true; // Email signature is optional
+      case 5:
         return true;
       default:
         return false;
@@ -263,7 +266,7 @@ export default function ProposalBuilder({
   };
 
   const handleNextStep = () => {
-    if (canProceedToNextStep() && currentStep < 4) {
+    if (canProceedToNextStep() && currentStep < 5) {
       setCurrentStep((currentStep + 1) as WizardStep);
     }
   };
