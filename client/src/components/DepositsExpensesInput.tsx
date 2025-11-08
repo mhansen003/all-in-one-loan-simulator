@@ -9,7 +9,7 @@ interface DepositsExpensesInputProps {
     monthlyDeposits: number;
     monthlyExpenses: number;
     monthlyLeftover: number;
-    depositFrequency: 'monthly' | 'biweekly' | 'weekly';
+    depositFrequency: 'weekly' | 'biweekly' | 'semi-monthly' | 'monthly' | 'quarterly' | 'semi-annual' | 'annual';
   }) => void;
   onBack?: () => void;
   mortgageDetails?: {
