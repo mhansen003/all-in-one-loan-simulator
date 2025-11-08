@@ -28,7 +28,7 @@ body {
 
 .app-header {
   background: #2b3e50;
-  padding: 1.5rem 2rem;
+  padding: 1rem 2rem;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
   position: relative;
   z-index: 1001;
@@ -318,7 +318,7 @@ body {
 
 .app-main {
   flex: 1;
-  padding: 2rem;
+  padding: 1.5rem 2rem;
   width: 100%;
   max-width: 1400px;
   margin: 0 auto;
@@ -331,14 +331,14 @@ body {
 .section-card {
   background: white;
   border-radius: 12px;
-  padding: 2.5rem;
+  padding: 2rem;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
 }
 
 .section-header {
   text-align: center;
-  margin-bottom: 2.5rem;
+  margin-bottom: 1.75rem;
 }
 
 .section-header h2 {
@@ -361,8 +361,8 @@ body {
 .info-cards {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 2rem;
-  margin: 2.5rem 0;
+  gap: 1.5rem;
+  margin: 1.75rem 0;
 }
 
 .info-card {
@@ -415,7 +415,7 @@ body {
 .action-container {
   display: flex;
   justify-content: center;
-  margin-top: 2.5rem;
+  margin-top: 1.75rem;
 }
 
 .btn-primary {

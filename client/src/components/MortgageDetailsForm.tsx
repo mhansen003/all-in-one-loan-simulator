@@ -667,16 +667,28 @@ export default function MortgageDetailsForm({
                           display: 'inline-flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          width: '20px',
-                          height: '20px',
+                          width: '22px',
+                          height: '22px',
                           marginLeft: '0.5rem',
-                          background: '#e5e7eb',
-                          color: '#6b7280',
+                          background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                          color: 'white',
                           borderRadius: '50%',
                           fontSize: '0.75rem',
-                          fontWeight: 'bold',
+                          fontWeight: '700',
+                          fontStyle: 'italic',
                           cursor: 'help',
-                          userSelect: 'none'
+                          userSelect: 'none',
+                          boxShadow: '0 2px 4px rgba(59, 130, 246, 0.3)',
+                          transition: 'all 0.2s ease',
+                          border: '2px solid rgba(255, 255, 255, 0.2)'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.transform = 'scale(1.15)';
+                          e.currentTarget.style.boxShadow = '0 4px 8px rgba(59, 130, 246, 0.4)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.transform = 'scale(1)';
+                          e.currentTarget.style.boxShadow = '0 2px 4px rgba(59, 130, 246, 0.3)';
                         }}
                       >
                         i
