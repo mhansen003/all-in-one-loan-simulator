@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import type { CashFlowAnalysis, Transaction } from '../types';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import './CashFlowReview.css';
 
 interface CashFlowReviewProps {
@@ -18,7 +19,7 @@ export default function CashFlowReview({
   hideSummary = false
 }: CashFlowReviewProps) {
   // No more tabs - single view
-  const [transactionSubTab, setTransactionSubTab] = useState<'all' | 'income' | 'expense' | 'housing' | 'one-time'>('all');
+  const [transactionSubTab, setTransactionSubTab] = useState<'all' | 'income' | 'expense' | 'housing' | 'one-time' | 'duplicates'>('all');
   const [transactions, setTransactions] = useState<Transaction[]>(() => {
     // Auto-exclude housing and one-time transactions on initial load
     return cashFlow.transactions.map(t => ({
@@ -52,7 +53,7 @@ export default function CashFlowReview({
       .reduce((sum, t) => sum + t.amount, 0) / actualMonths; // Average monthly
 
     const totalExpenses = includedTransactions
-      .filter(t => t.category === 'expense' || t.category === 'recurring')
+      .filter(t => t.category !== 'income') // Include all non-income categories (expense, recurring, housing, one-time)
       .reduce((sum, t) => sum + Math.abs(t.amount), 0) / actualMonths; // Average monthly
 
     const netCashFlow = totalIncome - totalExpenses;
@@ -96,10 +97,40 @@ export default function CashFlowReview({
     .reduce((sum, t) => sum + t.amount, 0) / actualMonths;
 
   const displayTotalExpenses = includedTransactions
-    .filter(t => t.category === 'expense' || t.category === 'recurring')
+    .filter(t => t.category !== 'income') // Include all non-income categories (expense, recurring, housing, one-time)
     .reduce((sum, t) => sum + Math.abs(t.amount), 0) / actualMonths;
 
   const displayNetCashFlow = displayTotalIncome - displayTotalExpenses;
+
+  // Prepare chart data - group by month and calculate incoming/outgoing
+  const chartData = useMemo(() => {
+    const monthlyData: { [key: string]: { incoming: number; outgoing: number } } = {};
+
+    includedTransactions.forEach(transaction => {
+      const date = new Date(transaction.date);
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+
+      if (!monthlyData[monthKey]) {
+        monthlyData[monthKey] = { incoming: 0, outgoing: 0 };
+      }
+
+      if (transaction.category === 'income' || transaction.amount > 0) {
+        monthlyData[monthKey].incoming += Math.abs(transaction.amount);
+      } else {
+        monthlyData[monthKey].outgoing += Math.abs(transaction.amount);
+      }
+    });
+
+    // Convert to array and sort by date
+    return Object.entries(monthlyData)
+      .map(([month, data]) => ({
+        month,
+        monthLabel: new Date(month + '-01').toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+        incoming: Math.round(data.incoming),
+        outgoing: Math.round(data.outgoing)
+      }))
+      .sort((a, b) => a.month.localeCompare(b.month));
+  }, [includedTransactions]);
 
   const formatCurrency = (amount: number): string => {
     return new Intl.NumberFormat('en-US', {
@@ -192,25 +223,18 @@ export default function CashFlowReview({
         description: 'Good candidate. AIO loan will provide meaningful interest savings.',
         icon: '👍'
       };
-    } else if (netCashFlow >= 200) {
+    } else if (netCashFlow > 300) {
       return {
         rating: 'FAIR',
         color: '#eab308',
         description: 'Moderate benefits. AIO loan can help, but savings will be modest.',
         icon: '⚠️'
       };
-    } else if (netCashFlow >= 0) {
-      return {
-        rating: 'MARGINAL',
-        color: '#f59e0b',
-        description: 'Limited benefits. Consider traditional mortgage or improving cash flow first.',
-        icon: '⚡'
-      };
     } else {
       return {
         rating: 'NOT SUITABLE',
         color: '#ef4444',
-        description: 'Not recommended. Negative cash flow means AIO loan will not provide benefits.',
+        description: 'Not recommended. Cash flow of $300 or less per month is insufficient for AIO loan benefits.',
         icon: '❌'
       };
     }
@@ -318,11 +342,103 @@ export default function CashFlowReview({
               </div>
               <div className="card-content">
                 <div className="card-label">Net Cash Flow</div>
-                <div className="card-value positive">{formatCurrency(displayNetCashFlow)}</div>
-                <div className="card-description">Available for loan offset</div>
+                <div className={`card-value ${displayNetCashFlow >= 0 ? 'positive' : 'negative'}`}>
+                  {formatCurrency(displayNetCashFlow)}
+                </div>
+                <div className="card-description">
+                  {displayNetCashFlow >= 0 ? 'Available for loan offset' : 'Negative - Not suitable for AIO'}
+                </div>
               </div>
             </div>
           </div>
+
+          {/* Cash Flow Chart */}
+          {chartData.length > 0 && (
+            <div className="cash-flow-chart" style={{
+              background: 'white',
+              borderRadius: '12px',
+              padding: '1.5rem',
+              marginBottom: '2rem',
+              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
+            }}>
+              <h3 style={{
+                fontSize: '1.125rem',
+                fontWeight: '600',
+                color: '#1a202c',
+                marginBottom: '1rem',
+                marginTop: '0'
+              }}>
+                Cash Flow Over Time
+              </h3>
+              <p style={{
+                fontSize: '0.875rem',
+                color: '#718096',
+                marginBottom: '1.5rem',
+                marginTop: '0'
+              }}>
+                Showing {chartData.length} month{chartData.length !== 1 ? 's' : ''} of transaction data
+              </p>
+              <ResponsiveContainer width="100%" height={300}>
+                <AreaChart
+                  data={chartData}
+                  margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+                >
+                  <defs>
+                    <linearGradient id="colorIncoming" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#48bb78" stopOpacity={0.8}/>
+                      <stop offset="95%" stopColor="#48bb78" stopOpacity={0.1}/>
+                    </linearGradient>
+                    <linearGradient id="colorOutgoing" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#ed8936" stopOpacity={0.8}/>
+                      <stop offset="95%" stopColor="#ed8936" stopOpacity={0.1}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                  <XAxis
+                    dataKey="monthLabel"
+                    stroke="#718096"
+                    style={{ fontSize: '0.75rem' }}
+                  />
+                  <YAxis
+                    stroke="#718096"
+                    style={{ fontSize: '0.75rem' }}
+                    tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
+                  />
+                  <Tooltip
+                    formatter={(value: number) => [`$${value.toLocaleString()}`, '']}
+                    contentStyle={{
+                      backgroundColor: 'white',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: '8px',
+                      padding: '0.75rem'
+                    }}
+                  />
+                  <Legend
+                    wrapperStyle={{ paddingTop: '1rem' }}
+                    iconType="square"
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="incoming"
+                    stroke="#48bb78"
+                    strokeWidth={2}
+                    fillOpacity={1}
+                    fill="url(#colorIncoming)"
+                    name="Incoming Cash"
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="outgoing"
+                    stroke="#ed8936"
+                    strokeWidth={2}
+                    fillOpacity={1}
+                    fill="url(#colorOutgoing)"
+                    name="Outgoing Cash"
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          )}
         </>
       )}
 
@@ -378,9 +494,22 @@ export default function CashFlowReview({
             >
               All Categories
             </button>
+            {cashFlow.duplicateTransactions && cashFlow.duplicateTransactions.length > 0 && (
+              <button
+                className={`sub-tab ${transactionSubTab === 'duplicates' ? 'active' : ''}`}
+                onClick={() => setTransactionSubTab('duplicates')}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '16px', height: '16px' }}>
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                </svg>
+                Duplicates
+                <span className="sub-tab-badge">{cashFlow.duplicateTransactions.length}</span>
+              </button>
+            )}
           </div>
 
           {/* Scrollable Transaction Container */}
+          {transactionSubTab !== 'duplicates' ? (
           <div style={{ maxHeight: '600px', overflowY: 'auto', border: '1px solid #e2e8f0', borderRadius: '8px', marginTop: '1rem' }}>
           {Object.entries(getFilteredTransactions()).map(([category, categoryTransactions]) => {
             const actualIndices = categoryTransactions.map(t =>
@@ -467,8 +596,161 @@ export default function CashFlowReview({
               </div>
             );
           })}
-          </div>{/* End scrollable container */}
+          </div>
+          ) : (
+            /* Duplicates Tab Content */
+            <div style={{ padding: '2rem', background: 'white', borderRadius: '12px', border: '2px solid #e2e8f0', marginTop: '1rem' }}>
+              <h2 style={{ textAlign: 'center', marginBottom: '1rem', color: '#1e293b' }}>🔍 Duplicate Transactions Excluded</h2>
+              <p style={{ textAlign: 'center', color: '#64748b', marginBottom: '2rem', fontSize: '0.95rem' }}>
+                These transactions were automatically detected and excluded from the analysis to prevent double-counting across multiple uploaded files.
+              </p>
+
+              {/* Summary Banner */}
+              <div style={{
+                padding: '1.5rem',
+                background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
+                border: '2px solid #fbbf24',
+                borderRadius: '12px',
+                marginBottom: '2rem',
+                textAlign: 'center'
+              }}>
+                <div style={{ fontSize: '1rem', color: '#92400e', fontWeight: '600', marginBottom: '0.5rem' }}>
+                  ⚠️ {cashFlow.duplicateTransactions?.length || 0} Duplicate Transaction{(cashFlow.duplicateTransactions?.length || 0) !== 1 ? 's' : ''} Found
+                </div>
+                <div style={{ fontSize: '0.9rem', color: '#b45309' }}>
+                  These transactions appeared in multiple files and were excluded to ensure accurate calculations
+                </div>
+              </div>
+
+              {/* Duplicates Table */}
+              <div style={{ overflowX: 'auto', maxHeight: '600px', overflowY: 'auto' }}>
+                <table style={{
+                  width: '100%',
+                  borderCollapse: 'collapse',
+                  fontSize: '0.9rem'
+                }}>
+                  <thead>
+                    <tr style={{ background: '#1e293b', color: 'white' }}>
+                      <th style={{ padding: '1rem', textAlign: 'left', borderBottom: '2px solid #cbd5e1', position: 'sticky', top: 0, background: '#1e293b' }}>Date</th>
+                      <th style={{ padding: '1rem', textAlign: 'left', borderBottom: '2px solid #cbd5e1', position: 'sticky', top: 0, background: '#1e293b' }}>Description</th>
+                      <th style={{ padding: '1rem', textAlign: 'right', borderBottom: '2px solid #cbd5e1', position: 'sticky', top: 0, background: '#1e293b' }}>Amount</th>
+                      <th style={{ padding: '1rem', textAlign: 'center', borderBottom: '2px solid #cbd5e1', position: 'sticky', top: 0, background: '#1e293b' }}>Category</th>
+                      <th style={{ padding: '1rem', textAlign: 'center', borderBottom: '2px solid #cbd5e1', position: 'sticky', top: 0, background: '#1e293b' }}>Source File</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(cashFlow.duplicateTransactions || []).map((transaction, index) => {
+                      const date = new Date(transaction.date);
+                      const formattedDate = isNaN(date.getTime()) ? transaction.date : date.toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric'
+                      });
+
+                      const getCategoryColor = (category: string) => {
+                        switch (category) {
+                          case 'income': return { bg: '#d1fae5', text: '#065f46', border: '#10b981' };
+                          case 'expense': return { bg: '#fee2e2', text: '#991b1b', border: '#ef4444' };
+                          case 'housing': return { bg: '#dbeafe', text: '#1e40af', border: '#3b82f6' };
+                          case 'one-time': return { bg: '#e0e7ff', text: '#3730a3', border: '#6366f1' };
+                          default: return { bg: '#f3f4f6', text: '#374151', border: '#9ca3af' };
+                        }
+                      };
+
+                      const categoryColors = getCategoryColor(transaction.category);
+
+                      return (
+                        <tr key={index} style={{
+                          background: index % 2 === 0 ? '#f8fafc' : 'white',
+                          borderBottom: '1px solid #e2e8f0'
+                        }}>
+                          <td style={{ padding: '0.75rem', fontWeight: '600', color: '#334155' }}>
+                            {formattedDate}
+                          </td>
+                          <td style={{ padding: '0.75rem', color: '#475569' }}>
+                            {transaction.description}
+                          </td>
+                          <td style={{
+                            padding: '0.75rem',
+                            textAlign: 'right',
+                            fontWeight: '600',
+                            color: transaction.category === 'income' ? '#059669' : '#dc2626'
+                          }}>
+                            {transaction.category === 'income' ? '+' : '-'}
+                            {formatCurrency(Math.abs(transaction.amount))}
+                          </td>
+                          <td style={{ padding: '0.75rem', textAlign: 'center' }}>
+                            <span style={{
+                              display: 'inline-block',
+                              padding: '0.25rem 0.75rem',
+                              background: categoryColors.bg,
+                              color: categoryColors.text,
+                              border: `1px solid ${categoryColors.border}`,
+                              borderRadius: '9999px',
+                              fontSize: '0.75rem',
+                              fontWeight: '600',
+                              textTransform: 'capitalize'
+                            }}>
+                              {transaction.category}
+                            </span>
+                          </td>
+                          <td style={{ padding: '0.75rem', textAlign: 'center', color: '#64748b', fontSize: '0.85rem' }}>
+                            {transaction.sourceFile || 'Unknown'}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Info Footer */}
+              <div style={{
+                marginTop: '2rem',
+                padding: '1rem',
+                background: '#eff6ff',
+                borderRadius: '8px',
+                border: '1px solid #3b82f6',
+                fontSize: '0.9rem',
+                color: '#1e40af'
+              }}>
+                <div style={{ fontWeight: '600', marginBottom: '0.5rem' }}>ℹ️ How Deduplication Works</div>
+                <ul style={{ margin: 0, paddingLeft: '1.5rem', lineHeight: 1.6 }}>
+                  <li>Transactions are compared based on date, amount, and description</li>
+                  <li>When identical transactions appear in multiple files, only the first occurrence is kept</li>
+                  <li>This ensures accurate cash flow calculations when uploading overlapping statements</li>
+                </ul>
+              </div>
+            </div>
+          )}{/* End scrollable container / duplicates */}
         </div>{/* End transactions-view */}
+
+      {/* Cash Flow Threshold Warning */}
+      {displayNetCashFlow <= 300 && (
+        <div style={{
+          padding: '1.5rem',
+          background: '#fef2f2',
+          border: '2px solid #ef4444',
+          borderRadius: '12px',
+          marginBottom: '1.5rem',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '1rem'
+        }}>
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '32px', height: '32px', color: '#ef4444', flexShrink: 0 }}>
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+          <div>
+            <strong style={{ color: '#991b1b', display: 'block', marginBottom: '0.5rem', fontSize: '1.1rem' }}>
+              Insufficient Cash Flow for AIO Loan
+            </strong>
+            <p style={{ color: '#7f1d1d', margin: 0, fontSize: '0.95rem', lineHeight: '1.5' }}>
+              Your net cash flow of {formatCurrency(displayNetCashFlow)}/month is below the minimum threshold of $300/month required for an All-In-One loan.
+              Please review your transactions and exclude any irregular items, or consider improving your cash flow before proceeding.
+            </p>
+          </div>
+        </div>
+      )}
 
       <div className="form-actions">
         {onBack && (
@@ -479,7 +761,17 @@ export default function CashFlowReview({
             Back
           </button>
         )}
-        <button type="button" className="btn-primary" onClick={onContinue}>
+        <button
+          type="button"
+          className="btn-primary"
+          onClick={onContinue}
+          disabled={displayNetCashFlow <= 300}
+          style={{
+            opacity: displayNetCashFlow <= 300 ? 0.5 : 1,
+            cursor: displayNetCashFlow <= 300 ? 'not-allowed' : 'pointer'
+          }}
+          title={displayNetCashFlow <= 300 ? 'Cash flow must exceed $300/month to continue' : ''}
+        >
           Continue to Simulation
           <svg className="btn-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
