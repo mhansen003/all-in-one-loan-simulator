@@ -1,7 +1,14 @@
 import { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
+import Papa from 'papaparse';
 import type { CashFlowAnalysis } from '../types';
 import './FileUpload.css';
+
+interface FileWithData {
+  file: File;
+  parsedData?: any[]; // For CSV/XLSX files parsed on client
+  rowCount?: number;
+}
 
 interface FileUploadProps {
   files: File[];
@@ -23,17 +30,66 @@ export default function FileUpload({
   onSkipToReview,
 }: FileUploadProps) {
   const [selectedFiles, setSelectedFiles] = useState<File[]>(files);
+  const [filesWithData, setFilesWithData] = useState<FileWithData[]>(files.map(f => ({ file: f })));
   const [isProcessingPdf, setIsProcessingPdf] = useState(false);
   const [showManualEntryModal, setShowManualEntryModal] = useState(false);
+
+  const parseCSV = (file: File): Promise<any[]> => {
+    return new Promise((resolve, reject) => {
+      Papa.parse(file, {
+        header: true,
+        dynamicTyping: true,
+        skipEmptyLines: true,
+        complete: (results) => {
+          console.log(`✅ CSV Parsed: ${file.name}`);
+          console.log(`   📊 Rows: ${results.data.length}`);
+          console.log(`   📋 Columns:`, Object.keys(results.data[0] || {}));
+          console.log(`   🔍 First 3 rows:`, results.data.slice(0, 3));
+          resolve(results.data);
+        },
+        error: (error) => {
+          console.error(`❌ CSV Parse Error: ${file.name}`, error);
+          reject(error);
+        }
+      });
+    });
+  };
 
   const onDrop = useCallback(
     async (acceptedFiles: File[]) => {
       try {
         setIsProcessingPdf(true);
 
-        // Pass files directly - no conversion needed (Gemini handles PDFs natively)
-        const newFiles = [...selectedFiles, ...acceptedFiles];
+        // Parse CSV files immediately on client side
+        const processedFiles: FileWithData[] = [];
+
+        for (const file of acceptedFiles) {
+          const ext = file.name.toLowerCase().split('.').pop();
+
+          if (ext === 'csv') {
+            try {
+              const parsedData = await parseCSV(file);
+              processedFiles.push({
+                file,
+                parsedData,
+                rowCount: parsedData.length
+              });
+            } catch (error) {
+              console.error(`Failed to parse CSV: ${file.name}`, error);
+              alert(`Failed to parse CSV file "${file.name}". Please check the file format.`);
+            }
+          } else {
+            // Images, PDFs, XLSX - keep as-is
+            processedFiles.push({ file });
+          }
+        }
+
+        // Update state with both file list and parsed data
+        const newFiles = [...selectedFiles, ...processedFiles.map(f => f.file)];
+        const newFilesWithData = [...filesWithData, ...processedFiles];
+
         setSelectedFiles(newFiles);
+        setFilesWithData(newFilesWithData);
         onFilesSelected(newFiles);
       } catch (error) {
         console.error('Error processing files:', error);
@@ -42,7 +98,7 @@ export default function FileUpload({
         setIsProcessingPdf(false);
       }
     },
-    [selectedFiles, onFilesSelected]
+    [selectedFiles, filesWithData, onFilesSelected]
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -59,7 +115,9 @@ export default function FileUpload({
 
   const removeFile = (index: number) => {
     const newFiles = selectedFiles.filter((_, i) => i !== index);
+    const newFilesWithData = filesWithData.filter((_, i) => i !== index);
     setSelectedFiles(newFiles);
+    setFilesWithData(newFilesWithData);
     onFilesSelected(newFiles);
   };
 
@@ -208,28 +266,38 @@ export default function FileUpload({
           </div>
 
           <div className="file-cards">
-            {selectedFiles.map((file, index) => (
-              <div key={index} className="file-card">
-                <div className="file-card-icon">{getFileIcon(file.name)}</div>
-                <div className="file-card-info">
-                  <div className="file-card-name" title={file.name}>
-                    {file.name}
+            {filesWithData.map((fileData, index) => {
+              const { file, rowCount } = fileData;
+              return (
+                <div key={index} className="file-card">
+                  <div className="file-card-icon">{getFileIcon(file.name)}</div>
+                  <div className="file-card-info">
+                    <div className="file-card-name" title={file.name}>
+                      {file.name}
+                    </div>
+                    <div className="file-card-size">
+                      {formatFileSize(file.size)}
+                      {rowCount && (
+                        <span style={{ marginLeft: '0.5rem', color: '#10b981', fontWeight: 600 }}>
+                          • {rowCount} rows parsed ✓
+                        </span>
+                      )}
+                    </div>
                   </div>
-                  <div className="file-card-size">{formatFileSize(file.size)}</div>
+                  <button
+                    type="button"
+                    className="file-remove-btn"
+                    onClick={() => removeFile(index)}
+                    disabled={isAnalyzing}
+                    title="Remove file"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  className="file-remove-btn"
-                  onClick={() => removeFile(index)}
-                  disabled={isAnalyzing}
-                  title="Remove file"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
