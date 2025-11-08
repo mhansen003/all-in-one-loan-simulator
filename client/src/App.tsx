@@ -332,7 +332,6 @@ function App() {
                 mortgageDetails={mortgageDetails as MortgageDetails}
                 cashFlow={cashFlowAnalysis || undefined}
                 onReset={handleReset}
-                onCreateProposal={() => setStep('proposal-builder')}
                 onCashFlowUpdate={setCashFlowAnalysis}
               />
             </div>

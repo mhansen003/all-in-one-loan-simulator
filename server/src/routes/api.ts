@@ -480,4 +480,163 @@ DO NOT use a greeting or signature. Start directly with the pitch content. Do no
   }
 });
 
+// ===== SIGNATURE MANAGEMENT ENDPOINTS =====
+
+// Check if signature exists for email
+router.get('/signature/exists/:email', async (req, res) => {
+  try {
+    const { email } = req.params;
+
+    if (!email || !email.includes('@')) {
+      return res.status(400).json({
+        error: 'Invalid email',
+        message: 'Please provide a valid email address',
+      });
+    }
+
+    const { signatureExists } = await import('../services/redis-service.js');
+    const exists = await signatureExists(email);
+
+    res.json({
+      exists,
+      email,
+      message: exists ? 'Signature found' : 'No signature found for this email',
+    });
+  } catch (error: any) {
+    console.error('Error checking signature:', error);
+    res.status(500).json({
+      error: 'Check failed',
+      message: error.message || 'Failed to check signature',
+    });
+  }
+});
+
+// Get signature by email
+router.get('/signature/:email', async (req, res) => {
+  try {
+    const { email } = req.params;
+
+    if (!email || !email.includes('@')) {
+      return res.status(400).json({
+        error: 'Invalid email',
+        message: 'Please provide a valid email address',
+      });
+    }
+
+    const { getSignature } = await import('../services/redis-service.js');
+    const signature = await getSignature(email);
+
+    if (!signature) {
+      return res.status(404).json({
+        error: 'Not found',
+        message: 'No signature found for this email',
+      });
+    }
+
+    res.json({
+      signature,
+      message: 'Signature retrieved successfully',
+    });
+  } catch (error: any) {
+    console.error('Error getting signature:', error);
+    res.status(500).json({
+      error: 'Retrieval failed',
+      message: error.message || 'Failed to retrieve signature',
+    });
+  }
+});
+
+// Save or update signature
+router.post('/signature', async (req, res) => {
+  try {
+    const { email, name, title, phone, nmls, officeAddress, photoUrl } = req.body;
+
+    // Validate required fields
+    if (!email || !email.includes('@')) {
+      return res.status(400).json({
+        error: 'Invalid email',
+        message: 'Please provide a valid email address',
+      });
+    }
+
+    if (!name || name.trim().length === 0) {
+      return res.status(400).json({
+        error: 'Invalid name',
+        message: 'Please provide a name',
+      });
+    }
+
+    if (!phone || phone.trim().length === 0) {
+      return res.status(400).json({
+        error: 'Invalid phone',
+        message: 'Please provide a phone number',
+      });
+    }
+
+    const { saveSignature } = await import('../services/redis-service.js');
+    const success = await saveSignature({
+      email,
+      name,
+      title: title || '',
+      phone,
+      nmls: nmls || undefined,
+      officeAddress: officeAddress || undefined,
+      photoUrl: photoUrl || undefined,
+    });
+
+    if (!success) {
+      return res.status(500).json({
+        error: 'Save failed',
+        message: 'Redis is not configured or save operation failed',
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Signature saved successfully',
+    });
+  } catch (error: any) {
+    console.error('Error saving signature:', error);
+    res.status(500).json({
+      error: 'Save failed',
+      message: error.message || 'Failed to save signature',
+    });
+  }
+});
+
+// Delete signature
+router.delete('/signature/:email', async (req, res) => {
+  try {
+    const { email } = req.params;
+
+    if (!email || !email.includes('@')) {
+      return res.status(400).json({
+        error: 'Invalid email',
+        message: 'Please provide a valid email address',
+      });
+    }
+
+    const { deleteSignature } = await import('../services/redis-service.js');
+    const success = await deleteSignature(email);
+
+    if (!success) {
+      return res.status(500).json({
+        error: 'Delete failed',
+        message: 'Redis is not configured or delete operation failed',
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Signature deleted successfully',
+    });
+  } catch (error: any) {
+    console.error('Error deleting signature:', error);
+    res.status(500).json({
+      error: 'Delete failed',
+      message: error.message || 'Failed to delete signature',
+    });
+  }
+});
+
 export default router;

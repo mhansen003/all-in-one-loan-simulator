@@ -73,7 +73,7 @@ export default function MortgageDetailsForm({
     setFormData({
       currentBalance: 350000,
       interestRate: 6.5,
-      aioInterestRate: 5.75, // Typically lower than traditional
+      aioInterestRate: 7.25, // Typically HIGHER than traditional
       monthlyPayment: testMonthlyPayment,
       remainingTermMonths: 300,
       propertyValue: 500000,
@@ -81,7 +81,7 @@ export default function MortgageDetailsForm({
     });
     setCurrentBalanceInput('350000');
     setInterestRateInput('6.5');
-    setAioInterestRateInput('5.75');
+    setAioInterestRateInput('7.25');
     setMonthlyPaymentInput('2200');
     setPropertyValueInput('500000');
     setAdditionalExpensesInput('600');
@@ -348,56 +348,6 @@ export default function MortgageDetailsForm({
             <span className="form-help-text">Current rate on their existing mortgage</span>
           </div>
 
-          {/* AIO Interest Rate */}
-          <div className="form-group">
-            <label htmlFor="aioInterestRate" className="form-label required">
-              All-In-One Loan Interest Rate
-            </label>
-            <div className="input-wrapper">
-              <input
-                type="text"
-                inputMode="decimal"
-                id="aioInterestRate"
-                className={`form-input ${errors.aioInterestRate ? 'input-error' : ''}`}
-                placeholder="5.750"
-                value={aioInterestRateInput}
-                onChange={(e) => {
-                  const value = e.target.value.replace(/[^0-9.]/g, '');
-                  // Allow only one decimal point
-                  const parts = value.split('.');
-                  const sanitized = parts.length > 2
-                    ? parts[0] + '.' + parts.slice(1).join('')
-                    : value;
-                  setAioInterestRateInput(sanitized);
-
-                  // Update form data if we have a valid number
-                  const numValue = parseFloat(sanitized);
-                  if (!isNaN(numValue)) {
-                    setFormData((prev) => ({ ...prev, aioInterestRate: numValue }));
-                  }
-
-                  // Clear error for this field
-                  if (errors.aioInterestRate) {
-                    setErrors((prev) => ({ ...prev, aioInterestRate: undefined }));
-                  }
-                }}
-                onBlur={(e) => {
-                  const value = e.target.value.replace(/[^0-9.]/g, '');
-                  if (value) {
-                    const num = parseFloat(value);
-                    if (!isNaN(num)) {
-                      setFormData((prev) => ({ ...prev, aioInterestRate: num }));
-                      setAioInterestRateInput(String(num));
-                    }
-                  }
-                }}
-              />
-              <span className="input-suffix">%</span>
-            </div>
-            {errors.aioInterestRate && <span className="error-text">{errors.aioInterestRate}</span>}
-            <span className="form-help-text">Rate for the new AIO loan (typically 0.5-1% lower)</span>
-          </div>
-
           {/* Remaining Term - Years/Months */}
           <div className="form-group">
             <label htmlFor="termYears" className="form-label required">
@@ -583,6 +533,62 @@ export default function MortgageDetailsForm({
             <span className="form-help-text" style={{ marginTop: '0.5rem' }}>
               This total is used to exclude all housing costs from your cash flow analysis
             </span>
+            </div>
+
+            {/* AIO Interest Rate - Highlighted */}
+            <div className="form-group" style={{
+              border: '3px solid #9bc53d',
+              borderRadius: '0.5rem',
+              padding: '1rem',
+              backgroundColor: '#f0f9f0',
+              marginTop: '1.5rem'
+            }}>
+              <label htmlFor="aioInterestRate" className="form-label required">
+                All-In-One Loan Interest Rate
+              </label>
+              <div className="input-wrapper">
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  id="aioInterestRate"
+                  className={`form-input ${errors.aioInterestRate ? 'input-error' : ''}`}
+                  placeholder="7.250"
+                  value={aioInterestRateInput}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/[^0-9.]/g, '');
+                    // Allow only one decimal point
+                    const parts = value.split('.');
+                    const sanitized = parts.length > 2
+                      ? parts[0] + '.' + parts.slice(1).join('')
+                      : value;
+                    setAioInterestRateInput(sanitized);
+
+                    // Update form data if we have a valid number
+                    const numValue = parseFloat(sanitized);
+                    if (!isNaN(numValue)) {
+                      setFormData((prev) => ({ ...prev, aioInterestRate: numValue }));
+                    }
+
+                    // Clear error for this field
+                    if (errors.aioInterestRate) {
+                      setErrors((prev) => ({ ...prev, aioInterestRate: undefined }));
+                    }
+                  }}
+                  onBlur={(e) => {
+                    const value = e.target.value.replace(/[^0-9.]/g, '');
+                    if (value) {
+                      const num = parseFloat(value);
+                      if (!isNaN(num)) {
+                        setFormData((prev) => ({ ...prev, aioInterestRate: num }));
+                        setAioInterestRateInput(String(num));
+                      }
+                    }
+                  }}
+                />
+                <span className="input-suffix">%</span>
+              </div>
+              {errors.aioInterestRate && <span className="error-text">{errors.aioInterestRate}</span>}
+              <span className="form-help-text">Proposed rate for the All-In-One loan (typically HIGHER than traditional mortgage rate)</span>
             </div>
           </div>
         </div>

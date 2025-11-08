@@ -46,8 +46,9 @@ async function extractTextFromPDF(filePath: string): Promise<string> {
       'IMPORTANT INFORMATION',
     ];
 
-    // Extract text from each page with intelligent filtering
-    for (let pageNum = 1; pageNum <= numPages; pageNum++) {
+    // Extract text from each page in parallel with intelligent filtering
+    const pagePromises = Array.from({ length: numPages }, async (_, i) => {
+      const pageNum = i + 1;
       const page = await pdfDocument.getPage(pageNum);
       const textContent = await page.getTextContent();
 
@@ -63,15 +64,22 @@ async function extractTextFromPDF(filePath: string): Promise<string> {
 
       if (shouldSkip) {
         console.log(`Skipped page ${pageNum}/${numPages} (disclosure/blank page)`);
-        skippedPages++;
-        continue;
+        return null; // Return null for skipped pages
       }
 
-      allText += pageText + '\n\n';
       console.log(`Extracted page ${pageNum}/${numPages}`);
-    }
+      return pageText;
+    });
 
-    console.log(`Successfully extracted ${numPages - skippedPages}/${numPages} pages (skipped ${skippedPages} irrelevant pages)`);
+    // Wait for all pages to be processed in parallel
+    const pageTexts = await Promise.all(pagePromises);
+
+    // Filter out skipped pages and join
+    const validPages = pageTexts.filter((text): text is string => text !== null);
+    allText = validPages.join('\n\n');
+    skippedPages = numPages - validPages.length;
+
+    console.log(`Successfully extracted ${validPages.length}/${numPages} pages (skipped ${skippedPages} irrelevant pages)`);
     return allText;
   } catch (error) {
     console.error('Error extracting PDF text:', error);

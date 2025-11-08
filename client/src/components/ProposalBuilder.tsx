@@ -104,6 +104,8 @@ export default function ProposalBuilder({
   const [isGeneratingPitch, setIsGeneratingPitch] = useState(false);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const [showPitchOptions, setShowPitchOptions] = useState(false);
+  const [isEditingPitch, setIsEditingPitch] = useState(false);
+  const [editedPitch, setEditedPitch] = useState('');
   const [pitchOptions, setPitchOptions] = useState<PitchOptions>({
     tone: 'neutral',
     length: 'standard',
@@ -147,6 +149,12 @@ export default function ProposalBuilder({
       id: 'amortization-chart',
       label: 'Payoff Timeline Chart',
       description: 'Visual timeline comparison',
+      enabled: false,
+    },
+    {
+      id: 'signature',
+      label: 'Email Signature',
+      description: 'Professional email signature with contact details',
       enabled: false,
     },
   ]);
@@ -211,6 +219,22 @@ export default function ProposalBuilder({
     setTimeout(() => {
       handleGeneratePitch();
     }, 100);
+  };
+
+  // Pitch editing handlers
+  const handleStartEditPitch = () => {
+    setEditedPitch(aiPitch);
+    setIsEditingPitch(true);
+  };
+
+  const handleSavePitch = () => {
+    setAiPitch(editedPitch);
+    setIsEditingPitch(false);
+  };
+
+  const handleCancelEditPitch = () => {
+    setEditedPitch('');
+    setIsEditingPitch(false);
   };
 
   // Wizard navigation
@@ -411,9 +435,50 @@ export default function ProposalBuilder({
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                Preview
+                {isEditingPitch ? 'Editing Pitch' : 'Preview'}
+                {!isEditingPitch && (
+                  <button
+                    className="btn-icon-only"
+                    onClick={handleStartEditPitch}
+                    title="Edit pitch"
+                    style={{ marginLeft: 'auto', padding: '0.5rem' }}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '18px', height: '18px' }}>
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                  </button>
+                )}
               </div>
-              <div className="pitch-content">{aiPitch}</div>
+              {isEditingPitch ? (
+                <>
+                  <textarea
+                    className="pitch-content"
+                    value={editedPitch}
+                    onChange={(e) => setEditedPitch(e.target.value)}
+                    rows={8}
+                    style={{
+                      width: '100%',
+                      padding: '1rem',
+                      border: '2px solid #3b82f6',
+                      borderRadius: '8px',
+                      fontSize: '1rem',
+                      fontFamily: 'inherit',
+                      lineHeight: '1.7',
+                      resize: 'vertical'
+                    }}
+                  />
+                  <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1rem', justifyContent: 'flex-end' }}>
+                    <button className="btn-secondary" onClick={handleCancelEditPitch}>
+                      Cancel
+                    </button>
+                    <button className="btn-primary" onClick={handleSavePitch}>
+                      Save Changes
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <div className="pitch-content">{aiPitch}</div>
+              )}
             </div>
           )}
 
@@ -435,17 +500,6 @@ export default function ProposalBuilder({
           <p className="section-description">
             Choose which sections to include and drag to reorder them
           </p>
-
-          <div className="savings-summary">
-            <div className="summary-item">
-              <span>Interest Savings:</span>
-              <strong>{formatCurrency(simulation.comparison.interestSavings)}</strong>
-            </div>
-            <div className="summary-item">
-              <span>Time Saved:</span>
-              <strong>{yearsMonthsFromMonths(simulation.comparison.timeSavedMonths)}</strong>
-            </div>
-          </div>
 
           <DndContext
             sensors={sensors}
@@ -578,6 +632,82 @@ export default function ProposalBuilder({
                         <h4>🔓 Full Flexibility</h4>
                         <p>Access your funds anytime while they work to reduce your interest.</p>
                       </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Cash Flow Analysis */}
+                {components.find((c) => c.id === 'cash-flow-details')?.enabled && (
+                  <div className="preview-section">
+                    <h3>Cash Flow Analysis</h3>
+                    <table className="preview-table">
+                      <thead>
+                        <tr>
+                          <th>Item</th>
+                          <th style={{textAlign: 'right'}}>Amount</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td>Monthly Income</td>
+                          <td style={{textAlign: 'right'}}>{formatCurrency(simulation.cashFlow?.totalIncome || 0)}</td>
+                        </tr>
+                        <tr>
+                          <td>Monthly Expenses</td>
+                          <td style={{textAlign: 'right'}}>{formatCurrency(simulation.cashFlow?.totalExpenses || 0)}</td>
+                        </tr>
+                        <tr className="savings-cell">
+                          <td><strong>Net Monthly Cash Flow</strong></td>
+                          <td style={{textAlign: 'right'}}><strong>{formatCurrency(simulation.cashFlow?.netCashFlow || 0)}</strong></td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+                {/* Payoff Timeline Chart */}
+                {components.find((c) => c.id === 'amortization-chart')?.enabled && (
+                  <div className="preview-section">
+                    <h3>Payoff Timeline Comparison</h3>
+                    <div style={{ background: '#f7fafc', padding: '2rem', borderRadius: '12px', textAlign: 'center' }}>
+                      <p style={{ marginBottom: '1rem', color: '#64748b' }}>Visual timeline showing accelerated payoff</p>
+                      <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', alignItems: 'flex-end' }}>
+                        <div style={{ flex: 1, maxWidth: '200px' }}>
+                          <div style={{
+                            height: `${(simulation.traditional.payoffMonths / simulation.traditional.payoffMonths) * 200}px`,
+                            background: '#3b82f6',
+                            borderRadius: '8px 8px 0 0',
+                            marginBottom: '0.5rem',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: 'white',
+                            fontWeight: '700'
+                          }}>
+                            {yearsMonthsFromMonths(simulation.traditional.payoffMonths)}
+                          </div>
+                          <div style={{ fontWeight: '600', color: '#475569' }}>Traditional</div>
+                        </div>
+                        <div style={{ flex: 1, maxWidth: '200px' }}>
+                          <div style={{
+                            height: `${(simulation.allInOne.payoffMonths / simulation.traditional.payoffMonths) * 200}px`,
+                            background: '#9bc53d',
+                            borderRadius: '8px 8px 0 0',
+                            marginBottom: '0.5rem',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: 'white',
+                            fontWeight: '700'
+                          }}>
+                            {yearsMonthsFromMonths(simulation.allInOne.payoffMonths)}
+                          </div>
+                          <div style={{ fontWeight: '600', color: '#475569' }}>All-In-One</div>
+                        </div>
+                      </div>
+                      <p style={{ marginTop: '1.5rem', color: '#16a34a', fontWeight: '600', fontSize: '1.1rem' }}>
+                        Pay off {yearsMonthsFromMonths(simulation.comparison.timeSavedMonths)} faster!
+                      </p>
                     </div>
                   </div>
                 )}
@@ -768,6 +898,84 @@ export default function ProposalBuilder({
                   <h4 style={{ margin: '0 0 0.75rem 0', color: '#2d3748' }}>📈 Accelerated Payoff</h4>
                   <p style={{ margin: 0, fontSize: '0.9rem', lineHeight: '1.6' }}>Every dollar that stays in your account works to reduce interest. You'll pay off your mortgage {yearsMonthsFromMonths(simulation.comparison.timeSavedMonths)} faster.</p>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* Cash Flow Analysis */}
+          {components.find((c) => c.id === 'cash-flow-details')?.enabled && (
+            <div style={{ marginBottom: '2rem' }}>
+              <h3 style={{ fontSize: '1.5rem', marginBottom: '1.5rem', textAlign: 'center', color: '#2d3748' }}>Cash Flow Analysis</h3>
+              <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '1rem' }}>
+                <thead>
+                  <tr>
+                    <th style={{ background: '#f8fafc', padding: '0.75rem 1rem', textAlign: 'left', fontWeight: 600, color: '#334155', border: '2px solid #e2e8f0' }}>Item</th>
+                    <th style={{ background: '#f8fafc', padding: '0.75rem 1rem', textAlign: 'right', fontWeight: 600, color: '#334155', border: '2px solid #e2e8f0' }}>Amount</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td style={{ padding: '0.75rem 1rem', border: '1px solid #e2e8f0', color: '#475569' }}>Monthly Income</td>
+                    <td style={{ padding: '0.75rem 1rem', border: '1px solid #e2e8f0', color: '#475569', textAlign: 'right' }}>{formatCurrency(simulation.cashFlow?.totalIncome || 0)}</td>
+                  </tr>
+                  <tr>
+                    <td style={{ padding: '0.75rem 1rem', border: '1px solid #e2e8f0', color: '#475569' }}>Monthly Expenses</td>
+                    <td style={{ padding: '0.75rem 1rem', border: '1px solid #e2e8f0', color: '#475569', textAlign: 'right' }}>{formatCurrency(simulation.cashFlow?.totalExpenses || 0)}</td>
+                  </tr>
+                  <tr style={{ background: '#f0f8e9' }}>
+                    <td style={{ padding: '0.75rem 1rem', border: '1px solid #e2e8f0', color: '#16a34a', fontWeight: 600 }}><strong>Net Monthly Cash Flow</strong></td>
+                    <td style={{ padding: '0.75rem 1rem', border: '1px solid #e2e8f0', color: '#16a34a', fontWeight: 600, textAlign: 'right' }}><strong>{formatCurrency(simulation.cashFlow?.netCashFlow || 0)}</strong></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {/* Payoff Timeline Chart */}
+          {components.find((c) => c.id === 'amortization-chart')?.enabled && (
+            <div style={{ marginBottom: '2rem' }}>
+              <h3 style={{ fontSize: '1.5rem', marginBottom: '1.5rem', textAlign: 'center', color: '#2d3748' }}>Payoff Timeline Comparison</h3>
+              <div style={{ background: '#f7fafc', padding: '2rem', borderRadius: '12px', textAlign: 'center' }}>
+                <p style={{ marginBottom: '1rem', color: '#64748b', fontSize: '0.95rem' }}>Visual timeline showing accelerated payoff with All-In-One loan</p>
+                <div style={{ display: 'flex', gap: '2rem', justifyContent: 'center', alignItems: 'flex-end', marginTop: '1.5rem' }}>
+                  <div style={{ flex: '0 0 180px' }}>
+                    <div style={{
+                      height: '200px',
+                      background: '#3b82f6',
+                      borderRadius: '8px 8px 0 0',
+                      marginBottom: '0.75rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: 'white',
+                      fontWeight: 700,
+                      fontSize: '1.1rem'
+                    }}>
+                      {yearsMonthsFromMonths(simulation.traditional.payoffMonths)}
+                    </div>
+                    <div style={{ fontWeight: 600, color: '#475569', fontSize: '1rem' }}>Traditional Mortgage</div>
+                  </div>
+                  <div style={{ flex: '0 0 180px' }}>
+                    <div style={{
+                      height: `${(simulation.allInOne.payoffMonths / simulation.traditional.payoffMonths) * 200}px`,
+                      background: '#9bc53d',
+                      borderRadius: '8px 8px 0 0',
+                      marginBottom: '0.75rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: 'white',
+                      fontWeight: 700,
+                      fontSize: '1.1rem'
+                    }}>
+                      {yearsMonthsFromMonths(simulation.allInOne.payoffMonths)}
+                    </div>
+                    <div style={{ fontWeight: 600, color: '#475569', fontSize: '1rem' }}>All-In-One Loan</div>
+                  </div>
+                </div>
+                <p style={{ marginTop: '1.5rem', color: '#16a34a', fontWeight: 600, fontSize: '1.2rem' }}>
+                  🎉 Pay off your mortgage {yearsMonthsFromMonths(simulation.comparison.timeSavedMonths)} faster!
+                </p>
               </div>
             </div>
           )}

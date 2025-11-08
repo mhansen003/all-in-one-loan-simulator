@@ -121,6 +121,7 @@
   font-size: 0.875rem;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  width: 100%;
 }
 
 .pitch-label svg {
@@ -359,7 +360,7 @@
 
 .wizard-step {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 0.75rem;
   position: relative;
   z-index: 1;

@@ -11,7 +11,6 @@ interface SimulationResultsProps {
   cashFlow?: CashFlowAnalysis;
   onReset: () => void;
   onGenerateReport?: () => void;
-  onCreateProposal?: () => void;
   onCashFlowUpdate?: (cashFlow: CashFlowAnalysis) => void;
 }
 
@@ -23,7 +22,6 @@ export default function SimulationResults({
   cashFlow,
   onReset,
   onGenerateReport,
-  onCreateProposal,
   onCashFlowUpdate,
 }: SimulationResultsProps) {
   const [activeTab, setActiveTab] = useState<TabView>('results');
@@ -49,6 +47,32 @@ export default function SimulationResults({
     return `${years} yr${years !== 1 ? 's' : ''} ${months} mo`;
   };
 
+  // Calculate AIO suitability rating based on net cash flow
+  const getTemperatureRating = (netCashFlow: number): {
+    rating: string;
+    color: string;
+    icon: string;
+  } => {
+    if (netCashFlow >= 2000) {
+      return { rating: 'EXCELLENT', color: '#10b981', icon: '🔥' };
+    } else if (netCashFlow >= 1000) {
+      return { rating: 'VERY GOOD', color: '#22c55e', icon: '✨' };
+    } else if (netCashFlow >= 500) {
+      return { rating: 'GOOD', color: '#84cc16', icon: '👍' };
+    } else if (netCashFlow >= 200) {
+      return { rating: 'FAIR', color: '#eab308', icon: '⚠️' };
+    } else if (netCashFlow >= 0) {
+      return { rating: 'MARGINAL', color: '#f59e0b', icon: '⚡' };
+    } else {
+      return { rating: 'NOT SUITABLE', color: '#ef4444', icon: '❌' };
+    }
+  };
+
+  const netCashFlow = cashFlow ? cashFlow.netCashFlow : 0;
+  const temperatureRating = getTemperatureRating(netCashFlow);
+  const confidenceColor = cashFlow && cashFlow.confidence >= 0.8 ? '#48bb78' : cashFlow && cashFlow.confidence >= 0.6 ? '#ed8936' : '#f56565';
+  const confidenceLabel = cashFlow && cashFlow.confidence >= 0.8 ? 'High' : cashFlow && cashFlow.confidence >= 0.6 ? 'Medium' : 'Low';
+
   return (
     <div className="simulation-results">
       <div className="results-header">
@@ -60,6 +84,77 @@ export default function SimulationResults({
         <h1>Simulation Results</h1>
         <p>Compare traditional mortgage vs All-In-One loan with cash flow offset</p>
       </div>
+
+      {/* Confidence and Suitability Banners */}
+      {cashFlow && (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '2rem' }}>
+          <div className="confidence-banner" style={{ borderColor: confidenceColor, marginBottom: 0 }}>
+            <div className="confidence-icon" style={{ background: confidenceColor }}>
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div>
+              <strong>Analysis Confidence: {confidenceLabel}</strong>
+              <p>AI confidence score: {(cashFlow.confidence * 100).toFixed(0)}%</p>
+            </div>
+          </div>
+
+          <div className="confidence-banner" style={{ borderColor: temperatureRating.color, marginBottom: 0 }}>
+            <div className="confidence-icon" style={{ background: temperatureRating.color }}>
+              <span style={{ fontSize: '1.5rem' }}>{temperatureRating.icon}</span>
+            </div>
+            <div>
+              <strong>{temperatureRating.rating}</strong>
+              <p>AIO Loan Suitability</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Summary Metric Cards */}
+      {cashFlow && (
+        <div className="summary-cards">
+          <div className="summary-card income-card">
+            <div className="card-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div className="card-content">
+              <div className="card-label">Total Monthly Income</div>
+              <div className="card-value">{formatCurrency(cashFlow.totalIncome)}</div>
+              <div className="card-description">Average across 12 months</div>
+            </div>
+          </div>
+
+          <div className="summary-card expense-card">
+            <div className="card-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+              </svg>
+            </div>
+            <div className="card-content">
+              <div className="card-label">Total Monthly Expenses</div>
+              <div className="card-value">{formatCurrency(cashFlow.totalExpenses)}</div>
+              <div className="card-description">Recurring expenses only</div>
+            </div>
+          </div>
+
+          <div className="summary-card cashflow-card">
+            <div className="card-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+              </svg>
+            </div>
+            <div className="card-content">
+              <div className="card-label">Net Cash Flow</div>
+              <div className="card-value positive">{formatCurrency(cashFlow.netCashFlow)}</div>
+              <div className="card-description">Available for loan offset</div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Tab Navigation */}
       {cashFlow && (
@@ -108,21 +203,6 @@ export default function SimulationResults({
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
             </svg>
             Email Signature
-          </button>
-        </div>
-      )}
-
-      {/* Primary CTA - Create Proposal */}
-      {onCreateProposal && (
-        <div className="primary-cta-container">
-          <button className="btn-primary-cta" onClick={onCreateProposal}>
-            <svg className="btn-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-            Create Client Proposal
-            <svg className="btn-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
           </button>
         </div>
       )}

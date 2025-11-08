@@ -1,6 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { CMG_BRANDING } from '../constants/cmgBranding';
+import SignatureEmailModal from './SignatureEmailModal';
 import './SignatureGenerator.css';
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
 interface SignatureData {
   name: string;
@@ -25,9 +28,87 @@ export function SignatureGenerator() {
 
   const [showPreview, setShowPreview] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+  const [showEmailModal, setShowEmailModal] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState('');
+  const [signatureLoaded, setSignatureLoaded] = useState(false);
 
   const handleInputChange = (field: keyof SignatureData, value: string) => {
     setSignatureData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleEmailSubmit = async (email: string) => {
+    setIsLoading(true);
+    setLoadingMessage('Checking for existing signature...');
+
+    try {
+      // Check if signature exists
+      const response = await fetch(`${API_URL}/signature/${encodeURIComponent(email)}`);
+
+      if (response.ok) {
+        const data = await response.json();
+        setSignatureData({
+          name: data.signature.name,
+          title: data.signature.title || '',
+          phone: data.signature.phone,
+          email: data.signature.email,
+          nmls: data.signature.nmls || '',
+          officeAddress: data.signature.officeAddress || '',
+          photoUrl: data.signature.photoUrl || '',
+        });
+        setSignatureLoaded(true);
+        setLoadingMessage('Signature loaded!');
+        setTimeout(() => {
+          setShowEmailModal(false);
+          setIsLoading(false);
+        }, 500);
+      } else {
+        // No signature found, create new one
+        setSignatureData(prev => ({ ...prev, email }));
+        setLoadingMessage('No signature found. Create a new one below.');
+        setTimeout(() => {
+          setShowEmailModal(false);
+          setIsLoading(false);
+        }, 500);
+      }
+    } catch (error) {
+      console.error('Error checking signature:', error);
+      // On error, just let them create new one
+      setSignatureData(prev => ({ ...prev, email }));
+      setShowEmailModal(false);
+      setIsLoading(false);
+    }
+  };
+
+  const handleSaveSignature = async () => {
+    if (!isFormValid) return;
+
+    setIsLoading(true);
+    setSaveSuccess(false);
+
+    try {
+      const response = await fetch(`${API_URL}/signature`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(signatureData),
+      });
+
+      if (response.ok) {
+        setSaveSuccess(true);
+        setTimeout(() => setSaveSuccess(false), 3000);
+      } else {
+        console.error('Failed to save signature');
+        alert('Failed to save signature. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error saving signature:', error);
+      alert('Failed to save signature. Please check your connection.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const generateSignatureHTML = (): string => {
@@ -180,6 +261,15 @@ export function SignatureGenerator() {
             <span className="form-help-text">Direct link to your professional photo (optional)</span>
           </div>
 
+          {signatureLoaded && (
+            <div style={{ padding: '1rem', background: '#d1fae5', border: '1px solid #6ee7b7', borderRadius: '8px', marginBottom: '1rem' }}>
+              <strong style={{ color: '#047857' }}>✓ Signature loaded from your account</strong>
+              <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.9rem', color: '#065f46' }}>
+                You can update the information below and click "Save Signature" to persist changes.
+              </p>
+            </div>
+          )}
+
           <div className="signature-actions">
             <button
               className="btn-secondary"
@@ -190,10 +280,27 @@ export function SignatureGenerator() {
             </button>
             <button
               className="btn-primary"
+              onClick={handleSaveSignature}
+              disabled={!isFormValid || isLoading}
+              style={{ marginRight: '0.75rem' }}
+            >
+              {isLoading ? (
+                <>
+                  <div className="spinner-small" style={{ display: 'inline-block', marginRight: '0.5rem' }}></div>
+                  Saving...
+                </>
+              ) : saveSuccess ? (
+                '✓ Saved!'
+              ) : (
+                'Save Signature'
+              )}
+            </button>
+            <button
+              className="btn-primary"
               onClick={handleCopySignature}
               disabled={!isFormValid}
             >
-              {copySuccess ? '✓ Copied!' : 'Copy HTML Signature'}
+              {copySuccess ? '✓ Copied!' : 'Copy HTML'}
             </button>
           </div>
         </div>
@@ -246,6 +353,14 @@ export function SignatureGenerator() {
           </div>
         </div>
       )}
+
+      {/* Email Modal */}
+      <SignatureEmailModal
+        isOpen={showEmailModal}
+        onClose={() => setShowEmailModal(false)}
+        onEmailSubmit={handleEmailSubmit}
+        isLoading={isLoading}
+      />
     </div>
   );
 }

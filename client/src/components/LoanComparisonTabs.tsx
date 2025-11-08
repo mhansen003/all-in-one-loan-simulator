@@ -678,7 +678,7 @@ function VisualizeTab({ comparison, weeklyBreakdown, loanAmount }: any) {
     traditionalData.push({ month, balance: Math.max(0, tradBalance) });
     // Approximate 6 months of payments
     for (let i = 0; i < 6; i++) {
-      const interest = tradBalance * (0.065 / 12); // Approximate
+      const interest = tradBalance * (traditionalRate / 12);
       const principal = comparison.traditional.monthlyPayment - interest;
       tradBalance -= principal;
       if (tradBalance < 0) tradBalance = 0;
