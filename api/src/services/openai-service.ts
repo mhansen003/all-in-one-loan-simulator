@@ -23,7 +23,7 @@ const openai = USE_OPENROUTER
 
 // Model selection based on provider
 const VISION_MODEL = USE_OPENROUTER
-  ? 'google/gemini-2.0-flash-exp' // Gemini 2.0 Flash via OpenRouter - fast vision + document processing
+  ? 'google/gemini-2.0-flash-001' // Gemini 2.0 Flash via OpenRouter - fast vision + document processing
   : 'gpt-4o'; // GPT-4o via OpenAI Direct - proven vision + PDF support, no 8k limit
 
 console.log(`🔧 AI Provider: ${USE_OPENROUTER ? 'OpenRouter' : 'OpenAI Direct'}`);
