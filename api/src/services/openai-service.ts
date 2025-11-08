@@ -552,7 +552,29 @@ Return your response in the following JSON format:
     const response = await Promise.race([analysisApiCallPromise, analysisTimeoutPromise]);
     console.log('✅ AI analysis completed successfully');
 
-    const result = JSON.parse(response.choices[0]?.message?.content || '{}');
+    // Parse JSON with better error handling
+    const rawContent = response.choices[0]?.message?.content || '{}';
+    console.log(`📝 Raw response length: ${rawContent.length} chars`);
+
+    let result;
+    try {
+      result = JSON.parse(rawContent);
+    } catch (parseError) {
+      console.error('❌ JSON Parse Error:', parseError);
+      console.log('🔍 Attempting to extract JSON from response...');
+
+      // Try to find JSON in markdown code blocks
+      const jsonMatch = rawContent.match(/```(?:json)?\s*(\{[\s\S]*\})\s*```/);
+      if (jsonMatch) {
+        console.log('✓ Found JSON in markdown code block, retrying parse...');
+        result = JSON.parse(jsonMatch[1]);
+      } else {
+        // Log first and last 500 chars for debugging
+        console.error('First 500 chars:', rawContent.substring(0, 500));
+        console.error('Last 500 chars:', rawContent.substring(rawContent.length - 500));
+        throw parseError;
+      }
+    }
 
     // Clean up uploaded files after processing
     for (const file of files) {

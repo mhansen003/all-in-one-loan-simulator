@@ -662,7 +662,11 @@ export default function MortgageDetailsForm({
                         {isFetchingRate ? 'Fetching...' : 'Fetch Current Rate'}
                       </button>
                       <span
-                        title="Fetches the current 30-year fixed mortgage rate from the Federal Reserve Economic Data (FRED) API. This rate updates weekly and represents the national average. Click 'Fetch Current Rate' to get the latest data automatically."
+                        title={`Fetch Current Mortgage Rate\n\n` +
+                          `📊 Source: Federal Reserve Economic Data (FRED)\n` +
+                          `📅 Updates: Weekly (national average)\n` +
+                          `🎯 Rate Type: 30-year fixed mortgage\n\n` +
+                          `Click "Fetch Current Rate" to automatically retrieve the latest market rate from the official FRED database.`}
                         style={{
                           display: 'inline-flex',
                           alignItems: 'center',
