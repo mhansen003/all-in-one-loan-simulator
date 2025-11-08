@@ -6,7 +6,7 @@
 
 .proposal-header {
   text-align: center;
-  margin-bottom: 3rem;
+  margin-bottom: 2rem;
 }
 
 .proposal-header .header-icon {
@@ -342,7 +342,7 @@
 .wizard-steps {
   display: flex;
   justify-content: space-between;
-  margin: 2rem 0;
+  margin: 1.5rem 0;
   padding: 0 2rem;
   position: relative;
 }
@@ -426,8 +426,8 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 2rem;
-  padding-top: 2rem;
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
   border-top: 2px solid #e2e8f0;
 }
 

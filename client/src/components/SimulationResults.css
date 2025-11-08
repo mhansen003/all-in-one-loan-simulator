@@ -7,7 +7,7 @@
   display: flex;
   align-items: center;
   gap: 2rem;
-  margin-bottom: 3rem;
+  margin-bottom: 2rem;
 }
 
 .header-icon {
@@ -46,11 +46,11 @@
   display: flex;
   align-items: center;
   gap: 1rem;
-  padding: 1.25rem;
+  padding: 1rem;
   background: white;
   border: 2px solid;
   border-radius: 10px;
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
 }
 
 .confidence-icon {
@@ -86,8 +86,8 @@
 .summary-cards {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 1.5rem;
-  margin-bottom: 2rem;
+  gap: 1.25rem;
+  margin-bottom: 1.5rem;
 }
 
 .summary-card {
@@ -169,7 +169,7 @@
 .results-tabs {
   display: flex;
   gap: 0.75rem;
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
   border-bottom: 3px solid #e2e8f0;
   justify-content: center;
 }
@@ -214,7 +214,7 @@
 .primary-cta-container {
   display: flex;
   justify-content: center;
-  margin-bottom: 2.5rem;
+  margin-bottom: 2rem;
 }
 
 .btn-primary-cta {
@@ -256,8 +256,8 @@
 .savings-highlight {
   background: linear-gradient(135deg, #9bc53d 0%, #8ab62f 100%);
   border-radius: 16px;
-  padding: 2.5rem;
-  margin-bottom: 3rem;
+  padding: 2rem;
+  margin-bottom: 2rem;
   color: white;
   box-shadow: 0 10px 30px rgba(155, 197, 61, 0.3);
 }
@@ -320,13 +320,13 @@
 
 /* Comparison Section */
 .comparison-section {
-  margin-bottom: 3rem;
+  margin-bottom: 2rem;
 }
 
 .comparison-section h2 {
   color: #2d3748;
   font-size: 2rem;
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
   text-align: center;
   font-weight: 600;
 }
@@ -452,13 +452,13 @@
 
 /* Details Section */
 .details-section {
-  margin-bottom: 3rem;
+  margin-bottom: 2rem;
 }
 
 .details-section h2 {
   color: #2d3748;
   font-size: 2rem;
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
   text-align: center;
   font-weight: 600;
 }

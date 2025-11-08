@@ -7,11 +7,11 @@
   display: flex;
   align-items: center;
   gap: 1rem;
-  padding: 1.25rem;
+  padding: 1rem;
   background: white;
   border: 2px solid;
   border-radius: 10px;
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
 }
 
 .confidence-icon {
@@ -48,7 +48,7 @@
   display: flex;
   gap: 0.5rem;
   border-bottom: 2px solid #e2e8f0;
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
 }
 
 .tab {
@@ -166,11 +166,11 @@
   background: white;
   border: 3px solid;
   border-radius: 16px;
-  padding: 2rem;
-  margin: 2rem 0;
+  padding: 1.5rem;
+  margin: 1.5rem 0;
   display: flex;
   align-items: center;
-  gap: 2rem;
+  gap: 1.5rem;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
   animation: slideIn 0.5s ease;
 }
