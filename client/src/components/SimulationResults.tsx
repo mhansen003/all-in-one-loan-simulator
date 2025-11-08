@@ -297,52 +297,6 @@ export default function SimulationResults({
         </div>
       </div>
 
-      {/* Details Section */}
-      <div className="details-section">
-        <h2>How the All-In-One Loan Works</h2>
-
-        <div className="detail-cards">
-          <div className="detail-card">
-            <div className="detail-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <h3>Cash Flow Offset</h3>
-            <p>
-              Your positive cash flow sits in the loan account, reducing the balance
-              used for interest calculations. This creates massive savings over time.
-            </p>
-          </div>
-
-          <div className="detail-card">
-            <div className="detail-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-              </svg>
-            </div>
-            <h3>Accelerated Payoff</h3>
-            <p>
-              Every dollar that stays in your account works to reduce interest. You'll
-              pay off your mortgage {yearsMonthsFromMonths(Math.max(0, simulation.comparison.timeSavedMonths))} faster.
-            </p>
-          </div>
-
-          <div className="detail-card">
-            <div className="detail-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0121 12c0 5.523-4.477 10-10 10S1 17.523 1 12 5.477 2 11 2c1.821 0 3.532.465 5.018 1.284m0 0a9.001 9.001 0 00-5.018-1.284c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c0-1.821-.465-3.532-1.284-5.018" />
-              </svg>
-            </div>
-            <h3>Full Flexibility</h3>
-            <p>
-              Access your funds anytime with checks, debit card, or online transfers.
-              Your money works for you while remaining completely accessible.
-            </p>
-          </div>
-        </div>
-      </div>
-
       {/* Secondary Action Buttons */}
       <div className="results-actions">
         {onGenerateReport && (
