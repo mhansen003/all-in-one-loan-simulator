@@ -220,7 +220,7 @@ async function analyzePdf(filePath: string): Promise<string> {
     console.log('   🚀 Sending API request NOW with native PDF...');
     const startTime = Date.now();
 
-    // Send PDF directly to OpenAI using file input format
+    // Send PDF directly to OpenRouter using proper file format
     const apiCallPromise = openai.chat.completions.create({
       model: VISION_MODEL,
       messages: [
@@ -248,16 +248,17 @@ Format each transaction on a new line like:
 Be thorough and extract EVERY transaction visible in the PDF.`,
             },
             {
-              type: 'image_url',
-              image_url: {
-                url: `data:application/pdf;base64,${base64Pdf}`,
+              type: 'file' as any, // OpenRouter-specific file type
+              file: {
+                filename: path.basename(filePath),
+                file_data: `data:application/pdf;base64,${base64Pdf}`,
               },
-            },
+            } as any,
           ],
         },
       ],
       max_tokens: 16000, // Higher limit for multi-page PDFs
-    }, {
+    } as any, {
       timeout: TIMEOUT_MS,
     });
 
