@@ -152,6 +152,10 @@ export default function ProposalBuilder({
     cta: 'moderate',
   });
 
+  // Component preview state
+  const [showComponentPreview, setShowComponentPreview] = useState(false);
+  const [previewComponentId, setPreviewComponentId] = useState<string | null>(null);
+
   // PDF content ref
   const pdfContentRef = useRef<HTMLDivElement>(null);
 
@@ -222,9 +226,9 @@ export default function ProposalBuilder({
     );
   };
 
-  // Preview functionality removed
-  const handlePreviewComponent = (_id: string) => {
-    // No-op: Preview feature not implemented
+  const handlePreviewComponent = (id: string) => {
+    setPreviewComponentId(id);
+    setShowComponentPreview(true);
   };
 
   const handleGeneratePitch = async () => {
@@ -1214,6 +1218,33 @@ export default function ProposalBuilder({
         onApply={handleApplyPitchOptions}
         currentOptions={pitchOptions}
       />
+
+      {/* Component Preview Modal */}
+      {showComponentPreview && previewComponentId && (() => {
+        const formatCurrency = (amount: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(amount);
+        const component = components.find(c => c.id === previewComponentId);
+
+        return (
+          <div onClick={() => setShowComponentPreview(false)} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '2rem' }}>
+            <div onClick={(e) => e.stopPropagation()} style={{ background: 'white', borderRadius: '16px', maxWidth: '800px', width: '100%', maxHeight: '90vh', overflow: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
+              <div style={{ padding: '2rem', borderBottom: '2px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)' }}>
+                <div><h2 style={{ margin: 0, fontSize: '1.5rem', color: '#1e293b' }}>{component?.label}</h2><p style={{ margin: '0.5rem 0 0', color: '#64748b', fontSize: '0.95rem' }}>{component?.description}</p></div>
+                <button onClick={() => setShowComponentPreview(false)} style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '0.5rem', cursor: 'pointer' }}><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '24px', height: '24px' }}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button>
+              </div>
+              <div style={{ padding: '2rem', background: '#f8fafc' }}>
+                <div style={{ background: 'white', borderRadius: '12px', border: '2px solid #e2e8f0', padding: '2rem' }}>
+                  {previewComponentId === 'savings-highlight' && <div style={{ textAlign: 'center', padding: '2rem', background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', borderRadius: '12px', color: 'white' }}><div style={{ fontSize: '0.9rem', opacity: 0.9 }}>Total Interest Savings</div><div style={{ fontSize: '3rem', fontWeight: 'bold' }}>{formatCurrency(simulation.comparison.interestSavings)}</div></div>}
+                  {previewComponentId === 'comparison-cards' && <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}><div style={{ padding: '1.5rem', background: '#f8fafc', borderRadius: '12px' }}><div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#4299e1' }}>{formatCurrency(simulation.traditionalLoan.totalInterestPaid)}</div><div style={{ fontSize: '0.9rem', color: '#64748b' }}>Traditional Interest</div></div><div style={{ padding: '1.5rem', background: '#f0fdf4', borderRadius: '12px' }}><div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#9bc53d' }}>{formatCurrency(simulation.allInOneLoan.totalInterestPaid)}</div><div style={{ fontSize: '0.9rem', color: '#64748b' }}>AIO Interest</div></div></div>}
+                  {previewComponentId === 'how-it-works' && <div style={{ padding: '1.5rem' }}><h3 style={{ color: '#1e293b', marginBottom: '1rem' }}>How the All-In-One Loan Works</h3><div style={{ lineHeight: 1.6, color: '#475569' }}>The All-In-One loan combines your mortgage and bank account into one, allowing your income to offset your loan balance daily.</div></div>}
+                  {previewComponentId === 'cash-flow-details' && cashFlow && <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', padding: '1.5rem' }}><div style={{ padding: '1rem', background: '#f0fdf4', borderRadius: '8px' }}><div style={{ fontSize: '0.85rem', color: '#64748b' }}>Monthly Income</div><div style={{ fontSize: '1.25rem', fontWeight: '700', color: '#10b981' }}>{formatCurrency(cashFlow.totalIncome)}</div></div><div style={{ padding: '1rem', background: '#fef3c7', borderRadius: '8px' }}><div style={{ fontSize: '0.85rem', color: '#64748b' }}>Monthly Expenses</div><div style={{ fontSize: '1.25rem', fontWeight: '700', color: '#f59e0b' }}>{formatCurrency(cashFlow.totalExpenses)}</div></div><div style={{ padding: '1rem', background: '#dbeafe', borderRadius: '8px' }}><div style={{ fontSize: '0.85rem', color: '#64748b' }}>Net Cash Flow</div><div style={{ fontSize: '1.25rem', fontWeight: '700', color: '#3b82f6' }}>{formatCurrency(cashFlow.netCashFlow)}</div></div></div>}
+                  {(!['savings-highlight', 'comparison-cards', 'how-it-works', 'cash-flow-details'].includes(previewComponentId)) && <div style={{ padding: '2rem', textAlign: 'center', color: '#94a3b8' }}>Preview rendering for {component?.label}</div>}
+                </div>
+                <div style={{ marginTop: '1.5rem', padding: '1rem', background: '#eff6ff', borderRadius: '8px', fontSize: '0.9rem', color: '#1e40af' }}>💡 This is a preview of how this component will appear in your proposal</div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }

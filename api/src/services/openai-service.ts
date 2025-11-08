@@ -365,6 +365,181 @@ function estimateTokens(text: string): number {
 }
 
 /**
+ * Chunk transactions into batches for processing
+ * Ensures each chunk stays under token limits
+ */
+function chunkTransactions(transactions: any[], maxTransactionsPerChunk: number = 250): any[][] {
+  const chunks: any[][] = [];
+
+  for (let i = 0; i < transactions.length; i += maxTransactionsPerChunk) {
+    const chunk = transactions.slice(i, i + maxTransactionsPerChunk);
+    chunks.push(chunk);
+  }
+
+  console.log(`📦 Split ${transactions.length} transactions into ${chunks.length} chunks of ~${maxTransactionsPerChunk} each`);
+
+  return chunks;
+}
+
+/**
+ * Process a single chunk of transactions with AI categorization
+ */
+async function analyzeTransactionChunk(
+  chunkData: any[],
+  chunkNumber: number,
+  totalChunks: number,
+  currentHousingPayment: number
+): Promise<OpenAIAnalysisResult> {
+  const chunkDataStr = JSON.stringify(chunkData);
+
+  console.log(`\n🔄 [Chunk ${chunkNumber}/${totalChunks}] Processing ${chunkData.length} transactions...`);
+  console.log(`   📊 Chunk size: ${chunkDataStr.length} characters (~${estimateTokens(chunkDataStr)} tokens)`);
+
+  const prompt = `You are a financial analysis expert analyzing a BATCH of transactions from bank statements.
+
+⚠️ CRITICAL: This is CHUNK ${chunkNumber} of ${totalChunks}. Analyze ONLY these transactions independently.
+⚠️ The data is ALREADY EXTRACTED as JSON. Your job: Categorize and analyze these transactions.
+⚠️ PRESERVE ALL TRANSACTIONS: Include EVERY transaction in your output.
+
+Current housing payment (to exclude from expenses): $${currentHousingPayment}
+
+Pre-Parsed Transaction Data for Chunk ${chunkNumber}:
+${chunkDataStr}
+
+Your task: CATEGORIZE and ANALYZE these transactions:
+
+CATEGORIZATION RULES:
+- "income": Deposits, paychecks, Zelle/transfers IN (positive amounts or credits)
+- "expense": Regular recurring expenses like utilities, bills, subscriptions, groceries
+- "housing": Rent or mortgage payments (around $${currentHousingPayment})
+- "one-time": Irregular purchases, large transfers, one-time payments
+
+FLAG ANOMALIES:
+- Luxury items, unusually large purchases, one-time events, irregular deposits
+- Provide specific flag reasons when flagged=true
+
+MONTHLY BREAKDOWN:
+- Group by month (YYYY-MM) and calculate income, expenses, net cash flow, transaction count
+
+CRITICAL RULES:
+✓ PRESERVE EVERY TRANSACTION - Output count must match input count (${chunkData.length} transactions)
+✓ USE EXACT DATES/AMOUNTS/DESCRIPTIONS from input
+✓ DETERMINISTIC - Same input = same output
+✓ NO SAMPLING - Include 100% of transactions
+
+Return COMPACT JSON (omit flagReason when flagged=false):
+{
+  "transactions": [
+    {"date": "YYYY-MM-DD", "description": "Description", "amount": 1234.56, "category": "income", "flagged": false, "monthYear": "2024-08"}
+  ],
+  "monthlyBreakdown": [
+    {"month": "2024-08", "income": 5000.00, "expenses": 2500.00, "netCashFlow": 2500.00, "transactionCount": 45}
+  ],
+  "totalIncome": 5000.00,
+  "totalExpenses": 2500.00,
+  "netCashFlow": 2500.00,
+  "confidence": 0.85
+}`;
+
+  const CHUNK_TIMEOUT_MS = 90000; // 90 seconds per chunk
+
+  try {
+    const response = await openaiDirect.chat.completions.create({
+      model: TEXT_MODEL,
+      messages: [
+        {
+          role: 'system',
+          content: 'You are a financial analyst specialized in cash flow analysis. Always respond with valid JSON. Be consistent and deterministic.',
+        },
+        {
+          role: 'user',
+          content: prompt,
+        },
+      ],
+      response_format: { type: 'json_object' },
+      temperature: 0,
+      top_p: 1,
+      seed: 42,
+      max_tokens: 16384,
+    }, {
+      timeout: CHUNK_TIMEOUT_MS,
+    });
+
+    const rawContent = response.choices[0]?.message?.content || '{}';
+    const result = JSON.parse(rawContent);
+
+    console.log(`✅ [Chunk ${chunkNumber}/${totalChunks}] Completed:`);
+    console.log(`   📊 Transactions returned: ${result.transactions?.length || 0}/${chunkData.length}`);
+    console.log(`   💰 Income: $${result.totalIncome?.toFixed(2) || 0}, Expenses: $${result.totalExpenses?.toFixed(2) || 0}`);
+
+    if (result.transactions?.length !== chunkData.length) {
+      console.warn(`⚠️  [Chunk ${chunkNumber}] Transaction count mismatch! Expected ${chunkData.length}, got ${result.transactions?.length || 0}`);
+    }
+
+    return result;
+  } catch (error) {
+    console.error(`❌ [Chunk ${chunkNumber}/${totalChunks}] Failed:`, error);
+    throw error;
+  }
+}
+
+/**
+ * Merge results from multiple chunks
+ */
+function mergeChunkResults(chunkResults: OpenAIAnalysisResult[]): OpenAIAnalysisResult {
+  console.log(`\n🔀 Merging ${chunkResults.length} chunk results...`);
+
+  // Combine all transactions
+  const allTransactions = chunkResults.flatMap(chunk => chunk.transactions || []);
+
+  // Merge monthly breakdowns (group by month and sum values)
+  const monthlyMap = new Map<string, any>();
+
+  chunkResults.forEach(chunk => {
+    (chunk.monthlyBreakdown || []).forEach(monthData => {
+      if (monthlyMap.has(monthData.month)) {
+        const existing = monthlyMap.get(monthData.month);
+        existing.income += monthData.income;
+        existing.expenses += monthData.expenses;
+        existing.netCashFlow += monthData.netCashFlow;
+        existing.transactionCount += monthData.transactionCount;
+      } else {
+        monthlyMap.set(monthData.month, { ...monthData });
+      }
+    });
+  });
+
+  const monthlyBreakdown = Array.from(monthlyMap.values()).sort((a, b) =>
+    a.month.localeCompare(b.month)
+  );
+
+  // Calculate merged totals
+  const totalIncome = chunkResults.reduce((sum, chunk) => sum + (chunk.totalIncome || 0), 0);
+  const totalExpenses = chunkResults.reduce((sum, chunk) => sum + (chunk.totalExpenses || 0), 0);
+  const netCashFlow = totalIncome - totalExpenses;
+
+  // Average confidence scores
+  const avgConfidence = chunkResults.reduce((sum, chunk) => sum + (chunk.confidence || 0), 0) / chunkResults.length;
+
+  console.log(`✅ Merge complete:`);
+  console.log(`   📊 Total transactions: ${allTransactions.length}`);
+  console.log(`   📅 Months covered: ${monthlyBreakdown.length}`);
+  console.log(`   💰 Total Income: $${totalIncome.toFixed(2)}`);
+  console.log(`   💰 Total Expenses: $${totalExpenses.toFixed(2)}`);
+  console.log(`   💰 Net Cash Flow: $${netCashFlow.toFixed(2)}`);
+  console.log(`   🎯 Avg Confidence: ${(avgConfidence * 100).toFixed(1)}%`);
+
+  return {
+    transactions: allTransactions,
+    monthlyBreakdown,
+    totalIncome,
+    totalExpenses,
+    netCashFlow,
+    confidence: avgConfidence,
+  };
+}
+
+/**
  * Split large data into chunks to stay under token limits
  *
  * OPTIMIZATION: Process data in smaller batches to avoid rate limits
@@ -580,8 +755,85 @@ export async function analyzeStatements(
     console.log('🔍 Analyzing combined transaction data with AI...');
     console.log(`📊 Combined data length: ${combinedData.length} characters (~${estimateTokens(combinedData)} tokens)`);
 
-    // Don't chunk - we need ALL transactions for accurate analysis
-    // GPT-4o can handle up to 128K tokens, and most CSVs are well under that
+    // DECISION POINT: Use chunking for large datasets
+    // Try to parse as JSON to count transactions
+    let parsedTransactions: any[] = [];
+    let shouldUseChunking = false;
+
+    try {
+      // Attempt to parse as JSON array
+      parsedTransactions = JSON.parse(combinedData);
+
+      if (Array.isArray(parsedTransactions)) {
+        console.log(`📊 Detected ${parsedTransactions.length} transactions`);
+
+        // Use chunking if > 500 transactions (to ensure each chunk fits in 16K token output)
+        if (parsedTransactions.length > 500) {
+          console.log(`⚡ Using CHUNKED processing (${parsedTransactions.length} > 500 transactions)`);
+          shouldUseChunking = true;
+        } else {
+          console.log(`✓ Using SINGLE-REQUEST processing (${parsedTransactions.length} <= 500 transactions)`);
+        }
+      }
+    } catch (parseError) {
+      console.log('📝 Data is not a JSON array, using single-request processing');
+    }
+
+    // CHUNKED PROCESSING for large datasets
+    if (shouldUseChunking && parsedTransactions.length > 0) {
+      const chunks = chunkTransactions(parsedTransactions, 250);
+
+      console.log(`\n🚀 Processing ${chunks.length} chunks in parallel...`);
+      const startTime = Date.now();
+
+      // Process all chunks in parallel
+      const chunkPromises = chunks.map((chunk, index) =>
+        analyzeTransactionChunk(chunk, index + 1, chunks.length, currentHousingPayment)
+      );
+
+      const chunkResults = await Promise.all(chunkPromises);
+      const elapsedTime = Date.now() - startTime;
+
+      console.log(`\n⚡ All chunks processed in ${(elapsedTime / 1000).toFixed(1)}s`);
+
+      // Merge chunk results
+      const result = mergeChunkResults(chunkResults);
+
+      // Continue with deduplication and final processing...
+      const { uniqueTransactions, duplicateTransactions } = deduplicateTransactions(result.transactions || []);
+      const flaggedTransactions = uniqueTransactions.filter((t: any) => t.flagged === true);
+      const averageMonthlyBalance = Math.max(0, result.netCashFlow);
+
+      console.log('📈 Final Analysis Results:');
+      console.log(`  ✓ Total transactions: ${result.transactions?.length || 0}`);
+      console.log(`  ✓ Unique transactions: ${uniqueTransactions.length}`);
+      console.log(`  ✓ Duplicate transactions: ${duplicateTransactions.length}`);
+      console.log(`  ✓ Flagged for review: ${flaggedTransactions.length}`);
+      console.log(`  ✓ Net cash flow: $${result.netCashFlow || 0}`);
+
+      // Clean up files
+      for (const file of files) {
+        try {
+          await fs.unlink(file.path);
+        } catch (error) {
+          console.error(`Error deleting file ${file.path}:`, error);
+        }
+      }
+
+      return {
+        totalIncome: result.totalIncome || 0,
+        totalExpenses: result.totalExpenses || 0,
+        netCashFlow: result.netCashFlow || 0,
+        averageMonthlyBalance,
+        transactions: uniqueTransactions,
+        monthlyBreakdown: result.monthlyBreakdown || [],
+        flaggedTransactions,
+        duplicateTransactions,
+        confidence: result.confidence || 0.7,
+      };
+    }
+
+    // SINGLE-REQUEST PROCESSING for smaller datasets (original code path)
     const dataToAnalyze = combinedData;
     const estimatedTokens = estimateTokens(dataToAnalyze);
 
