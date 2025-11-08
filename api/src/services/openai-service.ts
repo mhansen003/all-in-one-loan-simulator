@@ -472,10 +472,10 @@ Please perform a COMPREHENSIVE analysis with the following objectives:
    - Net cash flow per month
    - Transaction count per month
 
-4. **CALCULATE AVERAGES**:
-   - Average monthly income
-   - Average monthly expenses (EXCLUDING housing and flagged one-time items)
-   - Average net monthly cash flow (available to offset mortgage principal)
+4. **CALCULATE TOTALS** (Frontend will calculate monthly averages):
+   - SUM of all income transactions across the entire data period
+   - SUM of all expense transactions (EXCLUDING housing and flagged one-time items)
+   - Net cash flow (total income - total expenses)
 
 5. **CONFIDENCE SCORE**: Your confidence in the analysis (0-1 scale)
 
@@ -574,9 +574,9 @@ Return your response in the following JSON format:
     console.log(`  ✓ Confidence: ${((result.confidence || 0) * 100).toFixed(0)}%`);
 
     return {
-      totalIncome: result.totalIncome || 0,
-      totalExpenses: result.totalExpenses || 0,
-      netCashFlow: result.netCashFlow || 0,
+      totalIncome: result.totalIncome || 0,           // Sum of all income (frontend divides by months)
+      totalExpenses: result.totalExpenses || 0,       // Sum of all expenses (frontend divides by months)
+      netCashFlow: result.netCashFlow || 0,           // Total net (frontend divides by months)
       averageMonthlyBalance,
       transactions: result.transactions || [],
       monthlyBreakdown: result.monthlyBreakdown || [],

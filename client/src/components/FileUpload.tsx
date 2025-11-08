@@ -1,6 +1,5 @@
 import { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { processFilesWithPdfConversion } from '../utils/pdfConverter';
 import './FileUpload.css';
 
 interface FileUploadProps {
@@ -27,10 +26,8 @@ export default function FileUpload({
       try {
         setIsProcessingPdf(true);
 
-        // Convert PDFs to JPG images for better AI processing
-        const processedFiles = await processFilesWithPdfConversion(acceptedFiles);
-
-        const newFiles = [...selectedFiles, ...processedFiles];
+        // Pass files directly - no conversion needed (Gemini handles PDFs natively)
+        const newFiles = [...selectedFiles, ...acceptedFiles];
         setSelectedFiles(newFiles);
         onFilesSelected(newFiles);
       } catch (error) {
