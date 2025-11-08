@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { MortgageDetails } from '../types';
 import './MortgageDetailsForm.css';
 
@@ -64,6 +64,50 @@ export default function MortgageDetailsForm({
   });
 
   const [errors, setErrors] = useState<Partial<Record<keyof MortgageDetails, string>>>({});
+
+  // Market rate calculation state
+  const [useMarketRateCalculation, setUseMarketRateCalculation] = useState(false);
+  const [baseMarketRate, setBaseMarketRate] = useState<number>(6.5); // Default base rate
+  const [baseMarketRateInput, setBaseMarketRateInput] = useState<string>('6.5');
+  const [rateMargin, setRateMargin] = useState<number>(0.75); // Default margin (75 basis points)
+  const [rateMarginInput, setRateMarginInput] = useState<string>('0.75');
+  const [isFetchingRate, setIsFetchingRate] = useState(false);
+
+  // Auto-calculate AIO rate when using market rate calculation
+  const calculateAIORate = () => {
+    if (useMarketRateCalculation) {
+      const calculated = baseMarketRate + rateMargin;
+      setFormData((prev) => ({ ...prev, aioInterestRate: calculated }));
+      setAioInterestRateInput(String(calculated.toFixed(3)));
+    }
+  };
+
+  // Effect to recalculate AIO rate when base rate or margin changes
+  useEffect(() => {
+    if (useMarketRateCalculation) {
+      calculateAIORate();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [baseMarketRate, rateMargin, useMarketRateCalculation]);
+
+  // Fetch current market rate (placeholder - can be connected to real API)
+  const fetchMarketRate = async () => {
+    setIsFetchingRate(true);
+    try {
+      // Simulate API call - in production, fetch from Fred API or mortgage data source
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // For now, use a default rate (in production, fetch real data)
+      const currentRate = 6.5; // This would come from an API
+      setBaseMarketRate(currentRate);
+      setBaseMarketRateInput(String(currentRate));
+    } catch (error) {
+      console.error('Error fetching market rate:', error);
+      alert('Unable to fetch current market rate. Please enter manually.');
+    } finally {
+      setIsFetchingRate(false);
+    }
+  };
 
   // Debug function to pre-populate form with test data
   const fillTestData = () => {
@@ -543,52 +587,166 @@ export default function MortgageDetailsForm({
               backgroundColor: '#f0f9f0',
               marginTop: '1.5rem'
             }}>
-              <label htmlFor="aioInterestRate" className="form-label required">
-                All-In-One Loan Interest Rate
-              </label>
-              <div className="input-wrapper">
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  id="aioInterestRate"
-                  className={`form-input ${errors.aioInterestRate ? 'input-error' : ''}`}
-                  placeholder="7.250"
-                  value={aioInterestRateInput}
-                  onChange={(e) => {
-                    const value = e.target.value.replace(/[^0-9.]/g, '');
-                    // Allow only one decimal point
-                    const parts = value.split('.');
-                    const sanitized = parts.length > 2
-                      ? parts[0] + '.' + parts.slice(1).join('')
-                      : value;
-                    setAioInterestRateInput(sanitized);
-
-                    // Update form data if we have a valid number
-                    const numValue = parseFloat(sanitized);
-                    if (!isNaN(numValue)) {
-                      setFormData((prev) => ({ ...prev, aioInterestRate: numValue }));
-                    }
-
-                    // Clear error for this field
-                    if (errors.aioInterestRate) {
-                      setErrors((prev) => ({ ...prev, aioInterestRate: undefined }));
-                    }
-                  }}
-                  onBlur={(e) => {
-                    const value = e.target.value.replace(/[^0-9.]/g, '');
-                    if (value) {
-                      const num = parseFloat(value);
-                      if (!isNaN(num)) {
-                        setFormData((prev) => ({ ...prev, aioInterestRate: num }));
-                        setAioInterestRateInput(String(num));
-                      }
-                    }
-                  }}
-                />
-                <span className="input-suffix">%</span>
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={useMarketRateCalculation}
+                    onChange={(e) => setUseMarketRateCalculation(e.target.checked)}
+                    style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                  />
+                  <span style={{ fontWeight: '600', color: '#2d3748' }}>
+                    Calculate AIO Rate from Market Rate + Margin
+                  </span>
+                </label>
+                <span className="form-help-text" style={{ marginLeft: '26px' }}>
+                  Use current market rate plus a margin to determine the AIO rate
+                </span>
               </div>
-              {errors.aioInterestRate && <span className="error-text">{errors.aioInterestRate}</span>}
-              <span className="form-help-text">Proposed rate for the All-In-One loan (typically HIGHER than traditional mortgage rate)</span>
+
+              {useMarketRateCalculation ? (
+                <>
+                  {/* Base Market Rate */}
+                  <div style={{ marginBottom: '1rem' }}>
+                    <label htmlFor="baseMarketRate" className="form-label">
+                      Base Market Rate
+                    </label>
+                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-start' }}>
+                      <div className="input-wrapper" style={{ flex: 1 }}>
+                        <input
+                          type="text"
+                          inputMode="decimal"
+                          id="baseMarketRate"
+                          className="form-input"
+                          placeholder="6.500"
+                          value={baseMarketRateInput}
+                          onChange={(e) => {
+                            const value = e.target.value.replace(/[^0-9.]/g, '');
+                            const parts = value.split('.');
+                            const sanitized = parts.length > 2 ? parts[0] + '.' + parts.slice(1).join('') : value;
+                            setBaseMarketRateInput(sanitized);
+                            const numValue = parseFloat(sanitized);
+                            if (!isNaN(numValue)) {
+                              setBaseMarketRate(numValue);
+                            }
+                          }}
+                        />
+                        <span className="input-suffix">%</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={fetchMarketRate}
+                        disabled={isFetchingRate}
+                        style={{
+                          padding: '0.625rem 1rem',
+                          background: '#3b82f6',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '0.375rem',
+                          cursor: 'pointer',
+                          fontWeight: '600',
+                          fontSize: '0.875rem',
+                          whiteSpace: 'nowrap'
+                        }}
+                      >
+                        {isFetchingRate ? 'Fetching...' : 'Fetch Current Rate'}
+                      </button>
+                    </div>
+                    <span className="form-help-text">
+                      Current 30-year fixed mortgage rate
+                    </span>
+                  </div>
+
+                  {/* Rate Margin */}
+                  <div style={{ marginBottom: '1rem' }}>
+                    <label htmlFor="rateMargin" className="form-label">
+                      Margin / Spread
+                    </label>
+                    <div className="input-wrapper">
+                      <input
+                        type="text"
+                        inputMode="decimal"
+                        id="rateMargin"
+                        className="form-input"
+                        placeholder="0.750"
+                        value={rateMarginInput}
+                        onChange={(e) => {
+                          const value = e.target.value.replace(/[^0-9.]/g, '');
+                          const parts = value.split('.');
+                          const sanitized = parts.length > 2 ? parts[0] + '.' + parts.slice(1).join('') : value;
+                          setRateMarginInput(sanitized);
+                          const numValue = parseFloat(sanitized);
+                          if (!isNaN(numValue)) {
+                            setRateMargin(numValue);
+                          }
+                        }}
+                      />
+                      <span className="input-suffix">%</span>
+                    </div>
+                    <span className="form-help-text">
+                      Additional percentage points added to base rate
+                    </span>
+                  </div>
+
+                  {/* Calculated AIO Rate Display */}
+                  <div style={{
+                    background: 'white',
+                    padding: '1rem',
+                    borderRadius: '0.5rem',
+                    border: '2px solid #9bc53d'
+                  }}>
+                    <div style={{ fontSize: '0.875rem', color: '#718096', marginBottom: '0.5rem' }}>
+                      Calculated AIO Rate:
+                    </div>
+                    <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#2d3748' }}>
+                      {baseMarketRate.toFixed(3)}% + {rateMargin.toFixed(3)}% = <span style={{ color: '#9bc53d' }}>{(baseMarketRate + rateMargin).toFixed(3)}%</span>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  {/* Manual AIO Rate Input */}
+                  <label htmlFor="aioInterestRate" className="form-label required">
+                    All-In-One Loan Interest Rate
+                  </label>
+                  <div className="input-wrapper">
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      id="aioInterestRate"
+                      className={`form-input ${errors.aioInterestRate ? 'input-error' : ''}`}
+                      placeholder="7.250"
+                      value={aioInterestRateInput}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/[^0-9.]/g, '');
+                        const parts = value.split('.');
+                        const sanitized = parts.length > 2 ? parts[0] + '.' + parts.slice(1).join('') : value;
+                        setAioInterestRateInput(sanitized);
+                        const numValue = parseFloat(sanitized);
+                        if (!isNaN(numValue)) {
+                          setFormData((prev) => ({ ...prev, aioInterestRate: numValue }));
+                        }
+                        if (errors.aioInterestRate) {
+                          setErrors((prev) => ({ ...prev, aioInterestRate: undefined }));
+                        }
+                      }}
+                      onBlur={(e) => {
+                        const value = e.target.value.replace(/[^0-9.]/g, '');
+                        if (value) {
+                          const num = parseFloat(value);
+                          if (!isNaN(num)) {
+                            setFormData((prev) => ({ ...prev, aioInterestRate: num }));
+                            setAioInterestRateInput(String(num));
+                          }
+                        }
+                      }}
+                    />
+                    <span className="input-suffix">%</span>
+                  </div>
+                  {errors.aioInterestRate && <span className="error-text">{errors.aioInterestRate}</span>}
+                  <span className="form-help-text">Proposed rate for the All-In-One loan (typically HIGHER than traditional mortgage rate)</span>
+                </>
+              )}
             </div>
           </div>
         </div>
