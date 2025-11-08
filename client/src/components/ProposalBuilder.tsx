@@ -338,18 +338,24 @@ export default function ProposalBuilder({
       const dateStr = new Date().toISOString().split('T')[0];
       const safeClientName = (clientName || 'Client').replace(/[^a-zA-Z0-9]/g, '-');
 
+      // Temporarily move content into view for rendering
+      const element = pdfContentRef.current;
+      element.style.left = '0';
+      element.style.top = '0';
+
+      // Wait a brief moment for layout/rendering
+      await new Promise(resolve => setTimeout(resolve, 100));
+
       const opt = {
         margin: [0.5, 0.5, 0.5, 0.5] as [number, number, number, number], // top, right, bottom, left
         filename: `${safeClientName}-AIO-Proposal-${dateStr}.pdf`,
         image: { type: 'jpeg' as const, quality: 0.98 },
         html2canvas: {
-          scale: 3,              // Higher quality (was 2)
+          scale: 2,              // Good balance of quality and speed
           useCORS: true,
           letterRendering: true,
           logging: false,        // Reduce console noise
-          backgroundColor: '#ffffff',
-          windowHeight: pdfContentRef.current.scrollHeight,
-          windowWidth: pdfContentRef.current.scrollWidth
+          backgroundColor: '#ffffff'
         },
         jsPDF: {
           unit: 'in',
@@ -358,16 +364,23 @@ export default function ProposalBuilder({
           compress: true         // Smaller file size
         },
         pagebreak: {
-          mode: ['avoid-all', 'css'] // Better page breaks
+          mode: ['avoid-all', 'css', 'legacy'] // Better page breaks
         }
       };
 
       console.log('📄 Generating PDF proposal...');
-      await html2pdf().set(opt).from(pdfContentRef.current).save();
+      await html2pdf().set(opt).from(element).save();
       console.log('✅ PDF generated successfully!');
+
+      // Move content back off-screen
+      element.style.left = '-9999px';
     } catch (error) {
       console.error('❌ Error generating PDF:', error);
       alert('Failed to generate PDF. Please try again.\n\nError: ' + (error instanceof Error ? error.message : 'Unknown error'));
+      // Make sure to move content back even on error
+      if (pdfContentRef.current) {
+        pdfContentRef.current.style.left = '-9999px';
+      }
     } finally {
       setIsGeneratingPDF(false);
     }
