@@ -591,8 +591,8 @@ Return your response in the following JSON format:
         },
       ],
       response_format: { type: 'json_object' },
-      temperature: 0.1,
-      max_tokens: 8000,
+      temperature: 0, // Fully deterministic for consistent JSON formatting
+      max_tokens: 8000, // Sufficient for comprehensive analysis
     }, {
       timeout: ANALYSIS_TIMEOUT_MS,
     });
