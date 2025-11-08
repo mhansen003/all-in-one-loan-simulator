@@ -28,17 +28,32 @@ export default function CashFlowReview({
   });
   const [editingTransaction, setEditingTransaction] = useState<number | null>(null);
 
+  // Calculate actual months from transaction data
+  const calculateActualMonths = (transactions: Transaction[]): number => {
+    if (transactions.length === 0) return 1;
+
+    const dates = transactions.map(t => new Date(t.date));
+    const minDate = new Date(Math.min(...dates.map(d => d.getTime())));
+    const maxDate = new Date(Math.max(...dates.map(d => d.getTime())));
+
+    const monthsDiff = (maxDate.getFullYear() - minDate.getFullYear()) * 12 +
+                       (maxDate.getMonth() - minDate.getMonth()) + 1;
+
+    return Math.max(1, monthsDiff); // At least 1 month
+  };
+
   // Recalculate totals whenever transactions change
   useEffect(() => {
     const includedTransactions = transactions.filter(t => !t.excluded);
+    const actualMonths = calculateActualMonths(includedTransactions);
 
     const totalIncome = includedTransactions
       .filter(t => t.category === 'income')
-      .reduce((sum, t) => sum + t.amount, 0) / 12; // Average monthly
+      .reduce((sum, t) => sum + t.amount, 0) / actualMonths; // Average monthly
 
     const totalExpenses = includedTransactions
       .filter(t => t.category === 'expense' || t.category === 'recurring')
-      .reduce((sum, t) => sum + Math.abs(t.amount), 0) / 12; // Average monthly
+      .reduce((sum, t) => sum + Math.abs(t.amount), 0) / actualMonths; // Average monthly
 
     const netCashFlow = totalIncome - totalExpenses;
 
@@ -74,13 +89,15 @@ export default function CashFlowReview({
 
   // Recalculate totals for display
   const includedTransactions = transactions.filter(t => !t.excluded);
+  const actualMonths = calculateActualMonths(includedTransactions);
+
   const displayTotalIncome = includedTransactions
     .filter(t => t.category === 'income')
-    .reduce((sum, t) => sum + t.amount, 0) / 12;
+    .reduce((sum, t) => sum + t.amount, 0) / actualMonths;
 
   const displayTotalExpenses = includedTransactions
     .filter(t => t.category === 'expense' || t.category === 'recurring')
-    .reduce((sum, t) => sum + Math.abs(t.amount), 0) / 12;
+    .reduce((sum, t) => sum + Math.abs(t.amount), 0) / actualMonths;
 
   const displayNetCashFlow = displayTotalIncome - displayTotalExpenses;
 
@@ -223,7 +240,8 @@ export default function CashFlowReview({
   const getCategoryTotal = (category: string) => {
     const categoryTransactions = groupedTransactions[category] || [];
     const includedOnly = categoryTransactions.filter(t => !t.excluded);
-    return includedOnly.reduce((sum, t) => sum + Math.abs(t.amount), 0) / 12;
+    const categoryActualMonths = calculateActualMonths(includedOnly);
+    return includedOnly.reduce((sum, t) => sum + Math.abs(t.amount), 0) / categoryActualMonths;
   };
 
   return (
@@ -271,7 +289,9 @@ export default function CashFlowReview({
               <div className="card-content">
                 <div className="card-label">Total Monthly Income</div>
                 <div className="card-value">{formatCurrency(displayTotalIncome)}</div>
-                <div className="card-description">Average across 12 months</div>
+                <div className="card-description">
+                  Avg from {actualMonths} month{actualMonths !== 1 ? 's' : ''} of statements
+                </div>
               </div>
             </div>
 
@@ -284,7 +304,9 @@ export default function CashFlowReview({
               <div className="card-content">
                 <div className="card-label">Total Monthly Expenses</div>
                 <div className="card-value">{formatCurrency(displayTotalExpenses)}</div>
-                <div className="card-description">Recurring expenses only</div>
+                <div className="card-description">
+                  Avg from {actualMonths} month{actualMonths !== 1 ? 's' : ''} of statements
+                </div>
               </div>
             </div>
 
