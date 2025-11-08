@@ -72,14 +72,7 @@ async function extractDataFromSpreadsheet(filePath: string): Promise<string> {
 
     console.log(`📊 After field extraction: ${compressedData.length} rows with valid date+amount`);
 
-    // Sort by date (newest first) and limit to recent 18 months
-    // Extended from 6 to 18 months to accommodate full year lookbacks
-    const eighteenMonthsAgo = new Date();
-    eighteenMonthsAgo.setMonth(eighteenMonthsAgo.getMonth() - 18);
-
-    console.log(`📅 Date filter cutoff: ${eighteenMonthsAgo.toISOString()}`);
-
-    // Sample first few dates to debug parsing
+    // Sample first few dates to verify parsing
     if (compressedData.length > 0) {
       const sample = compressedData.slice(0, 3);
       console.log(`📅 Sample dates from CSV:`, sample.map(r => ({
@@ -89,27 +82,11 @@ async function extractDataFromSpreadsheet(filePath: string): Promise<string> {
       })));
     }
 
-    const recentData = compressedData.filter((row: any) => {
-      try {
-        const transactionDate = new Date(row.date);
-        const isValid = !isNaN(transactionDate.getTime());
-        const isRecent = transactionDate >= eighteenMonthsAgo;
-        return isValid && isRecent;
-      } catch {
-        return true; // Keep if date parsing fails (let AI handle it)
-      }
-    });
+    // Return ALL valid transactions - no date filtering
+    // The AI will analyze the entire history provided by the user
+    console.log(`✓ Using all ${compressedData.length} transactions (no date filtering)`);
 
-    console.log(`Filtered to ${recentData.length} recent transactions (last 18 months)`);
-    console.log(`Data reduction: ${jsonData.length} → ${recentData.length} rows (${((1 - recentData.length/jsonData.length) * 100).toFixed(1)}% reduction)`);
-
-    // If we filtered out too much data, warn and use all data
-    if (recentData.length === 0 && compressedData.length > 0) {
-      console.log(`⚠️  Warning: All transactions filtered out by date. Using all ${compressedData.length} transactions instead.`);
-      return JSON.stringify(compressedData);
-    }
-
-    return JSON.stringify(recentData);
+    return JSON.stringify(compressedData);
   } catch (error) {
     console.error('Error extracting spreadsheet data:', error);
     throw new Error('Failed to extract data from spreadsheet');
@@ -539,92 +516,92 @@ export async function analyzeStatements(
     console.log('🔍 Analyzing combined transaction data with AI...');
     console.log(`📊 Combined data length: ${combinedData.length} characters (~${estimateTokens(combinedData)} tokens)`);
 
-    // Check if data needs chunking
-    const chunks = chunkData(combinedData, 12000); // Conservative 12K tokens per chunk (leaves room for prompt)
+    // Don't chunk - we need ALL transactions for accurate analysis
+    // GPT-4o can handle up to 128K tokens, and most CSVs are well under that
+    const dataToAnalyze = combinedData;
+    const estimatedTokens = estimateTokens(dataToAnalyze);
 
-    // For chunked data, process the first chunk for now (simplified approach)
-    // Future enhancement: Process all chunks and merge results
-    const dataToAnalyze = chunks.length > 1
-      ? `${chunks[0]}\n\n[NOTE: This is chunk 1 of ${chunks.length}. Analysis is based on recent transactions.]`
-      : combinedData;
+    console.log(`✓ Processing all data in single request (~${estimatedTokens} tokens)`);
 
-    console.log(chunks.length > 1
-      ? `⚠️  Using first chunk only (${chunks.length} chunks total). Recent transactions prioritized.`
-      : `✓ Processing all data in single request`);
+    if (estimatedTokens > 100000) {
+      console.log(`⚠️  Warning: Large dataset (${estimatedTokens} tokens). This may take longer to process.`);
+    }
 
     // Use GPT-4 to analyze the transactions with enhanced anomaly detection
-    const prompt = `You are a financial analysis expert. Analyze the following bank statement data covering multiple months of transactions.
+    const prompt = `You are a financial analysis expert. You are receiving PRE-PARSED STRUCTURED DATA from bank statements.
+
+⚠️ CRITICAL: The data below is ALREADY EXTRACTED as JSON. Each transaction is already parsed with date, description, and amount.
+⚠️ YOUR JOB: Categorize and analyze these existing transactions. DO NOT extract or re-interpret them.
+⚠️ PRESERVE ALL TRANSACTIONS: You must include EVERY transaction in your output. Do not drop any transactions.
 
 IMPORTANT: You must be CONSISTENT and DETERMINISTIC. Analyze the same data the same way every time.
 
-Current housing payment (to exclude): $${currentHousingPayment}
+Current housing payment (to exclude from expenses): $${currentHousingPayment}
 
-Bank Statement Data:
+Pre-Parsed Transaction Data (JSON Array):
 ${dataToAnalyze}
 
-Please perform a COMPREHENSIVE analysis with the following objectives:
+Your task is to CATEGORIZE and ANALYZE the above transactions:
 
-1. **EXTRACT & CATEGORIZE ALL TRANSACTIONS**:
+1. **PRESERVE & CATEGORIZE EVERY TRANSACTION**:
+   - The data is already extracted - keep ALL transactions in your output
+   - Use the EXACT date, description, and amount from the input
+   - DO NOT drop transactions, modify dates, or change amounts
+   - DO NOT hallucinate new transactions or dates
 
-   EXTRACTION RULES (follow exactly):
-   - Extract EVERY monetary transaction with a date, description, and amount
-   - DO NOT skip transactions just because they're small or seem insignificant
-   - DO include internal transfers, credits, debits, and adjustments
-   - DO include pending transactions if they have a date
-   - DO NOT include running balances, available balances, or summary lines
-   - DO NOT include header rows, footer rows, or non-transaction text
+   CATEGORIZATION RULES:
+   - "income": Deposits, paychecks, Zelle/transfers IN (positive amounts or credits)
+   - "expense": Regular recurring expenses like utilities, bills, subscriptions, groceries
+   - "housing": Rent or mortgage payments (around $${currentHousingPayment})
+   - "one-time": Irregular purchases, large transfers, one-time payments
 
-   CATEGORIZATION:
-   - "income": Regular income deposits (salary, wages, business income, regular deposits)
-   - "expense": Regular recurring monthly expenses (groceries, utilities, insurance, subscriptions)
-   - "housing": Current rent/mortgage payments (around $${currentHousingPayment})
-   - "one-time": One-time or irregular transactions
-
-2. **IDENTIFY ANOMALIES & FLAG FOR REVIEW**:
+2. **FLAG ANOMALIES FOR REVIEW**:
    Flag transactions that are:
    - **Luxury items**: High-end dining, designer purchases, jewelry, luxury travel
    - **Unusually large**: 2x or more above typical spending in that category
-   - **One-time purchases**: Major purchases, large cash withdrawals, large deposits
-   - **Irregular deposits**: Tax refunds, bonuses, gifts, large transfers
+   - **One-time purchases**: Major purchases, large cash withdrawals, wire transfers
+   - **Irregular deposits**: Large one-time deposits, refunds, bonuses
    - **Non-essential**: Entertainment, hobbies, discretionary spending above normal patterns
 
-   For each flagged transaction, provide a specific reason (e.g., "Luxury dining - $500 at upscale restaurant", "One-time: New laptop purchase", "Irregular: Large tax refund")
+   Provide specific flag reasons like:
+   - "One-time: Wire transfer"
+   - "Unusually large payment"
+   - "Luxury: High-end purchase"
+   - "Irregular: Large deposit"
 
 3. **MONTHLY BREAKDOWN**:
-   Provide month-by-month summary showing:
-   - Total income per month
-   - Total expenses per month (excluding housing and flagged items)
+   Group by month (YYYY-MM format) and calculate:
+   - Total income per month (sum of income category)
+   - Total expenses per month (sum of expense category, EXCLUDING housing and flagged items)
    - Net cash flow per month
    - Transaction count per month
 
-4. **CALCULATE TOTALS** (Frontend will calculate monthly averages):
-   - SUM of all income transactions across the entire data period
-   - SUM of all expense transactions (EXCLUDING housing and flagged one-time items)
+4. **CALCULATE TOTALS**:
+   - SUM of ALL income transactions across entire period
+   - SUM of ALL expense transactions (EXCLUDING housing and flagged one-time items)
    - Net cash flow (total income - total expenses)
 
-5. **CONFIDENCE SCORE**: Your confidence in the analysis (0-1 scale)
+5. **CONFIDENCE SCORE**: Your confidence in categorization accuracy (0-1 scale)
 
-CRITICAL RULES FOR CONSISTENCY:
-- ALWAYS extract the SAME transactions from the SAME data
-- DO NOT randomly include or exclude transactions between runs
-- EXCLUDE current housing payments ($${currentHousingPayment}) from expense calculations
-- FLAG any transaction that seems irregular, luxury, or one-time
-- Only include predictable recurring expenses in the final average
-- Look back at as much historical data as possible
-- Be conservative: when in doubt, flag it for user review
-- Process transactions in chronological order (oldest to newest) for consistency
-- When a transaction could be multiple categories, use this priority: housing > income > one-time > expense
+CRITICAL RULES - READ CAREFULLY:
+✓ PRESERVE EVERY TRANSACTION - Your output must have the SAME number of transactions as the input
+✓ USE EXACT DATES - Do not change or hallucinate dates (use YYYY-MM-DD format from input)
+✓ USE EXACT AMOUNTS - Do not modify transaction amounts
+✓ USE EXACT DESCRIPTIONS - Keep original descriptions from input
+✓ DETERMINISTIC - Same input MUST produce same output every time
+✓ NO SAMPLING - Include 100% of transactions, not a sample
+✓ CATEGORIZE ONLY - You are categorizing existing data, not extracting new data
 
-Return your response in the following JSON format:
+Return your response in the following JSON format (with ALL transactions):
 {
   "transactions": [
     {
       "date": "YYYY-MM-DD",
-      "description": "Transaction description",
+      "description": "Original description from input",
       "amount": 1234.56,
       "category": "income" | "expense" | "housing" | "one-time",
       "flagged": true/false,
-      "flagReason": "Luxury dining - $500 at upscale restaurant" (only if flagged),
+      "flagReason": "Specific reason if flagged",
       "monthYear": "2024-08"
     }
   ],
@@ -672,7 +649,7 @@ Return your response in the following JSON format:
       temperature: 0, // Fully deterministic for consistent JSON formatting
       top_p: 1, // Disable nucleus sampling for maximum determinism
       seed: 42, // Fixed seed for reproducible results across identical inputs
-      max_tokens: 8000, // Sufficient for comprehensive analysis
+      max_tokens: 16000, // Increased to handle large transaction sets (800+ transactions)
     }, {
       timeout: ANALYSIS_TIMEOUT_MS,
     });
