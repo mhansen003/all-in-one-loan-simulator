@@ -2,7 +2,6 @@ import { useState } from 'react';
 import type { CashFlowAnalysis } from '../types';
 import CashFlowReviewModal from './CashFlowReviewModal';
 import AnalyzingModal from './AnalyzingModal';
-import { convertPdfToImages } from '../utils/pdfConverter';
 import './FileUpload.css';
 
 interface DepositsExpensesInputProps {
@@ -129,15 +128,8 @@ export default function DepositsExpensesInput({ onSubmit, onBack, mortgageDetail
     for (const file of fileArray) {
       const ext = file.name.toLowerCase();
 
-      if (ext.endsWith('.pdf')) {
-        try {
-          const images = await convertPdfToImages(file);
-          processedFiles.push(...images);
-        } catch (err) {
-          console.error('Error converting PDF:', err);
-          setError(`Failed to convert ${file.name}. Please try another file.`);
-        }
-      } else if (
+      if (
+        ext.endsWith('.pdf') ||
         ext.endsWith('.jpg') ||
         ext.endsWith('.jpeg') ||
         ext.endsWith('.png') ||

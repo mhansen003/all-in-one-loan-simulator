@@ -30,9 +30,9 @@ console.log(`🔧 AI Provider: ${USE_OPENROUTER ? 'OpenRouter' : 'OpenAI Direct'
 console.log(`🤖 Vision Model: ${VISION_MODEL}`);
 
 /**
- * Note: PDFs are now converted to images CLIENT-SIDE using pdf.js in the browser.
- * This eliminates server-side native dependency issues in serverless environments.
- * The analyzeImage function below handles the converted PDF images.
+ * Note: PDFs are now processed NATIVELY using Gemini 2.0 Flash's PDF capabilities.
+ * This eliminates the need for client-side PDF-to-image conversion.
+ * The analyzePdf function handles direct PDF analysis.
  */
 
 /**
@@ -338,13 +338,30 @@ function chunkData(data: string, maxTokensPerChunk: number = 15000): string[] {
 
 /**
  * Process a single bank statement file with retry logic
- * TESTING: Now supports native PDF processing
+ * Supports native PDF processing via Gemini 2.0 Flash
  */
 async function processFile(file: Express.Multer.File, retries = 2): Promise<string> {
   const ext = path.extname(file.originalname).toLowerCase();
 
   if (ext === '.csv' || ext === '.xlsx' || ext === '.xls') {
     return await extractDataFromSpreadsheet(file.path);
+  } else if (ext === '.pdf') {
+    // Retry logic for PDF analysis with native PDF support
+    let lastError: Error | null = null;
+    for (let attempt = 1; attempt <= retries; attempt++) {
+      try {
+        console.log(`Attempt ${attempt}/${retries} for PDF ${file.originalname}`);
+        return await analyzePdf(file.path);
+      } catch (error) {
+        lastError = error as Error;
+        console.error(`Attempt ${attempt}/${retries} failed:`, error instanceof Error ? error.message : error);
+        if (attempt < retries) {
+          console.log(`Retrying in 2 seconds...`);
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        }
+      }
+    }
+    throw lastError || new Error('Failed to process PDF after retries');
   } else if (['.jpg', '.jpeg', '.png', '.gif', '.webp'].includes(ext)) {
     // Retry logic for image analysis
     let lastError: Error | null = null;

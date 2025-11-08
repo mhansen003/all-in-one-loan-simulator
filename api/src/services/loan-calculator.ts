@@ -229,14 +229,36 @@ export function simulateLoan(
     throw new Error('Loan balance must be greater than zero');
   }
 
+  // Debug logging for inputs
+  console.log('💰 [LOAN CALC] Simulation Inputs:');
+  console.log(`  Loan Balance: $${mortgage.currentBalance.toFixed(2)}`);
+  console.log(`  Interest Rate: ${mortgage.interestRate.toFixed(3)}%`);
+  console.log(`  Monthly Payment: $${mortgage.monthlyPayment.toFixed(2)}`);
+  console.log(`  Total Income: $${cashFlow.totalIncome.toFixed(2)}`);
+  console.log(`  Total Expenses: $${cashFlow.totalExpenses.toFixed(2)}`);
+  console.log(`  Net Cash Flow: $${cashFlow.netCashFlow.toFixed(2)}`);
+  console.log(`  Avg Monthly Balance: $${cashFlow.averageMonthlyBalance.toFixed(2)}`);
+
   // Calculate both scenarios
   const traditionalLoan = calculateTraditionalLoan(mortgage);
+  console.log('📊 [LOAN CALC] Traditional Loan Results:');
+  console.log(`  Payoff Months: ${traditionalLoan.payoffMonths}`);
+  console.log(`  Total Interest: $${traditionalLoan.totalInterestPaid.toFixed(2)}`);
+
   const allInOneLoan = calculateAllInOneLoan(mortgage, cashFlow);
+  console.log('📊 [LOAN CALC] All-In-One Loan Results:');
+  console.log(`  Payoff Months: ${allInOneLoan.payoffMonths}`);
+  console.log(`  Total Interest: $${allInOneLoan.totalInterestPaid.toFixed(2)}`);
 
   // Calculate savings
   const interestSavings = traditionalLoan.totalInterestPaid - allInOneLoan.totalInterestPaid;
   const timeSavedMonths = traditionalLoan.payoffMonths - allInOneLoan.payoffMonths;
   const percentageSavings = (interestSavings / traditionalLoan.totalInterestPaid) * 100;
+
+  console.log('💡 [LOAN CALC] Comparison Results:');
+  console.log(`  Interest Savings: $${interestSavings.toFixed(2)}`);
+  console.log(`  Time Saved: ${timeSavedMonths} months`);
+  console.log(`  Percentage Savings: ${percentageSavings.toFixed(2)}%`);
 
   // Add savings data to All-In-One projection
   allInOneLoan.interestSavings = interestSavings;
