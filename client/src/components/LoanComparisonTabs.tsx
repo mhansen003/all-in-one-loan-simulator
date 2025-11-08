@@ -192,6 +192,7 @@ export default function LoanComparisonTabs({
             comparison={comparison}
             weeklyBreakdown={weeklyBreakdown}
             loanAmount={loanAmount}
+            traditionalRate={traditionalRate}
           />
         )}
       </div>

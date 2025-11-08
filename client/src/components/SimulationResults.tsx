@@ -588,6 +588,7 @@ export default function SimulationResults({
           <ProposalBuilder
             simulation={simulation}
             mortgageDetails={mortgageDetails}
+            cashFlow={cashFlow}
             onBack={() => setActiveTab('results')}
           />
         </div>

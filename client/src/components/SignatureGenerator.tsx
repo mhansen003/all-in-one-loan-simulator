@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { CMG_BRANDING } from '../constants/cmgBranding';
 import SignatureEmailModal from './SignatureEmailModal';
 import './SignatureGenerator.css';
@@ -31,7 +31,6 @@ export function SignatureGenerator() {
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [showEmailModal, setShowEmailModal] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
-  const [loadingMessage, setLoadingMessage] = useState('');
   const [signatureLoaded, setSignatureLoaded] = useState(false);
 
   const handleInputChange = (field: keyof SignatureData, value: string) => {
@@ -40,7 +39,6 @@ export function SignatureGenerator() {
 
   const handleEmailSubmit = async (email: string) => {
     setIsLoading(true);
-    setLoadingMessage('Checking for existing signature...');
 
     try {
       // Check if signature exists
@@ -58,7 +56,6 @@ export function SignatureGenerator() {
           photoUrl: data.signature.photoUrl || '',
         });
         setSignatureLoaded(true);
-        setLoadingMessage('Signature loaded!');
         setTimeout(() => {
           setShowEmailModal(false);
           setIsLoading(false);
@@ -66,7 +63,6 @@ export function SignatureGenerator() {
       } else {
         // No signature found, create new one
         setSignatureData(prev => ({ ...prev, email }));
-        setLoadingMessage('No signature found. Create a new one below.');
         setTimeout(() => {
           setShowEmailModal(false);
           setIsLoading(false);

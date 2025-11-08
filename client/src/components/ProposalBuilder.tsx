@@ -32,6 +32,7 @@ interface ProposalComponent {
 interface ProposalBuilderProps {
   simulation: SimulationResult;
   mortgageDetails: MortgageDetails;
+  cashFlow?: CashFlowAnalysis;
   onBack: () => void;
 }
 
@@ -89,6 +90,7 @@ type WizardStep = 1 | 2 | 3 | 4;
 export default function ProposalBuilder({
   simulation,
   mortgageDetails,
+  cashFlow,
   onBack,
 }: ProposalBuilderProps) {
   // Wizard state
@@ -597,18 +599,18 @@ export default function ProposalBuilder({
                       <tbody>
                         <tr>
                           <td>Monthly Payment</td>
-                          <td>{formatCurrency(simulation.traditionalLoan.monthlyPayment)}</td>
-                          <td>{formatCurrency(simulation.allInOneLoan.monthlyPayment)}</td>
+                          <td>{formatCurrency(simulation.traditionalLoanLoan.monthlyPayment)}</td>
+                          <td>{formatCurrency(simulation.allInOneLoanLoan.monthlyPayment)}</td>
                         </tr>
                         <tr>
                           <td>Total Interest</td>
-                          <td>{formatCurrency(simulation.traditionalLoan.totalInterestPaid)}</td>
-                          <td className="savings-cell">{formatCurrency(simulation.allInOneLoan.totalInterestPaid)}</td>
+                          <td>{formatCurrency(simulation.traditionalLoanLoan.totalInterestPaid)}</td>
+                          <td className="savings-cell">{formatCurrency(simulation.allInOneLoanLoan.totalInterestPaid)}</td>
                         </tr>
                         <tr>
                           <td>Payoff Timeline</td>
-                          <td>{yearsMonthsFromMonths(simulation.traditionalLoan.payoffMonths)}</td>
-                          <td className="savings-cell">{yearsMonthsFromMonths(simulation.allInOneLoan.payoffMonths)}</td>
+                          <td>{yearsMonthsFromMonths(simulation.traditionalLoanLoan.payoffMonths)}</td>
+                          <td className="savings-cell">{yearsMonthsFromMonths(simulation.allInOneLoanLoan.payoffMonths)}</td>
                         </tr>
                       </tbody>
                     </table>
@@ -650,15 +652,15 @@ export default function ProposalBuilder({
                       <tbody>
                         <tr>
                           <td>Monthly Income</td>
-                          <td style={{textAlign: 'right'}}>{formatCurrency(simulation.cashFlow?.totalIncome || 0)}</td>
+                          <td style={{textAlign: 'right'}}>{formatCurrency(cashFlow?.totalIncome || 0)}</td>
                         </tr>
                         <tr>
                           <td>Monthly Expenses</td>
-                          <td style={{textAlign: 'right'}}>{formatCurrency(simulation.cashFlow?.totalExpenses || 0)}</td>
+                          <td style={{textAlign: 'right'}}>{formatCurrency(cashFlow?.totalExpenses || 0)}</td>
                         </tr>
                         <tr className="savings-cell">
                           <td><strong>Net Monthly Cash Flow</strong></td>
-                          <td style={{textAlign: 'right'}}><strong>{formatCurrency(simulation.cashFlow?.netCashFlow || 0)}</strong></td>
+                          <td style={{textAlign: 'right'}}><strong>{formatCurrency(cashFlow?.netCashFlow || 0)}</strong></td>
                         </tr>
                       </tbody>
                     </table>
@@ -674,7 +676,7 @@ export default function ProposalBuilder({
                       <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', alignItems: 'flex-end' }}>
                         <div style={{ flex: 1, maxWidth: '200px' }}>
                           <div style={{
-                            height: `${(simulation.traditional.payoffMonths / simulation.traditional.payoffMonths) * 200}px`,
+                            height: `${(simulation.traditionalLoan.payoffMonths / simulation.traditionalLoan.payoffMonths) * 200}px`,
                             background: '#3b82f6',
                             borderRadius: '8px 8px 0 0',
                             marginBottom: '0.5rem',
@@ -684,13 +686,13 @@ export default function ProposalBuilder({
                             color: 'white',
                             fontWeight: '700'
                           }}>
-                            {yearsMonthsFromMonths(simulation.traditional.payoffMonths)}
+                            {yearsMonthsFromMonths(simulation.traditionalLoan.payoffMonths)}
                           </div>
                           <div style={{ fontWeight: '600', color: '#475569' }}>Traditional</div>
                         </div>
                         <div style={{ flex: 1, maxWidth: '200px' }}>
                           <div style={{
-                            height: `${(simulation.allInOne.payoffMonths / simulation.traditional.payoffMonths) * 200}px`,
+                            height: `${(simulation.allInOneLoan.payoffMonths / simulation.traditionalLoan.payoffMonths) * 200}px`,
                             background: '#9bc53d',
                             borderRadius: '8px 8px 0 0',
                             marginBottom: '0.5rem',
@@ -700,7 +702,7 @@ export default function ProposalBuilder({
                             color: 'white',
                             fontWeight: '700'
                           }}>
-                            {yearsMonthsFromMonths(simulation.allInOne.payoffMonths)}
+                            {yearsMonthsFromMonths(simulation.allInOneLoan.payoffMonths)}
                           </div>
                           <div style={{ fontWeight: '600', color: '#475569' }}>All-In-One</div>
                         </div>
@@ -862,23 +864,23 @@ export default function ProposalBuilder({
                 <tbody>
                   <tr>
                     <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0', fontWeight: 600 }}>Monthly Payment</td>
-                    <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0' }}>{formatCurrency(simulation.traditionalLoan.monthlyPayment)}</td>
-                    <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0' }}>{formatCurrency(simulation.allInOneLoan.monthlyPayment)}</td>
+                    <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0' }}>{formatCurrency(simulation.traditionalLoanLoan.monthlyPayment)}</td>
+                    <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0' }}>{formatCurrency(simulation.allInOneLoanLoan.monthlyPayment)}</td>
                   </tr>
                   <tr>
                     <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0', fontWeight: 600 }}>Total Interest Paid</td>
-                    <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0' }}>{formatCurrency(simulation.traditionalLoan.totalInterestPaid)}</td>
-                    <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0', background: '#f0f8e9', color: '#48bb78', fontWeight: 700 }}>{formatCurrency(simulation.allInOneLoan.totalInterestPaid)}</td>
+                    <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0' }}>{formatCurrency(simulation.traditionalLoanLoan.totalInterestPaid)}</td>
+                    <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0', background: '#f0f8e9', color: '#48bb78', fontWeight: 700 }}>{formatCurrency(simulation.allInOneLoanLoan.totalInterestPaid)}</td>
                   </tr>
                   <tr>
                     <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0', fontWeight: 600 }}>Payoff Timeline</td>
-                    <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0' }}>{yearsMonthsFromMonths(simulation.traditionalLoan.payoffMonths)}</td>
-                    <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0', background: '#f0f8e9', color: '#48bb78', fontWeight: 700 }}>{yearsMonthsFromMonths(simulation.allInOneLoan.payoffMonths)}</td>
+                    <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0' }}>{yearsMonthsFromMonths(simulation.traditionalLoanLoan.payoffMonths)}</td>
+                    <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0', background: '#f0f8e9', color: '#48bb78', fontWeight: 700 }}>{yearsMonthsFromMonths(simulation.allInOneLoanLoan.payoffMonths)}</td>
                   </tr>
                   <tr>
                     <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0', fontWeight: 600 }}>Payoff Date</td>
-                    <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0' }}>{new Date(simulation.traditionalLoan.payoffDate).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</td>
-                    <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0', background: '#f0f8e9', color: '#48bb78', fontWeight: 700 }}>{new Date(simulation.allInOneLoan.payoffDate).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</td>
+                    <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0' }}>{new Date(simulation.traditionalLoanLoan.payoffDate).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</td>
+                    <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0', background: '#f0f8e9', color: '#48bb78', fontWeight: 700 }}>{new Date(simulation.allInOneLoanLoan.payoffDate).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</td>
                   </tr>
                 </tbody>
               </table>
@@ -916,15 +918,15 @@ export default function ProposalBuilder({
                 <tbody>
                   <tr>
                     <td style={{ padding: '0.75rem 1rem', border: '1px solid #e2e8f0', color: '#475569' }}>Monthly Income</td>
-                    <td style={{ padding: '0.75rem 1rem', border: '1px solid #e2e8f0', color: '#475569', textAlign: 'right' }}>{formatCurrency(simulation.cashFlow?.totalIncome || 0)}</td>
+                    <td style={{ padding: '0.75rem 1rem', border: '1px solid #e2e8f0', color: '#475569', textAlign: 'right' }}>{formatCurrency(cashFlow?.totalIncome || 0)}</td>
                   </tr>
                   <tr>
                     <td style={{ padding: '0.75rem 1rem', border: '1px solid #e2e8f0', color: '#475569' }}>Monthly Expenses</td>
-                    <td style={{ padding: '0.75rem 1rem', border: '1px solid #e2e8f0', color: '#475569', textAlign: 'right' }}>{formatCurrency(simulation.cashFlow?.totalExpenses || 0)}</td>
+                    <td style={{ padding: '0.75rem 1rem', border: '1px solid #e2e8f0', color: '#475569', textAlign: 'right' }}>{formatCurrency(cashFlow?.totalExpenses || 0)}</td>
                   </tr>
                   <tr style={{ background: '#f0f8e9' }}>
                     <td style={{ padding: '0.75rem 1rem', border: '1px solid #e2e8f0', color: '#16a34a', fontWeight: 600 }}><strong>Net Monthly Cash Flow</strong></td>
-                    <td style={{ padding: '0.75rem 1rem', border: '1px solid #e2e8f0', color: '#16a34a', fontWeight: 600, textAlign: 'right' }}><strong>{formatCurrency(simulation.cashFlow?.netCashFlow || 0)}</strong></td>
+                    <td style={{ padding: '0.75rem 1rem', border: '1px solid #e2e8f0', color: '#16a34a', fontWeight: 600, textAlign: 'right' }}><strong>{formatCurrency(cashFlow?.netCashFlow || 0)}</strong></td>
                   </tr>
                 </tbody>
               </table>
@@ -951,13 +953,13 @@ export default function ProposalBuilder({
                       fontWeight: 700,
                       fontSize: '1.1rem'
                     }}>
-                      {yearsMonthsFromMonths(simulation.traditional.payoffMonths)}
+                      {yearsMonthsFromMonths(simulation.traditionalLoan.payoffMonths)}
                     </div>
                     <div style={{ fontWeight: 600, color: '#475569', fontSize: '1rem' }}>Traditional Mortgage</div>
                   </div>
                   <div style={{ flex: '0 0 180px' }}>
                     <div style={{
-                      height: `${(simulation.allInOne.payoffMonths / simulation.traditional.payoffMonths) * 200}px`,
+                      height: `${(simulation.allInOneLoan.payoffMonths / simulation.traditionalLoan.payoffMonths) * 200}px`,
                       background: '#9bc53d',
                       borderRadius: '8px 8px 0 0',
                       marginBottom: '0.75rem',
@@ -968,7 +970,7 @@ export default function ProposalBuilder({
                       fontWeight: 700,
                       fontSize: '1.1rem'
                     }}>
-                      {yearsMonthsFromMonths(simulation.allInOne.payoffMonths)}
+                      {yearsMonthsFromMonths(simulation.allInOneLoan.payoffMonths)}
                     </div>
                     <div style={{ fontWeight: 600, color: '#475569', fontSize: '1rem' }}>All-In-One Loan</div>
                   </div>
