@@ -276,7 +276,7 @@ export default function SimulationResults({
           {/* Traditional Loan Card */}
           <div className="loan-card traditional-card">
             <div className="card-header">
-              <h3>Traditional Mortgage</h3>
+              <h3>{simulation.traditionalLoan.productName || 'Traditional Mortgage'}</h3>
               <span className="card-badge">Current</span>
             </div>
 
@@ -306,7 +306,7 @@ export default function SimulationResults({
           {/* All-In-One Loan Card */}
           <div className="loan-card allinone-card">
             <div className="card-header">
-              <h3>All-In-One Loan</h3>
+              <h3>{simulation.allInOneLoan.productName || 'All-In-One Loan'}</h3>
               <span className="card-badge recommended">Recommended</span>
             </div>
 
