@@ -4,30 +4,33 @@ import path from 'path';
 import xlsx from 'xlsx';
 import type { CashFlowAnalysis, Transaction, OpenAIAnalysisResult } from '../types.js';
 
-// Configure OpenAI client
-// Set USE_OPENROUTER=true to use OpenRouter, otherwise uses OpenAI directly
-const USE_OPENROUTER = process.env.USE_OPENROUTER === 'true';
+// ==================== SMART AI ROUTING ====================
+// We use TWO AI clients for optimal performance:
+// 1. OpenAI Direct (GPT-4) → CSV/XLSX structured data analysis
+// 2. OpenRouter (Gemini) → Images/PDFs vision processing
 
-const openai = USE_OPENROUTER
-  ? new OpenAI({
-      apiKey: process.env.OPENROUTER_API_KEY,
-      baseURL: 'https://openrouter.ai/api/v1',
-      defaultHeaders: {
-        'HTTP-Referer': process.env.YOUR_SITE_URL || 'https://aio-simulator.cmgfinancial.ai',
-        'X-Title': 'All-In-One Look Back Simulator',
-      },
-    })
-  : new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY, // Direct OpenAI API key
-    });
+// Client 1: OpenAI Direct for structured data (CSV/XLSX)
+const openaiDirect = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
 
-// Model selection based on provider
-const VISION_MODEL = USE_OPENROUTER
-  ? 'google/gemini-2.0-flash-001' // Gemini 2.0 Flash via OpenRouter - fast vision + document processing
-  : 'gpt-4o'; // GPT-4o via OpenAI Direct - proven vision + PDF support, no 8k limit
+// Client 2: OpenRouter with Gemini for vision tasks (images/PDFs)
+const openRouter = new OpenAI({
+  apiKey: process.env.OPENROUTER_API_KEY,
+  baseURL: 'https://openrouter.ai/api/v1',
+  defaultHeaders: {
+    'HTTP-Referer': process.env.YOUR_SITE_URL || 'https://aio-simulator.cmgfinancial.ai',
+    'X-Title': 'All-In-One Look Back Simulator',
+  },
+});
 
-console.log(`🔧 AI Provider: ${USE_OPENROUTER ? 'OpenRouter' : 'OpenAI Direct'}`);
-console.log(`🤖 Vision Model: ${VISION_MODEL}`);
+// Model configurations
+const TEXT_MODEL = 'gpt-4o'; // OpenAI Direct - excellent for structured data, JSON analysis
+const VISION_MODEL = 'google/gemini-2.0-flash-001'; // OpenRouter Gemini - superior vision, fast, cost-effective
+
+console.log(`🔧 Smart AI Routing Enabled:`);
+console.log(`   📊 Text/CSV/XLSX → OpenAI Direct (${TEXT_MODEL})`);
+console.log(`   👁️  Images/PDFs → OpenRouter (${VISION_MODEL})`);
 
 /**
  * Note: PDFs are now processed NATIVELY using Gemini 2.0 Flash's PDF capabilities.
@@ -105,8 +108,8 @@ async function analyzeImage(filePath: string): Promise<string> {
     const mimeType = ext === '.png' ? 'image/png' : 'image/jpeg';
     console.log(`   ✓ Converted to base64 (${base64Image.length} chars, type: ${mimeType})`);
 
-    console.log('🌐 [4/5] Calling AI API...');
-    console.log(`   📡 Endpoint: ${openai.baseURL || 'https://api.openai.com/v1'}`);
+    console.log('🌐 [4/5] Calling OpenRouter (Gemini) for vision...');
+    console.log(`   📡 Endpoint: ${openRouter.baseURL}`);
     console.log(`   🤖 Model: ${VISION_MODEL}`);
     console.log(`   ⏱️  Timeout: ${TIMEOUT_MS / 1000}s`);
 
@@ -121,9 +124,8 @@ async function analyzeImage(filePath: string): Promise<string> {
     console.log('   🚀 Sending API request NOW...');
     const startTime = Date.now();
 
-    // Create the API call promise using configured model
-    // GPT-5 has native PDF support, Claude has excellent vision capabilities
-    const apiCallPromise = openai.chat.completions.create({
+    // Create the API call promise using OpenRouter with Gemini
+    const apiCallPromise = openRouter.chat.completions.create({
       model: VISION_MODEL,
       messages: [
         {
@@ -205,8 +207,8 @@ async function analyzePdf(filePath: string): Promise<string> {
     const base64Pdf = pdfBuffer.toString('base64');
     console.log(`   ✓ Converted to base64 (${base64Pdf.length} chars)`);
 
-    console.log('🌐 [4/4] Calling AI API with native PDF...');
-    console.log(`   📡 Endpoint: ${openai.baseURL || 'https://api.openai.com/v1'}`);
+    console.log('🌐 [4/4] Calling OpenRouter (Gemini) with native PDF...');
+    console.log(`   📡 Endpoint: ${openRouter.baseURL}`);
     console.log(`   🤖 Model: ${VISION_MODEL}`);
     console.log(`   ⏱️  Timeout: ${TIMEOUT_MS / 1000}s`);
 
@@ -220,8 +222,8 @@ async function analyzePdf(filePath: string): Promise<string> {
     console.log('   🚀 Sending API request NOW with native PDF...');
     const startTime = Date.now();
 
-    // Send PDF directly to OpenRouter using proper file format
-    const apiCallPromise = openai.chat.completions.create({
+    // Send PDF directly to OpenRouter (Gemini) using proper file format
+    const apiCallPromise = openRouter.chat.completions.create({
       model: VISION_MODEL,
       messages: [
         {
@@ -523,9 +525,11 @@ Return your response in the following JSON format:
       }, ANALYSIS_TIMEOUT_MS);
     });
 
-    // Create the main analysis API call promise using configured model
-    const analysisApiCallPromise = openai.chat.completions.create({
-      model: VISION_MODEL,
+    // Use OpenAI Direct (GPT-4o) for final text analysis
+    // This analyzes the extracted transaction text (from CSV or vision extraction)
+    console.log(`🧠 Using OpenAI Direct (${TEXT_MODEL}) for transaction analysis...`);
+    const analysisApiCallPromise = openaiDirect.chat.completions.create({
+      model: TEXT_MODEL,
       messages: [
         {
           role: 'system',
@@ -538,9 +542,9 @@ Return your response in the following JSON format:
       ],
       response_format: { type: 'json_object' },
       temperature: 0.1,
-      max_tokens: 8000, // GPT-4o uses max_tokens
+      max_tokens: 8000,
     }, {
-      timeout: ANALYSIS_TIMEOUT_MS, // SDK timeout as backup
+      timeout: ANALYSIS_TIMEOUT_MS,
     });
 
     console.log(`🏁 Racing main analysis against ${ANALYSIS_TIMEOUT_MS / 1000}s timeout...`);
