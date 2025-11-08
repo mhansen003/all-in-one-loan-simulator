@@ -52,13 +52,15 @@ export default function CashFlowReview({
     const includedTransactions = transactions.filter(t => !t.excluded);
     const actualMonths = calculateActualMonths(includedTransactions);
 
+    // Calculate income: regular income + positive one-time amounts
     const totalIncome = includedTransactions
-      .filter(t => t.category === 'income')
-      .reduce((sum, t) => sum + t.amount, 0) / actualMonths; // Average monthly
+      .filter(t => t.category === 'income' || (t.category === 'one-time' && t.amount > 0))
+      .reduce((sum, t) => sum + Math.abs(t.amount), 0) / actualMonths;
 
+    // Calculate expenses: all negative amounts (expenses, housing, negative one-time)
     const totalExpenses = includedTransactions
-      .filter(t => t.category !== 'income') // Include all non-income categories (expense, recurring, housing, one-time)
-      .reduce((sum, t) => sum + Math.abs(t.amount), 0) / actualMonths; // Average monthly
+      .filter(t => t.category !== 'income' && (t.category !== 'one-time' || t.amount < 0))
+      .reduce((sum, t) => sum + Math.abs(t.amount), 0) / actualMonths;
 
     const netCashFlow = totalIncome - totalExpenses;
 
@@ -97,12 +99,14 @@ export default function CashFlowReview({
   const includedTransactions = transactions.filter(t => !t.excluded);
   const actualMonths = calculateActualMonths(includedTransactions);
 
+  // Calculate income: regular income + positive one-time amounts
   const displayTotalIncome = includedTransactions
-    .filter(t => t.category === 'income')
-    .reduce((sum, t) => sum + t.amount, 0) / actualMonths;
+    .filter(t => t.category === 'income' || (t.category === 'one-time' && t.amount > 0))
+    .reduce((sum, t) => sum + Math.abs(t.amount), 0) / actualMonths;
 
+  // Calculate expenses: all negative amounts (expenses, housing, negative one-time)
   const displayTotalExpenses = includedTransactions
-    .filter(t => t.category !== 'income') // Include all non-income categories (expense, recurring, housing, one-time)
+    .filter(t => t.category !== 'income' && (t.category !== 'one-time' || t.amount < 0))
     .reduce((sum, t) => sum + Math.abs(t.amount), 0) / actualMonths;
 
   const displayNetCashFlow = displayTotalIncome - displayTotalExpenses;
@@ -311,6 +315,29 @@ export default function CashFlowReview({
           <div className="form-header">
             <h2>Cash Flow Analysis Complete</h2>
             <p>Review the AI-generated analysis of your bank statements</p>
+          </div>
+
+          {/* Top Continue Button */}
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1.5rem' }}>
+            <button
+              type="button"
+              className="btn-primary"
+              onClick={onContinue}
+              disabled={displayNetCashFlow <= 300}
+              style={{
+                opacity: displayNetCashFlow <= 300 ? 0.5 : 1,
+                cursor: displayNetCashFlow <= 300 ? 'not-allowed' : 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem'
+              }}
+              title={displayNetCashFlow <= 300 ? 'Cash flow must exceed $300/month to continue' : ''}
+            >
+              Continue to Simulation
+              <svg style={{ width: '20px', height: '20px' }} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
           </div>
 
           {/* Confidence and Suitability Side-by-Side */}

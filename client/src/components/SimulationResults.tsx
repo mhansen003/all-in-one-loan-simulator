@@ -89,7 +89,22 @@ export default function SimulationResults({
         <button
           className="btn-secondary"
           onClick={onBackToCFA}
-          style={{ marginRight: '1rem' }}
+          style={{
+            marginRight: '1rem',
+            border: '2px solid #64748b',
+            boxShadow: '0 2px 8px rgba(100, 116, 139, 0.2)',
+            background: 'linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%)',
+            transition: 'all 0.2s ease',
+            fontWeight: '500'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.boxShadow = '0 4px 12px rgba(100, 116, 139, 0.3)';
+            e.currentTarget.style.transform = 'translateY(-1px)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.boxShadow = '0 2px 8px rgba(100, 116, 139, 0.2)';
+            e.currentTarget.style.transform = 'translateY(0)';
+          }}
         >
           <svg className="btn-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 17l-5-5m0 0l5-5m-5 5h12" />
