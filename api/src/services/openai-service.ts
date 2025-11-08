@@ -189,7 +189,8 @@ Be thorough and extract EVERY transaction visible in the image.`,
           ],
         },
       ],
-      max_tokens: 4096, // GPT-4o uses max_tokens
+      max_tokens: 2048, // Reduced for faster response (transaction extraction rarely needs more)
+      temperature: 0, // Deterministic output for consistent results
     }, {
       timeout: TIMEOUT_MS, // SDK timeout as backup
     });
@@ -288,7 +289,8 @@ Be thorough and extract EVERY transaction visible in the PDF.`,
           ],
         },
       ],
-      max_tokens: 16000, // Higher limit for multi-page PDFs
+      max_tokens: 8000, // Optimized for faster response while handling multi-page PDFs
+      temperature: 0, // Deterministic output for consistent results
     } as any, {
       timeout: TIMEOUT_MS,
     });
@@ -425,23 +427,42 @@ export async function analyzeStatements(
 ): Promise<CashFlowAnalysis> {
   try {
     console.log(`Processing ${files.length} files...`);
+    console.log(`⚡ Using parallel processing for ${files.length} files simultaneously`);
 
-    // Extract text/data from all files, with error handling for individual files
+    // Process ALL files in PARALLEL for maximum performance
+    const filePromises = files.map(async (file) => {
+      console.log(`📄 Starting: ${file.originalname}`);
+      try {
+        const content = await processFile(file);
+        console.log(`✓ Completed: ${file.originalname}`);
+        return { success: true, content, filename: file.originalname };
+      } catch (error) {
+        console.error(`✗ Failed: ${file.originalname}:`, error instanceof Error ? error.message : error);
+        return { success: false, error, filename: file.originalname };
+      }
+    });
+
+    // Wait for all files to process (or fail) in parallel
+    const fileResults = await Promise.allSettled(filePromises);
+
+    // Extract successful results and failed files
     const extractedData: string[] = [];
     const failedFiles: string[] = [];
 
-    for (const file of files) {
-      console.log(`Processing file: ${file.originalname}`);
-      try {
-        const content = await processFile(file);
-        extractedData.push(content);
-        console.log(`✓ Successfully processed ${file.originalname}`);
-      } catch (error) {
-        console.error(`✗ Failed to process ${file.originalname}:`, error instanceof Error ? error.message : error);
-        failedFiles.push(file.originalname);
-        // Continue processing other files instead of failing completely
+    fileResults.forEach((result) => {
+      if (result.status === 'fulfilled') {
+        const fileResult = result.value;
+        if (fileResult.success && 'content' in fileResult) {
+          extractedData.push(fileResult.content);
+        } else if (!fileResult.success) {
+          failedFiles.push(fileResult.filename);
+        }
+      } else {
+        failedFiles.push('unknown file');
       }
-    }
+    });
+
+    console.log(`⚡ Parallel processing complete: ${extractedData.length} successful, ${failedFiles.length} failed`);
 
     if (extractedData.length === 0) {
       throw new Error(`Failed to process any files. ${failedFiles.length} file(s) failed: ${failedFiles.join(', ')}`);

@@ -73,6 +73,11 @@ export default function MortgageDetailsForm({
   const [rateMarginInput, setRateMarginInput] = useState<string>('0.75');
   const [isFetchingRate, setIsFetchingRate] = useState(false);
 
+  // Rate fetch modal state
+  const [showRateModal, setShowRateModal] = useState(false);
+  const [rateModalData, setRateModalData] = useState<{ rate: number; date: string; source: string } | null>(null);
+  const [rateModalError, setRateModalError] = useState<string | null>(null);
+
   // Auto-calculate AIO rate when using market rate calculation
   const calculateAIORate = () => {
     if (useMarketRateCalculation) {
@@ -93,6 +98,9 @@ export default function MortgageDetailsForm({
   // Fetch current market rate from FRED API via backend
   const fetchMarketRate = async () => {
     setIsFetchingRate(true);
+    setRateModalError(null);
+    setRateModalData(null);
+
     try {
       const response = await fetch('/api/current-mortgage-rate');
       const result = await response.json();
@@ -107,11 +115,13 @@ export default function MortgageDetailsForm({
       setBaseMarketRate(rate);
       setBaseMarketRateInput(String(rate));
 
-      // Show success notification
-      alert(`✓ Updated to current rate: ${rate}%\nAs of: ${date}\nSource: ${source}`);
+      // Show success modal
+      setRateModalData({ rate, date, source });
+      setShowRateModal(true);
     } catch (error) {
       console.error('Error fetching market rate:', error);
-      alert(`Unable to fetch current market rate from FRED API.\n\nError: ${error instanceof Error ? error.message : 'Unknown error'}\n\nPlease enter the rate manually or try again later.`);
+      setRateModalError(error instanceof Error ? error.message : 'Unknown error');
+      setShowRateModal(true);
     } finally {
       setIsFetchingRate(false);
     }
@@ -760,7 +770,15 @@ export default function MortgageDetailsForm({
                       All-In-One Loan Interest Rate
                     </label>
                     <span
-                      title="The All-In-One loan typically has a HIGHER interest rate than traditional mortgages because it offers flexibility and banking features. However, you save money through daily interest calculation on reduced principal (offset by your cash flow). Common range: 0.5% to 2.5% above traditional rate."
+                      title={`All-In-One Loan Rate\n\n` +
+                        `💡 Why Higher Rate?\n` +
+                        `   • Flexible banking features included\n` +
+                        `   • Daily interest calculation (not monthly)\n` +
+                        `   • Offset capability reduces principal\n\n` +
+                        `💰 You Still Save Money:\n` +
+                        `   Daily interest on reduced principal = Lower costs\n` +
+                        `   Your cash flow directly offsets the balance\n\n` +
+                        `📊 Typical Range: 0.5% - 2.5% above traditional rate`}
                       style={{
                         display: 'inline-flex',
                         alignItems: 'center',
@@ -853,6 +871,181 @@ export default function MortgageDetailsForm({
           </button>
         </div>
       </form>
+
+      {/* Rate Fetch Modal */}
+      {showRateModal && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0, 0, 0, 0.6)',
+            backdropFilter: 'blur(4px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 10000,
+            animation: 'fadeIn 0.2s ease'
+          }}
+          onClick={() => setShowRateModal(false)}
+        >
+          <div
+            style={{
+              background: 'white',
+              borderRadius: '16px',
+              maxWidth: '500px',
+              width: '90%',
+              boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
+              animation: 'slideUp 0.3s ease',
+              overflow: 'hidden'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              padding: '1.5rem',
+              borderBottom: '1px solid #e2e8f0'
+            }}>
+              <h3 style={{ margin: 0, color: '#2d3748', fontSize: '1.25rem', fontWeight: 600 }}>
+                {rateModalError ? 'Unable to Fetch Rate' : 'Current Market Rate'}
+              </h3>
+              <button
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '8px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  color: '#718096',
+                  transition: 'all 0.2s ease'
+                }}
+                onClick={() => setShowRateModal(false)}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = '#f7fafc';
+                  e.currentTarget.style.color = '#2d3748';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'none';
+                  e.currentTarget.style.color = '#718096';
+                }}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div style={{ padding: '2rem 1.5rem', textAlign: 'center' }}>
+              {rateModalError ? (
+                <>
+                  <div style={{
+                    width: '64px',
+                    height: '64px',
+                    margin: '0 auto 1.5rem',
+                    background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'white'
+                  }}>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <p style={{ color: '#4a5568', fontSize: '1rem', lineHeight: 1.6, margin: '0 0 1rem 0' }}>
+                    Unable to fetch current market rate from FRED API.
+                  </p>
+                  <div style={{
+                    padding: '1rem',
+                    background: '#fef2f2',
+                    borderRadius: '8px',
+                    border: '1px solid #fecaca',
+                    marginBottom: '1rem'
+                  }}>
+                    <strong style={{ color: '#991b1b', fontSize: '0.9rem' }}>Error:</strong>
+                    <p style={{ color: '#991b1b', fontSize: '0.9rem', margin: '0.5rem 0 0 0' }}>{rateModalError}</p>
+                  </div>
+                  <p style={{ color: '#718096', fontSize: '0.9rem', lineHeight: 1.6, margin: 0 }}>
+                    Please enter the rate manually or try again later.
+                  </p>
+                </>
+              ) : rateModalData && (
+                <>
+                  <div style={{
+                    width: '64px',
+                    height: '64px',
+                    margin: '0 auto 1.5rem',
+                    background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'white'
+                  }}>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <p style={{ color: '#4a5568', fontSize: '1rem', lineHeight: 1.6, margin: '0 0 1.5rem 0' }}>
+                    Successfully updated to current market rate
+                  </p>
+                  <div style={{
+                    padding: '1.5rem',
+                    background: 'linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%)',
+                    borderRadius: '12px',
+                    border: '2px solid #10b981',
+                    marginBottom: '1.5rem'
+                  }}>
+                    <div style={{ fontSize: '0.85rem', color: '#047857', textTransform: 'uppercase', fontWeight: 600, marginBottom: '0.5rem' }}>
+                      Current Rate
+                    </div>
+                    <div style={{ fontSize: '3rem', fontWeight: 700, color: '#059669', lineHeight: 1 }}>
+                      {rateModalData.rate}%
+                    </div>
+                  </div>
+                  <div style={{ display: 'grid', gap: '0.75rem', textAlign: 'left', fontSize: '0.9rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.75rem', background: '#f7fafc', borderRadius: '8px' }}>
+                      <span style={{ color: '#718096', fontWeight: 500 }}>As of:</span>
+                      <span style={{ color: '#2d3748', fontWeight: 600 }}>{rateModalData.date}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.75rem', background: '#f7fafc', borderRadius: '8px' }}>
+                      <span style={{ color: '#718096', fontWeight: 500 }}>Source:</span>
+                      <span style={{ color: '#2d3748', fontWeight: 600 }}>{rateModalData.source}</span>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div style={{
+              padding: '1.5rem',
+              borderTop: '1px solid #e2e8f0',
+              display: 'flex',
+              justifyContent: 'flex-end'
+            }}>
+              <button
+                className="btn-primary"
+                onClick={() => setShowRateModal(false)}
+                style={{ padding: '0.75rem 2rem' }}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
