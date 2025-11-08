@@ -34,6 +34,15 @@ export default function CashFlowReview({
   const aiRecommendedFrequency = (cashFlow.depositFrequency as 'weekly' | 'biweekly' | 'semi-monthly' | 'monthly') || 'monthly';
   const [chartCollapsed, setChartCollapsed] = useState(false);
 
+  // Manual transaction entry states
+  const [showAddTransaction, setShowAddTransaction] = useState(false);
+  const [newTransaction, setNewTransaction] = useState({
+    date: new Date().toISOString().split('T')[0],
+    description: '',
+    amount: '',
+    category: 'expense' as Transaction['category']
+  });
+
   // Calculate actual months from transaction data
   const calculateActualMonths = (transactions: Transaction[]): number => {
     if (transactions.length === 0) return 1;
@@ -96,6 +105,36 @@ export default function CashFlowReview({
     setEditingTransaction(null);
   };
 
+  const handleAddTransaction = () => {
+    if (!newTransaction.description || !newTransaction.amount) {
+      alert('Please fill in all fields');
+      return;
+    }
+
+    const amount = parseFloat(newTransaction.amount);
+    if (isNaN(amount)) {
+      alert('Please enter a valid amount');
+      return;
+    }
+
+    const transaction: Transaction = {
+      date: newTransaction.date,
+      description: newTransaction.description,
+      amount: newTransaction.category === 'income' ? Math.abs(amount) : -Math.abs(amount),
+      category: newTransaction.category,
+      excluded: false
+    };
+
+    setTransactions([...transactions, transaction]);
+    setShowAddTransaction(false);
+    setNewTransaction({
+      date: new Date().toISOString().split('T')[0],
+      description: '',
+      amount: '',
+      category: 'expense'
+    });
+  };
+
   // Recalculate totals for display
   const includedTransactions = transactions.filter(t => !t.excluded);
   const actualMonths = calculateActualMonths(includedTransactions);
@@ -112,65 +151,103 @@ export default function CashFlowReview({
 
   const displayNetCashFlow = displayTotalIncome - displayTotalExpenses;
 
-  // Prepare chart data - group by month and calculate incoming/outgoing
-  const chartData = useMemo(() => {
-    const monthlyData: { [key: string]: { incoming: number; outgoing: number } } = {};
+  // Prepare unified chart data - group by month and calculate incoming/outgoing
+  const { chartData, oneTimeIncomeData, oneTimeExpenseData } = useMemo(() => {
+    const monthlyData: {
+      [key: string]: {
+        incoming: number;
+        outgoing: number;
+        oneTimeIncome: Array<{ amount: number; description: string; excluded: boolean }>;
+        oneTimeExpense: Array<{ amount: number; description: string; excluded: boolean }>;
+      }
+    } = {};
 
-    includedTransactions.forEach(transaction => {
+    // First, create month entries from ALL transactions to establish the x-axis range
+    transactions.forEach(transaction => {
       const date = new Date(transaction.date);
       const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
 
       if (!monthlyData[monthKey]) {
-        monthlyData[monthKey] = { incoming: 0, outgoing: 0 };
-      }
-
-      if (transaction.category === 'income' || transaction.amount > 0) {
-        monthlyData[monthKey].incoming += Math.abs(transaction.amount);
-      } else {
-        monthlyData[monthKey].outgoing += Math.abs(transaction.amount);
+        monthlyData[monthKey] = { incoming: 0, outgoing: 0, oneTimeIncome: [], oneTimeExpense: [] };
       }
     });
 
-    // Convert to array and sort by date
-    return Object.entries(monthlyData)
-      .map(([month, data]) => ({
-        month,
-        monthLabel: new Date(month + '-01').toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
-        incoming: Math.round(data.incoming),
-        outgoing: Math.round(data.outgoing)
-      }))
-      .sort((a, b) => a.month.localeCompare(b.month));
-  }, [includedTransactions]);
+    // Process regular transactions (income, expense, recurring) for area charts
+    transactions
+      .filter(t => t.category !== 'housing' && t.category !== 'one-time')
+      .forEach(transaction => {
+        const date = new Date(transaction.date);
+        const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
 
-  // Prepare scatter data for one-time items (showing ALL, not just included)
-  const { oneTimeIncomeData, oneTimeExpenseData } = useMemo(() => {
-    const incomeData: any[] = [];
-    const expenseData: any[] = [];
+        if (transaction.category === 'income' || transaction.amount > 0) {
+          monthlyData[monthKey].incoming += Math.abs(transaction.amount);
+        } else {
+          monthlyData[monthKey].outgoing += Math.abs(transaction.amount);
+        }
+      });
 
+    // Process one-time transactions for scatter plots
     transactions
       .filter(t => t.category === 'one-time')
       .forEach(transaction => {
         const date = new Date(transaction.date);
         const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-        const monthLabel = new Date(monthKey + '-01').toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
         const amount = Math.abs(transaction.amount);
         const isIncome = transaction.amount > 0;
 
         const dataPoint = {
-          monthLabel, // Must match X-axis key
           amount,
           description: transaction.description,
-          excluded: transaction.excluded
+          excluded: transaction.excluded || false
         };
 
         if (isIncome) {
-          incomeData.push(dataPoint);
+          monthlyData[monthKey].oneTimeIncome.push(dataPoint);
         } else {
-          expenseData.push(dataPoint);
+          monthlyData[monthKey].oneTimeExpense.push(dataPoint);
         }
       });
 
-    return { oneTimeIncomeData: incomeData, oneTimeExpenseData: expenseData };
+    // Convert to array and sort by date
+    const chartArray = Object.entries(monthlyData)
+      .map(([month, data]) => ({
+        month,
+        monthLabel: new Date(month + '-01').toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+        incoming: Math.round(data.incoming),
+        outgoing: Math.round(data.outgoing),
+        oneTimeIncome: data.oneTimeIncome,
+        oneTimeExpense: data.oneTimeExpense
+      }))
+      .sort((a, b) => a.month.localeCompare(b.month));
+
+    // Flatten one-time data for scatter plots while maintaining monthLabel reference
+    const incomeScatter: any[] = [];
+    const expenseScatter: any[] = [];
+
+    chartArray.forEach(month => {
+      month.oneTimeIncome.forEach(item => {
+        incomeScatter.push({
+          monthLabel: month.monthLabel,
+          amount: item.amount,
+          description: item.description,
+          excluded: item.excluded
+        });
+      });
+      month.oneTimeExpense.forEach(item => {
+        expenseScatter.push({
+          monthLabel: month.monthLabel,
+          amount: item.amount,
+          description: item.description,
+          excluded: item.excluded
+        });
+      });
+    });
+
+    return {
+      chartData: chartArray,
+      oneTimeIncomeData: incomeScatter,
+      oneTimeExpenseData: expenseScatter
+    };
   }, [transactions]);
 
   const formatCurrency = (amount: number): string => {
@@ -313,21 +390,56 @@ export default function CashFlowReview({
     <div className="cash-flow-review">
       {!hideSummary && (
         <>
-          {/* Header with Combined Stats on Right */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem', gap: '2rem' }}>
-            <div className="form-header" style={{ margin: 0, flex: '1' }}>
-              <h2 style={{ margin: '0 0 0.5rem 0' }}>Cash Flow Analysis Complete</h2>
-              <p style={{ margin: 0 }}>Review the AI-generated analysis of your bank statements</p>
-            </div>
+          {/* Header */}
+          <div className="form-header" style={{ margin: '0 0 1rem 0' }}>
+            <h2 style={{ margin: '0 0 0.5rem 0' }}>Cash Flow Analysis Complete</h2>
+            <p style={{ margin: 0 }}>Review the AI-generated analysis of your bank statements</p>
+          </div>
 
-            {/* Combined Confidence & Suitability Tile */}
+          {/* Top Continue Button */}
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1.5rem' }}>
+            <button
+              type="button"
+              className="btn-primary"
+              onClick={onContinue}
+              disabled={displayNetCashFlow <= 300}
+              style={{
+                opacity: displayNetCashFlow <= 300 ? 0.5 : 1,
+                cursor: displayNetCashFlow <= 300 ? 'not-allowed' : 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                padding: '0.75rem 1.5rem',
+                fontSize: '1rem',
+                fontWeight: '600'
+              }}
+              title={displayNetCashFlow <= 300 ? 'Cash flow must exceed $300/month to continue' : ''}
+            >
+              Continue to Simulation
+              <svg style={{ width: '20px', height: '20px' }} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          </div>
+
+          {/* Compact Layout: Confidence/Suitability + Summary Cards */}
+          <div style={{
+            display: 'flex',
+            gap: '1.5rem',
+            marginBottom: '2rem',
+            alignItems: 'stretch'
+          }}>
+            {/* Left: Combined Confidence & Suitability Tile */}
             <div style={{
               background: 'white',
               border: '2px solid #e2e8f0',
               borderRadius: '12px',
-              padding: '1rem 1.25rem',
+              padding: '1.25rem',
               minWidth: '320px',
-              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
+              maxWidth: '380px',
+              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+              display: 'flex',
+              flexDirection: 'column'
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
                 <div style={{
@@ -353,11 +465,11 @@ export default function CashFlowReview({
                   </div>
                 </div>
               </div>
-              <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '0.75rem' }}>
+              <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '0.75rem', marginTop: 'auto' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
-                  <span style={{ fontSize: '1.25rem' }}>{temperatureRating.icon}</span>
+                  <span style={{ fontSize: '1.5rem' }}>{temperatureRating.icon}</span>
                   <div>
-                    <div style={{ fontSize: '0.875rem', fontWeight: '600', color: temperatureRating.color }}>
+                    <div style={{ fontSize: '0.95rem', fontWeight: '700', color: temperatureRating.color }}>
                       {temperatureRating.rating}
                     </div>
                     <div style={{ fontSize: '0.75rem', color: '#718096' }}>
@@ -365,55 +477,19 @@ export default function CashFlowReview({
                     </div>
                   </div>
                 </div>
-                <div style={{ fontSize: '0.75rem', color: '#475569', textAlign: 'center', padding: '0.5rem', background: '#f7fafc', borderRadius: '6px' }}>
-                  ${formatCurrency(displayNetCashFlow)}/month cash flow
-                  <span style={{ color: '#94a3b8', marginLeft: '0.25rem' }}>
+                <div style={{ fontSize: '0.875rem', color: '#1a202c', fontWeight: '600', textAlign: 'center', padding: '0.75rem', background: '#f7fafc', borderRadius: '6px', marginTop: '0.5rem' }}>
+                  {formatCurrency(displayNetCashFlow)}/month cash flow
+                  <div style={{ fontSize: '0.7rem', color: '#94a3b8', marginTop: '0.25rem', fontWeight: 'normal' }}>
                     ({Math.round((displayNetCashFlow / 3000) * 100)}% of optimal)
-                  </span>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* Top Continue Button */}
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1.5rem' }}>
-            <button
-              type="button"
-              className="btn-primary"
-              onClick={onContinue}
-              disabled={displayNetCashFlow <= 300}
-              style={{
-                opacity: displayNetCashFlow <= 300 ? 0.5 : 1,
-                cursor: displayNetCashFlow <= 300 ? 'not-allowed' : 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem'
-              }}
-              title={displayNetCashFlow <= 300 ? 'Cash flow must exceed $300/month to continue' : ''}
-            >
-              Continue to Simulation
-              <svg style={{ width: '20px', height: '20px' }} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </button>
-          </div>
-
-          {/* Sticky Summary Cards at Top */}
-          <div style={{
-            position: 'sticky',
-            top: '0',
-            zIndex: 100,
-            background: '#f7fafc',
-            padding: '1rem 0',
-            marginBottom: '2rem',
-            marginLeft: '-2rem',
-            marginRight: '-2rem',
-            paddingLeft: '2rem',
-            paddingRight: '2rem',
-            boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
-          }}>
-            <div className="summary-cards">
-            <div className="summary-card income-card">
+            {/* Right: Summary Cards */}
+            <div style={{ flex: '1', display: 'flex', gap: '1rem' }}>
+              <div className="summary-cards" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', flex: '1' }}>
+              <div className="summary-card income-card">
               <div className="card-icon">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -455,10 +531,11 @@ export default function CashFlowReview({
                   {formatCurrency(displayNetCashFlow)}
                 </div>
                 <div className="card-description">
-                  {displayNetCashFlow >= 0 ? 'Available for loan offset' : 'Negative - Not suitable for AIO'}
+                  {displayNetCashFlow >= 0 ? 'Net Monthly Average Cash Flow' : 'Negative - Not suitable for AIO'}
                 </div>
               </div>
             </div>
+              </div>
             </div>
           </div>
 
@@ -656,6 +733,8 @@ export default function CashFlowReview({
                     dataKey="monthLabel"
                     stroke="#718096"
                     style={{ fontSize: '0.75rem' }}
+                    type="category"
+                    allowDuplicatedCategory={false}
                   />
                   <YAxis
                     stroke="#718096"
@@ -663,17 +742,79 @@ export default function CashFlowReview({
                     tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
                   />
                   <Tooltip
-                    formatter={(value: any, name: any) => {
-                      if (typeof value === 'number') {
-                        return [`$${value.toLocaleString()}`, name];
+                    content={({ active, payload }) => {
+                      if (!active || !payload || payload.length === 0) return null;
+
+                      // Check if this is a scatter point (one-time transaction)
+                      const scatterPoint = payload.find(p =>
+                        p.dataKey === 'amount' && p.payload?.description
+                      );
+
+                      if (scatterPoint && scatterPoint.payload) {
+                        const data = scatterPoint.payload;
+                        return (
+                          <div
+                            style={{
+                              backgroundColor: 'white',
+                              border: '2px solid ' + (scatterPoint.name === 'One-Time Income' ? '#10b981' : '#ef4444'),
+                              borderRadius: '8px',
+                              padding: '0.75rem',
+                              boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                              maxWidth: '250px'
+                            }}
+                          >
+                            <div style={{
+                              fontWeight: '700',
+                              color: scatterPoint.name === 'One-Time Income' ? '#10b981' : '#ef4444',
+                              marginBottom: '0.5rem',
+                              fontSize: '0.875rem'
+                            }}>
+                              {scatterPoint.name}
+                            </div>
+                            <div style={{ fontSize: '0.85rem', color: '#4a5568', marginBottom: '0.25rem' }}>
+                              <strong>Description:</strong> {data.description}
+                            </div>
+                            <div style={{ fontSize: '0.85rem', color: '#4a5568', marginBottom: '0.25rem' }}>
+                              <strong>Amount:</strong> ${Math.abs(data.amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </div>
+                            {data.excluded && (
+                              <div style={{
+                                fontSize: '0.75rem',
+                                color: '#dc2626',
+                                marginTop: '0.5rem',
+                                padding: '0.25rem 0.5rem',
+                                background: '#fee2e2',
+                                borderRadius: '4px',
+                                fontWeight: '600'
+                              }}>
+                                ⚠️ Excluded from calculations
+                              </div>
+                            )}
+                          </div>
+                        );
                       }
-                      return [value, name];
-                    }}
-                    contentStyle={{
-                      backgroundColor: 'white',
-                      border: '1px solid #e2e8f0',
-                      borderRadius: '8px',
-                      padding: '0.75rem'
+
+                      // Regular tooltip for area chart
+                      return (
+                        <div
+                          style={{
+                            backgroundColor: 'white',
+                            border: '1px solid #e2e8f0',
+                            borderRadius: '8px',
+                            padding: '0.75rem'
+                          }}
+                        >
+                          <div style={{ marginBottom: '0.5rem', fontWeight: '600', color: '#1a202c' }}>
+                            {payload[0]?.payload?.monthLabel}
+                          </div>
+                          {payload.map((entry: any, index: number) => (
+                            <div key={index} style={{ fontSize: '0.875rem', color: '#4a5568', marginBottom: '0.25rem' }}>
+                              <span style={{ color: entry.color, fontWeight: '600' }}>●</span>{' '}
+                              {entry.name}: ${entry.value?.toLocaleString()}
+                            </div>
+                          ))}
+                        </div>
+                      );
                     }}
                   />
                   <Legend
@@ -704,7 +845,7 @@ export default function CashFlowReview({
                     fill="#10b981"
                     name="One-Time Income"
                     shape="circle"
-                    r={6}
+                    r={3}
                   />
                   <Scatter
                     data={oneTimeExpenseData}
@@ -712,7 +853,7 @@ export default function CashFlowReview({
                     fill="#ef4444"
                     name="One-Time Expense"
                     shape="circle"
-                    r={6}
+                    r={3}
                   />
                 </ComposedChart>
               </ResponsiveContainer>
@@ -726,16 +867,32 @@ export default function CashFlowReview({
 
       {/* Transactions Section */}
       <div className="transactions-view">
-        <div className="transactions-header">
-          <p>Showing {transactions.length} categorized transactions</p>
-          <div className="transactions-instructions">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        {/* Add Transaction Button */}
+        <div style={{ marginBottom: '1rem' }}>
+          <button
+            onClick={() => setShowAddTransaction(true)}
+            style={{
+              background: '#10b981',
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              padding: '0.75rem 1.5rem',
+              fontSize: '0.875rem',
+              fontWeight: '600',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              transition: 'all 0.2s'
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.background = '#059669'}
+            onMouseLeave={(e) => e.currentTarget.style.background = '#10b981'}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '20px', height: '20px' }}>
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
             </svg>
-            <span>
-              <strong>Check to EXCLUDE</strong> transactions from calculations. Click amounts to edit if OCR errors are detected.
-            </span>
-          </div>
+            Add Manual Transaction
+          </button>
         </div>
 
         {/* Transaction Sub-Tabs - Reordered to match display */}
@@ -774,6 +931,19 @@ export default function CashFlowReview({
             >
               All Categories
             </button>
+          </div>
+
+          {/* Transaction Header - Count and Instructions */}
+          <div className="transactions-header" style={{ marginTop: '1rem' }}>
+            <p>Showing {transactions.length} categorized transactions</p>
+            <div className="transactions-instructions">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span>
+                <strong>Check to EXCLUDE</strong> transactions from calculations. Click amounts to edit if OCR errors are detected.
+              </span>
+            </div>
           </div>
 
           {/* Scrollable Transaction Container */}
@@ -900,6 +1070,155 @@ export default function CashFlowReview({
               Your net cash flow of {formatCurrency(displayNetCashFlow)}/month is below the minimum threshold of $300/month required for an All-In-One loan.
               Please review your transactions and exclude any irregular items, or consider improving your cash flow before proceeding.
             </p>
+          </div>
+        </div>
+      )}
+
+      {/* Add Transaction Modal */}
+      {showAddTransaction && (
+        <div
+          onClick={() => setShowAddTransaction(false)}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: 'white',
+              borderRadius: '12px',
+              padding: '2rem',
+              maxWidth: '500px',
+              width: '90%',
+              boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)'
+            }}
+          >
+            <h2 style={{ margin: '0 0 1.5rem 0', fontSize: '1.5rem', color: '#1a202c' }}>
+              Add Manual Transaction
+            </h2>
+
+            <div style={{ marginBottom: '1rem' }}>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600', color: '#4a5568' }}>
+                Date
+              </label>
+              <input
+                type="date"
+                value={newTransaction.date}
+                onChange={(e) => setNewTransaction({ ...newTransaction, date: e.target.value })}
+                style={{
+                  width: '100%',
+                  padding: '0.75rem',
+                  border: '1px solid #cbd5e0',
+                  borderRadius: '8px',
+                  fontSize: '0.875rem'
+                }}
+              />
+            </div>
+
+            <div style={{ marginBottom: '1rem' }}>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600', color: '#4a5568' }}>
+                Description
+              </label>
+              <input
+                type="text"
+                value={newTransaction.description}
+                onChange={(e) => setNewTransaction({ ...newTransaction, description: e.target.value })}
+                placeholder="Enter transaction description"
+                style={{
+                  width: '100%',
+                  padding: '0.75rem',
+                  border: '1px solid #cbd5e0',
+                  borderRadius: '8px',
+                  fontSize: '0.875rem'
+                }}
+              />
+            </div>
+
+            <div style={{ marginBottom: '1rem' }}>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600', color: '#4a5568' }}>
+                Amount
+              </label>
+              <input
+                type="number"
+                value={newTransaction.amount}
+                onChange={(e) => setNewTransaction({ ...newTransaction, amount: e.target.value })}
+                placeholder="Enter amount (positive number)"
+                step="0.01"
+                style={{
+                  width: '100%',
+                  padding: '0.75rem',
+                  border: '1px solid #cbd5e0',
+                  borderRadius: '8px',
+                  fontSize: '0.875rem'
+                }}
+              />
+            </div>
+
+            <div style={{ marginBottom: '1.5rem' }}>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600', color: '#4a5568' }}>
+                Category
+              </label>
+              <select
+                value={newTransaction.category}
+                onChange={(e) => setNewTransaction({ ...newTransaction, category: e.target.value as Transaction['category'] })}
+                style={{
+                  width: '100%',
+                  padding: '0.75rem',
+                  border: '1px solid #cbd5e0',
+                  borderRadius: '8px',
+                  fontSize: '0.875rem',
+                  background: 'white'
+                }}
+              >
+                <option value="income">Income</option>
+                <option value="expense">Expense</option>
+                <option value="recurring">Recurring Expense</option>
+                <option value="housing">Housing</option>
+                <option value="one-time">One-Time</option>
+              </select>
+            </div>
+
+            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => setShowAddTransaction(false)}
+                style={{
+                  padding: '0.75rem 1.5rem',
+                  border: '1px solid #cbd5e0',
+                  borderRadius: '8px',
+                  background: 'white',
+                  color: '#4a5568',
+                  fontSize: '0.875rem',
+                  fontWeight: '600',
+                  cursor: 'pointer'
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleAddTransaction}
+                style={{
+                  padding: '0.75rem 1.5rem',
+                  border: 'none',
+                  borderRadius: '8px',
+                  background: '#10b981',
+                  color: 'white',
+                  fontSize: '0.875rem',
+                  fontWeight: '600',
+                  cursor: 'pointer'
+                }}
+              >
+                Add Transaction
+              </button>
+            </div>
           </div>
         </div>
       )}

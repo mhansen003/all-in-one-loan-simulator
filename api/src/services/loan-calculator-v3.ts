@@ -6,7 +6,33 @@
 
 import { AccurateLoanCalculator, AccurateCalculationInput } from './loan-calculator-accurate.js';
 import { calculateMonthlyPayment } from './loan-calculator.js';
-import type { MortgageDetails, CashFlowAnalysis, SimulationResult, LoanProjection } from '../types.js';
+import type { MortgageDetails, CashFlowAnalysis, SimulationResult, LoanProjection, TraditionalProductType } from '../types.js';
+
+/**
+ * Get product display name from product type
+ */
+function getProductDisplayName(productType: TraditionalProductType): string {
+  const displayNames: Record<TraditionalProductType, string> = {
+    '15-year-fixed': '15-Year Fixed',
+    '20-year-fixed': '20-Year Fixed',
+    '25-year-fixed': '25-Year Fixed',
+    '30-year-fixed': '30-Year Fixed',
+  };
+  return displayNames[productType] || '30-Year Fixed';
+}
+
+/**
+ * Get term in months from product type
+ */
+function getTermMonths(productType: TraditionalProductType): number {
+  const termMap: Record<TraditionalProductType, number> = {
+    '15-year-fixed': 180,  // 15 years
+    '20-year-fixed': 240,  // 20 years
+    '25-year-fixed': 300,  // 25 years
+    '30-year-fixed': 360,  // 30 years
+  };
+  return termMap[productType] || 360;
+}
 
 /**
  * Simulate loan using the accurate calculator
@@ -18,7 +44,11 @@ export function simulateLoan(
   const loanBalance = mortgageDetails.currentBalance || 0;
   const tradRate = (mortgageDetails.interestRate || 0) / 100;
   const aioRate = tradRate; // Use same interest rate for AIO
-  const remainingMonths = mortgageDetails.remainingTermMonths || 300;
+
+  // Get product type and determine term
+  const productType = (mortgageDetails.productType || '30-year-fixed') as TraditionalProductType;
+  const productDisplayName = getProductDisplayName(productType);
+  const remainingMonths = getTermMonths(productType);
 
   // Calculate traditional mortgage projection
   const traditionalMonthlyPayment = mortgageDetails.monthlyPayment ||
@@ -30,6 +60,7 @@ export function simulateLoan(
 
   const traditionalLoan: LoanProjection = {
     type: 'traditional',
+    productName: productDisplayName,
     monthlyPayment: traditionalMonthlyPayment,
     totalInterestPaid: Math.max(0, traditionalTotalInterest),
     payoffDate: traditionalPayoffDate,
@@ -57,6 +88,7 @@ export function simulateLoan(
 
   const allInOneLoan: LoanProjection = {
     type: 'all-in-one',
+    productName: 'All-In-One',
     monthlyPayment: 0, // AIO doesn't have fixed monthly payment
     totalInterestPaid: Math.max(0, aioTotalInterest),
     payoffDate: aioPayoffDate,

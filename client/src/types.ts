@@ -1,3 +1,10 @@
+// Product types for comparison
+export type TraditionalProductType =
+  | '15-year-fixed'
+  | '20-year-fixed'
+  | '25-year-fixed'
+  | '30-year-fixed';
+
 // Loan and borrower information types
 export interface MortgageDetails {
   currentBalance: number;
@@ -8,6 +15,7 @@ export interface MortgageDetails {
   propertyValue: number;
   currentHousingPayment: number; // To exclude from cash flow
   loanBalance?: number; // Alias for currentBalance (for backwards compatibility)
+  productType?: TraditionalProductType; // Type of traditional mortgage to compare against (default: 30-year-fixed)
 }
 
 export interface BankStatement {
@@ -66,6 +74,7 @@ export interface EligibilityResult {
 
 export interface LoanProjection {
   type: 'traditional' | 'all-in-one';
+  productName?: string; // Display name (e.g., "15-Year Fixed", "All-In-One")
   monthlyPayment: number;
   totalInterestPaid: number;
   payoffDate: Date;

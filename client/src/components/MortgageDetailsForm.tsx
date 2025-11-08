@@ -140,6 +140,7 @@ export default function MortgageDetailsForm({
       remainingTermMonths: 300,
       propertyValue: 500000,
       currentHousingPayment: testMonthlyPayment + testAdditionalExpenses, // 2800
+      productType: '25-year-fixed', // Default to 25-year for test data
     });
     setCurrentBalanceInput('350000');
     setInterestRateInput('6.5');
@@ -253,6 +254,68 @@ export default function MortgageDetailsForm({
       </div>
 
       <form onSubmit={handleSubmit} className="mortgage-form">
+        {/* Product Type Selector - Full Width at Top */}
+        <div className="form-group" style={{
+          gridColumn: '1 / -1',
+          marginBottom: '2rem',
+          padding: '1.5rem',
+          background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)',
+          borderRadius: '12px',
+          border: '2px solid #dee2e6'
+        }}>
+          <label htmlFor="productType" className="form-label required" style={{
+            fontSize: '1.1rem',
+            fontWeight: 600,
+            color: '#2d3748',
+            marginBottom: '0.75rem'
+          }}>
+            Comparison Product Type
+          </label>
+          <select
+            id="productType"
+            className="form-input"
+            style={{
+              fontSize: '1rem',
+              padding: '0.875rem',
+              fontWeight: 500
+            }}
+            value={formData.productType || '30-year-fixed'}
+            onChange={(e) => {
+              const productType = e.target.value as any;
+              setFormData((prev) => ({ ...prev, productType }));
+
+              // Auto-adjust term based on product
+              const termMap: { [key: string]: number } = {
+                '15-year-fixed': 15,
+                '20-year-fixed': 20,
+                '25-year-fixed': 25,
+                '30-year-fixed': 30,
+              };
+              const years = termMap[productType] || 30;
+              setTermYears(years);
+              setTermMonths(0);
+              setFormData((prev) => ({
+                ...prev,
+                productType,
+                remainingTermMonths: years * 12
+              }));
+
+              // Clear term error if exists
+              if (errors.remainingTermMonths) {
+                setErrors((prev) => ({ ...prev, remainingTermMonths: undefined }));
+              }
+            }}
+          >
+            <option value="15-year-fixed">15-Year Fixed Mortgage</option>
+            <option value="20-year-fixed">20-Year Fixed Mortgage</option>
+            <option value="25-year-fixed">25-Year Fixed Mortgage</option>
+            <option value="30-year-fixed">30-Year Fixed Mortgage</option>
+          </select>
+          <span className="form-help-text" style={{ marginTop: '0.5rem', display: 'block' }}>
+            Select the type of traditional mortgage to compare against the All-In-One loan
+          </span>
+        </div>
+
         <div className="form-grid">
           {/* LEFT COLUMN: Loan Details */}
           <div className="form-column">
