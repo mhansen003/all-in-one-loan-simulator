@@ -280,18 +280,40 @@ export default function ProposalBuilder({
     setIsGeneratingPDF(true);
 
     try {
+      // Generate filename with date for better organization
+      const dateStr = new Date().toISOString().split('T')[0];
+      const safeClientName = (clientName || 'Client').replace(/[^a-zA-Z0-9]/g, '-');
+
       const opt = {
-        margin: 0.5,
-        filename: `${clientName || 'Client'}-AIO-Proposal.pdf`,
+        margin: [0.5, 0.5, 0.5, 0.5] as [number, number, number, number], // top, right, bottom, left
+        filename: `${safeClientName}-AIO-Proposal-${dateStr}.pdf`,
         image: { type: 'jpeg' as const, quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, letterRendering: true },
-        jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' as const },
+        html2canvas: {
+          scale: 3,              // Higher quality (was 2)
+          useCORS: true,
+          letterRendering: true,
+          logging: false,        // Reduce console noise
+          backgroundColor: '#ffffff',
+          windowHeight: pdfContentRef.current.scrollHeight,
+          windowWidth: pdfContentRef.current.scrollWidth
+        },
+        jsPDF: {
+          unit: 'in',
+          format: 'letter',
+          orientation: 'portrait' as const,
+          compress: true         // Smaller file size
+        },
+        pagebreak: {
+          mode: ['avoid-all', 'css'] // Better page breaks
+        }
       };
 
+      console.log('📄 Generating PDF proposal...');
       await html2pdf().set(opt).from(pdfContentRef.current).save();
+      console.log('✅ PDF generated successfully!');
     } catch (error) {
-      console.error('Error generating PDF:', error);
-      alert('Failed to generate PDF. Please try again.');
+      console.error('❌ Error generating PDF:', error);
+      alert('Failed to generate PDF. Please try again.\n\nError: ' + (error instanceof Error ? error.message : 'Unknown error'));
     } finally {
       setIsGeneratingPDF(false);
     }

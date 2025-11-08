@@ -212,22 +212,8 @@ router.post('/simulate-loan', async (req, res) => {
   }
 });
 
-// Generate PDF report (placeholder - to be implemented)
-router.post('/generate-report', async (req, res) => {
-  try {
-    // TODO: Implement PDF generation
-    res.status(501).json({
-      error: 'Not implemented',
-      message: 'PDF report generation coming soon',
-    });
-  } catch (error: any) {
-    console.error('Error generating report:', error);
-    res.status(500).json({
-      error: 'Report generation failed',
-      message: error.message || 'Failed to generate report',
-    });
-  }
-});
+// Note: PDF generation is handled client-side in ProposalBuilder.tsx using html2pdf.js
+// This endpoint is not used and can be removed or implemented for server-side PDF generation if needed
 
 // Get detailed amortization schedule
 router.post('/amortization-schedule', async (req, res) => {

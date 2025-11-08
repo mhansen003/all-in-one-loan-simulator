@@ -69,7 +69,10 @@ export const simulateLoan = async (
   return response.data.simulation;
 };
 
-// Generate PDF report
+// Note: PDF generation is handled client-side in ProposalBuilder.tsx using html2pdf.js
+// This API function is not used and backend endpoint returns 501
+// Keeping for reference in case server-side PDF generation is needed in the future
+/*
 export const generateReport = async (
   mortgageDetails: MortgageDetails,
   cashFlow: CashFlowAnalysis,
@@ -89,5 +92,6 @@ export const generateReport = async (
 
   return response.data;
 };
+*/
 
 export default api;
