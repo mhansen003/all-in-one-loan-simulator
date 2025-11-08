@@ -334,6 +334,7 @@ function App() {
                 mortgageDetails={mortgageDetails as MortgageDetails}
                 cashFlow={cashFlowAnalysis || undefined}
                 onReset={handleReset}
+                onCreateProposal={() => setStep('proposal-builder')}
               />
             </div>
           )}
@@ -343,6 +344,7 @@ function App() {
               <ProposalBuilder
                 simulation={simulationResult}
                 mortgageDetails={mortgageDetails as MortgageDetails}
+                cashFlow={cashFlowAnalysis || undefined}
                 onBack={() => setStep('results')}
               />
             </div>

@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import type { SimulationResult, MortgageDetails, CashFlowAnalysis } from '../types';
-import ProposalBuilder from './ProposalBuilder';
 import './SimulationResults.css';
 
 interface SimulationResultsProps {
@@ -9,9 +8,10 @@ interface SimulationResultsProps {
   cashFlow?: CashFlowAnalysis;
   onReset: () => void;
   onGenerateReport?: () => void;
+  onCreateProposal?: () => void;
 }
 
-type TabView = 'results' | 'paydown' | 'charts' | 'duplicates' | 'proposal' | 'signature';
+type TabView = 'results' | 'paydown' | 'charts' | 'duplicates';
 
 export default function SimulationResults({
   simulation,
@@ -19,6 +19,7 @@ export default function SimulationResults({
   cashFlow,
   onReset,
   onGenerateReport,
+  onCreateProposal,
 }: SimulationResultsProps) {
   const [activeTab, setActiveTab] = useState<TabView>('results');
   const formatCurrency = (amount: number): string => {
@@ -83,7 +84,7 @@ export default function SimulationResults({
         </div>
         <button
           className="btn-primary"
-          onClick={() => setActiveTab('proposal')}
+          onClick={onCreateProposal}
           style={{
             alignSelf: 'flex-start',
             border: '3px solid #3b82f6',
@@ -538,8 +539,8 @@ export default function SimulationResults({
                         opacity="0.6"
                       />
 
-                      {/* Label for AIO payoff */}
-                      <g transform={`translate(${xScale(aioMonths)}, ${yScale(traditionalBalanceAtAIOPayoff) - 40})`}>
+                      {/* Label for AIO payoff - positioned to avoid overlap */}
+                      <g transform={`translate(${xScale(aioMonths)}, ${Math.max(yScale(traditionalBalanceAtAIOPayoff) - 40, padding.top + 60)})`}>
                         <rect x="-70" y="-30" width="140" height="28" fill="#fff5e6" stroke="#9bc53d" strokeWidth="2" rx="4" />
                         <text x="0" y="-18" textAnchor="middle" fontSize="11" fontWeight="700" fill="#558b2f">
                           AIO Paid Off!
@@ -739,14 +740,29 @@ export default function SimulationResults({
                       tradInterest,
                       tradPrincipal
                     )}
-                    {createPieChart(
-                      aioInterestPercent,
-                      aioPrincipalPercent,
-                      { interest: '#fb923c', principal: '#9bc53d' },
-                      'All-In-One Loan',
-                      aioInterest,
-                      aioPrincipal
-                    )}
+                    {/* AIO chart with green aura */}
+                    <div style={{ position: 'relative' }}>
+                      <div style={{
+                        position: 'absolute',
+                        top: '50%',
+                        left: '50%',
+                        transform: 'translate(-50%, -50%)',
+                        width: '280px',
+                        height: '280px',
+                        borderRadius: '50%',
+                        background: 'radial-gradient(circle, rgba(155, 197, 61, 0.15) 0%, transparent 70%)',
+                        pointerEvents: 'none',
+                        zIndex: 0
+                      }}></div>
+                      {createPieChart(
+                        aioInterestPercent,
+                        aioPrincipalPercent,
+                        { interest: '#ef4444', principal: '#60a5fa' },
+                        'All-In-One Loan',
+                        aioInterest,
+                        aioPrincipal
+                      )}
+                    </div>
                   </>
                 );
               })()}
@@ -802,41 +818,44 @@ export default function SimulationResults({
               </div>
 
               <div>
-                <div style={{ marginBottom: '0.5rem' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.5rem' }}>
-                    <span style={{ fontWeight: '600', color: '#2d3748', minWidth: '140px', flexShrink: 0 }}>All-In-One Loan:</span>
-                    <div style={{ flex: 1, position: 'relative', height: '40px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.5rem' }}>
+                  <span style={{ fontWeight: '600', color: '#2d3748', minWidth: '140px', flexShrink: 0 }}>All-In-One Loan:</span>
+                  <div style={{ flex: 1, position: 'relative', height: '40px', display: 'flex' }}>
+                    {/* AIO payoff time */}
+                    <div style={{
+                      width: `${(simulation.allInOneLoan.payoffMonths / Math.max(simulation.traditionalLoan.payoffMonths, simulation.allInOneLoan.payoffMonths)) * 100}%`,
+                      height: '40px',
+                      background: 'linear-gradient(90deg, #9bc53d 0%, #7da62e 100%)',
+                      borderRadius: '8px 0 0 8px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: 'white',
+                      fontWeight: '600',
+                      minWidth: '120px',
+                    }}>
+                      {yearsMonthsFromMonths(simulation.allInOneLoan.payoffMonths)}
+                    </div>
+                    {/* Savings extension - fills to match traditional bar */}
+                    {simulation.comparison.timeSavedMonths > 0 && (
                       <div style={{
-                        width: `${(simulation.allInOneLoan.payoffMonths / Math.max(simulation.traditionalLoan.payoffMonths, simulation.allInOneLoan.payoffMonths)) * 100}%`,
+                        width: `${(simulation.comparison.timeSavedMonths / Math.max(simulation.traditionalLoan.payoffMonths, simulation.allInOneLoan.payoffMonths)) * 100}%`,
                         height: '40px',
-                        background: 'linear-gradient(90deg, #9bc53d 0%, #7da62e 100%)',
-                        borderRadius: '8px',
+                        background: 'repeating-linear-gradient(45deg, #e8f5e9, #e8f5e9 10px, #d4edda 10px, #d4edda 20px)',
+                        borderRadius: '0 8px 8px 0',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        color: 'white',
-                        fontWeight: '600',
-                        minWidth: '120px',
-                      }}>
-                        {yearsMonthsFromMonths(simulation.allInOneLoan.payoffMonths)}
-                      </div>
-                    </div>
-                  </div>
-                  {simulation.comparison.timeSavedMonths > 0 && (
-                    <div style={{ paddingLeft: '156px' }}>
-                      <span style={{
-                        display: 'inline-block',
-                        padding: '0.5rem 1rem',
-                        background: '#e8f5e9',
                         color: '#558b2f',
-                        borderRadius: '6px',
                         fontWeight: '600',
-                        fontSize: '0.9rem',
+                        fontSize: '0.85rem',
+                        border: '2px solid #9bc53d',
+                        borderLeft: 'none'
                       }}>
-                        ⚡ {yearsMonthsFromMonths(simulation.comparison.timeSavedMonths)} faster!
-                      </span>
-                    </div>
-                  )}
+                        ⚡ {yearsMonthsFromMonths(simulation.comparison.timeSavedMonths)} faster
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
@@ -968,18 +987,6 @@ export default function SimulationResults({
               <li>This ensures accurate cash flow calculations when uploading overlapping statements</li>
             </ul>
           </div>
-        </div>
-      )}
-
-      {/* Proposal Builder Tab */}
-      {activeTab === 'proposal' && (
-        <div className="proposal-tab-content">
-          <ProposalBuilder
-            simulation={simulation}
-            mortgageDetails={mortgageDetails}
-            cashFlow={cashFlow}
-            onBack={() => setActiveTab('results')}
-          />
         </div>
       )}
 
