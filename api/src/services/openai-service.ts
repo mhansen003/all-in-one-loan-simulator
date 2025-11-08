@@ -64,21 +64,28 @@ async function extractDataFromSpreadsheet(filePath: string): Promise<string> {
       return { date, description, amount, type };
     }).filter(row => row.date && row.amount); // Filter out invalid rows
 
-    // Sort by date (newest first) and limit to recent 6 months (180 days)
-    const sixMonthsAgo = new Date();
-    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+    // Sort by date (newest first) and limit to recent 18 months
+    // Extended from 6 to 18 months to accommodate full year lookbacks
+    const eighteenMonthsAgo = new Date();
+    eighteenMonthsAgo.setMonth(eighteenMonthsAgo.getMonth() - 18);
 
     const recentData = compressedData.filter((row: any) => {
       try {
         const transactionDate = new Date(row.date);
-        return transactionDate >= sixMonthsAgo;
+        return transactionDate >= eighteenMonthsAgo;
       } catch {
         return true; // Keep if date parsing fails (let AI handle it)
       }
     });
 
-    console.log(`Filtered to ${recentData.length} recent transactions (last 6 months)`);
+    console.log(`Filtered to ${recentData.length} recent transactions (last 18 months)`);
     console.log(`Data reduction: ${jsonData.length} → ${recentData.length} rows (${((1 - recentData.length/jsonData.length) * 100).toFixed(1)}% reduction)`);
+
+    // If we filtered out too much data, warn and use all data
+    if (recentData.length === 0 && compressedData.length > 0) {
+      console.log(`⚠️  Warning: All transactions filtered out by date. Using all ${compressedData.length} transactions instead.`);
+      return JSON.stringify(compressedData);
+    }
 
     return JSON.stringify(recentData);
   } catch (error) {
