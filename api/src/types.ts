@@ -17,6 +17,9 @@ export interface Transaction {
   flagged?: boolean; // AI flagged as potentially irregular
   flagReason?: string; // Why it was flagged (luxury, one-time, unusually large, etc.)
   monthYear?: string; // Month/Year for grouping (e.g., "2024-08")
+  sourceFile?: string; // Which file this transaction came from
+  isDuplicate?: boolean; // Marked as duplicate of another transaction
+  duplicateOf?: string; // Transaction ID (date+amount+description hash) this is a duplicate of
 }
 
 export interface MonthlyBreakdown {
@@ -35,6 +38,7 @@ export interface CashFlowAnalysis {
   transactions: Transaction[];
   monthlyBreakdown: MonthlyBreakdown[];
   flaggedTransactions: Transaction[];
+  duplicateTransactions?: Transaction[]; // Transactions excluded as duplicates
   confidence: number;
   // NEW: Detailed breakdown for AIO calculation
   monthlyDeposits?: number;        // Total monthly income/deposits

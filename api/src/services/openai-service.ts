@@ -419,6 +419,67 @@ async function processFile(file: Express.Multer.File, retries = 2): Promise<stri
 }
 
 /**
+ * Deduplicate transactions based on date, amount, and description similarity
+ * Returns unique transactions and duplicates separately
+ */
+function deduplicateTransactions(transactions: any[]): {
+  uniqueTransactions: any[];
+  duplicateTransactions: any[];
+} {
+  const uniqueTransactions: any[] = [];
+  const duplicateTransactions: any[] = [];
+  const transactionKeys = new Map<string, any>();
+
+  // Helper to create a transaction key
+  const createTransactionKey = (t: any): string => {
+    // Normalize description: lowercase, remove extra spaces, remove special chars
+    const normalizedDesc = (t.description || '')
+      .toLowerCase()
+      .replace(/[^a-z0-9\s]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .substring(0, 50); // First 50 chars for comparison
+
+    // Normalize amount to 2 decimal places
+    const normalizedAmount = Math.abs(parseFloat(t.amount) || 0).toFixed(2);
+
+    // Parse and normalize date
+    const date = new Date(t.date);
+    const normalizedDate = isNaN(date.getTime()) ? t.date : date.toISOString().split('T')[0];
+
+    return `${normalizedDate}|${normalizedAmount}|${normalizedDesc}`;
+  };
+
+  console.log(`🔍 Deduplication: Processing ${transactions.length} transactions...`);
+
+  transactions.forEach((transaction, index) => {
+    const key = createTransactionKey(transaction);
+
+    if (transactionKeys.has(key)) {
+      // This is a duplicate
+      const originalTransaction = transactionKeys.get(key);
+      duplicateTransactions.push({
+        ...transaction,
+        isDuplicate: true,
+        duplicateOf: key,
+      });
+      console.log(`  ⚠️  Duplicate found: ${transaction.date} - ${transaction.description} - $${transaction.amount}`);
+    } else {
+      // This is unique
+      transactionKeys.set(key, transaction);
+      uniqueTransactions.push({
+        ...transaction,
+        isDuplicate: false,
+      });
+    }
+  });
+
+  console.log(`  ✓ Unique: ${uniqueTransactions.length}, Duplicates: ${duplicateTransactions.length}`);
+
+  return { uniqueTransactions, duplicateTransactions };
+}
+
+/**
  * Analyze bank statements using OpenAI GPT-4
  */
 export async function analyzeStatements(
@@ -641,8 +702,13 @@ Return your response in the following JSON format:
     // Extract flagged transactions for review
     const flaggedTransactions = (result.transactions || []).filter((t: any) => t.flagged === true);
 
+    // Deduplicate transactions across files
+    const { uniqueTransactions, duplicateTransactions } = deduplicateTransactions(result.transactions || []);
+
     console.log('📈 Analysis Results:');
     console.log(`  ✓ Total transactions: ${result.transactions?.length || 0}`);
+    console.log(`  ✓ Unique transactions: ${uniqueTransactions.length}`);
+    console.log(`  ✓ Duplicate transactions: ${duplicateTransactions.length}`);
     console.log(`  ✓ Flagged for review: ${flaggedTransactions.length}`);
     console.log(`  ✓ Monthly deposits: $${result.totalIncome || 0}`);
     console.log(`  ✓ Monthly expenses: $${result.totalExpenses || 0}`);
@@ -654,9 +720,10 @@ Return your response in the following JSON format:
       totalExpenses: result.totalExpenses || 0,       // Sum of all expenses (frontend divides by months)
       netCashFlow: result.netCashFlow || 0,           // Total net (frontend divides by months)
       averageMonthlyBalance,
-      transactions: result.transactions || [],
+      transactions: uniqueTransactions,
       monthlyBreakdown: result.monthlyBreakdown || [],
       flaggedTransactions,
+      duplicateTransactions,
       confidence: result.confidence || 0.7,
     };
   } catch (error) {
