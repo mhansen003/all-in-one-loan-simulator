@@ -865,37 +865,102 @@ Your task is to CATEGORIZE and ANALYZE the above transactions:
    - DO NOT drop transactions, modify dates, or change amounts
    - DO NOT hallucinate new transactions or dates
 
-   CATEGORIZATION RULES:
-   - "income": Deposits, paychecks, Zelle/transfers IN (positive amounts or credits)
-   - "expense": Regular recurring expenses like utilities, bills, subscriptions, groceries
-   - "housing": Rent or mortgage payments (around $${currentHousingPayment})
-   - "one-time": Irregular purchases, large transfers, one-time payments
+   CATEGORIZATION RULES - APPLY IN THIS EXACT ORDER:
 
-2. **FLAG ANOMALIES FOR REVIEW**:
-   Flag transactions that are:
-   - **Luxury items**: High-end dining, designer purchases, jewelry, luxury travel
-   - **Unusually large**: 2x or more above typical spending in that category
-   - **One-time purchases**: Major purchases, large cash withdrawals, wire transfers
-   - **Irregular deposits**: Large one-time deposits, refunds, bonuses
-   - **Non-essential**: Entertainment, hobbies, discretionary spending above normal patterns
+   ⚠️ CRITICAL: You MUST be 100% consistent. Same transaction = same category every time.
 
-   Provide specific flag reasons like:
-   - "One-time: Wire transfer"
-   - "Unusually large payment"
-   - "Luxury: High-end purchase"
-   - "Irregular: Large deposit"
+   STEP 1 - Check if INCOME:
+   - Positive amounts (credits/deposits)
+   - Paychecks, salary deposits, direct deposits (look for: "PAYROLL", "SALARY", "DIRECT DEP", "ACH CREDIT")
+   - Transfers IN from external accounts (Zelle, Venmo, Cash App, wire transfers IN)
+   - Refunds, reimbursements, tax refunds
+   → Category: "income"
+
+   STEP 2 - Check if HOUSING (if not income):
+   - Housing payment MUST be within $50 OR 2% of $${currentHousingPayment} (whichever is larger)
+   - Example: If housing = $2000, accept $1960-$2040 OR $1900-$2100 (use wider range)
+   - Look for descriptions containing: "MORTGAGE", "RENT", "PROPERTY MGMT", "LANDLORD", "HOUSING"
+   - If amount matches AND description suggests housing → Category: "housing"
+   - If only description matches but amount is far off → NOT housing, continue to next step
+   → Category: "housing"
+
+   STEP 3 - Check if ONE-TIME (if not income or housing):
+   Apply ALL of these rules - if ANY rule matches, categorize as "one-time":
+
+   Rule A - Large irregular purchases (>$500 for single transaction):
+   - Large retail purchases (>$500 at Target, Walmart, Amazon, etc.)
+   - Electronics purchases (Apple, Best Buy, electronics stores)
+   - Furniture/home improvement (Home Depot, Lowe's, IKEA, furniture stores)
+   - Medical bills, dental bills, veterinary bills
+   - Car repairs, maintenance >$500
+   - Moving expenses, storage fees
+
+   Rule B - Financial movements:
+   - Wire transfers OUT (look for: "WIRE", "WIRE TRF", "OUTGOING WIRE")
+   - Large transfers OUT to external accounts (>$1000)
+   - Cash withdrawals >$500
+   - Check deposits >$1000
+   - Loan payments (student loans, car loans, personal loans)
+   - Credit card payments (payments TO credit cards, not purchases with cards)
+   - Investment/brokerage transfers (Vanguard, Fidelity, Schwab, etc.)
+
+   Rule C - Irregular/Annual expenses:
+   - Insurance payments (auto, life, umbrella - but NOT monthly health insurance)
+   - Property tax payments
+   - HOA special assessments (NOT regular HOA fees)
+   - Annual subscriptions/memberships (if >$200)
+   - Vacation/travel expenses (hotels, flights, vacation rentals)
+   - Tuition, education expenses
+   - Holiday spending (if unusually large)
+   - Gifts, donations >$200
+   - Legal fees, tax preparation
+
+   Rule D - Luxury & discretionary:
+   - High-end dining (>$150 per meal)
+   - Designer purchases (luxury brands, jewelry stores)
+   - Entertainment >$200 (concerts, sports events, shows)
+   - Spa, salon services >$150
+
+   → Category: "one-time" + SET flagged=true + flagReason describing which rule matched
+
+   STEP 4 - Otherwise, RECURRING EXPENSE (everything else):
+   - Utilities (electric, gas, water, trash, sewer)
+   - Internet, cable, phone bills
+   - Subscriptions (Netflix, Spotify, Amazon Prime, etc. - if <$200/year)
+   - Groceries (supermarkets, grocery stores)
+   - Regular dining (<$150 per meal)
+   - Gas stations, fuel
+   - Regular retail (<$500)
+   - Monthly HOA fees
+   - Monthly health insurance premiums
+   - Gym memberships, childcare (if monthly)
+   - Regular transportation (Uber, Lyft, public transit)
+   - Pet supplies, pet care (routine, <$500)
+   → Category: "expense"
+
+2. **FLAGGING - Apply to transactions that need review**:
+   - ALL "one-time" transactions must have flagged=true with specific flagReason
+   - Also flag any income transactions >$10,000 with flagReason: "Large deposit - verify source"
+   - Use clear flag reasons that cite the specific rule:
+     * "One-Time: Large retail purchase >$500"
+     * "One-Time: Wire transfer out"
+     * "One-Time: Annual insurance payment"
+     * "One-Time: Vacation/travel expense"
+     * "One-Time: Luxury dining >$150"
 
 3. **MONTHLY BREAKDOWN**:
    Group by month (YYYY-MM format) and calculate:
-   - Total income per month (sum of income category)
-   - Total expenses per month (sum of expense category, EXCLUDING housing and flagged items)
-   - Net cash flow per month
-   - Transaction count per month
+   - Total income per month (sum of all "income" category transactions)
+   - Total expenses per month (sum of ONLY "expense" category - DO NOT include "housing" or "one-time")
+   - Net cash flow per month (income - expenses)
+   - Transaction count per month (all transactions)
 
 4. **CALCULATE TOTALS**:
-   - SUM of ALL income transactions across entire period
-   - SUM of ALL expense transactions (EXCLUDING housing and flagged one-time items)
-   - Net cash flow (total income - total expenses)
+   - totalIncome: SUM of ALL "income" category transactions
+   - totalExpenses: SUM of ONLY "expense" category transactions (EXCLUDE "housing" and "one-time")
+   - netCashFlow: totalIncome - totalExpenses
+
+   ⚠️ CRITICAL: "housing" and "one-time" are NEVER included in expense totals!
 
 5. **CONFIDENCE SCORE**: Your confidence in categorization accuracy (0-1 scale)
 

@@ -402,7 +402,7 @@ export default function CashFlowReview({
                 </div>
 
                 <div className="transaction-list">
-                  {categoryTransactions.slice(0, 50).map((transaction, idx) => {
+                  {categoryTransactions.map((transaction, idx) => {
                     const actualIndex = actualIndices[idx];
                     return (
                       <div key={actualIndex} className={`transaction-item ${transaction.excluded ? 'excluded' : ''}`}>
@@ -463,11 +463,6 @@ export default function CashFlowReview({
                       </div>
                     );
                   })}
-                  {categoryTransactions.length > 50 && (
-                    <div className="transaction-item more">
-                      <span>... and {categoryTransactions.length - 50} more</span>
-                    </div>
-                  )}
                 </div>
               </div>
             );
