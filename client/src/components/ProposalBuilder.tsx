@@ -41,7 +41,7 @@ function SortableItem({ id, component, onToggle, onPreview }: {
   id: string;
   component: ProposalComponent;
   onToggle: (id: string) => void;
-  onPreview: (id: string) => void;
+  onPreview?: (id: string) => void;
 }) {
   const {
     attributes,
@@ -85,7 +85,7 @@ function SortableItem({ id, component, onToggle, onPreview }: {
           className="btn-icon-only"
           onClick={(e) => {
             e.stopPropagation();
-            onPreview(id);
+            onPreview?.(id);
           }}
           title="Preview this component"
           style={{
@@ -151,10 +151,6 @@ export default function ProposalBuilder({
     style: 'balanced',
     cta: 'moderate',
   });
-
-  // Component preview state
-  const [showComponentPreview, setShowComponentPreview] = useState(false);
-  const [previewComponentId, setPreviewComponentId] = useState<string | null>(null);
 
   // PDF content ref
   const pdfContentRef = useRef<HTMLDivElement>(null);
