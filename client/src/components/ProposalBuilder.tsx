@@ -37,10 +37,11 @@ interface ProposalBuilderProps {
 }
 
 // Sortable Item Component
-function SortableItem({ id, component, onToggle }: {
+function SortableItem({ id, component, onToggle, onPreview }: {
   id: string;
   component: ProposalComponent;
   onToggle: (id: string) => void;
+  onPreview: (id: string) => void;
 }) {
   const {
     attributes,
@@ -80,6 +81,39 @@ function SortableItem({ id, component, onToggle }: {
             <span className="component-description">{component.description}</span>
           </div>
         </label>
+        <button
+          className="btn-icon-only"
+          onClick={(e) => {
+            e.stopPropagation();
+            onPreview(id);
+          }}
+          title="Preview this component"
+          style={{
+            marginLeft: 'auto',
+            padding: '0.5rem',
+            background: '#f1f5f9',
+            border: '1px solid #cbd5e1',
+            borderRadius: '6px',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            transition: 'all 0.2s'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = '#e2e8f0';
+            e.currentTarget.style.borderColor = '#94a3b8';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = '#f1f5f9';
+            e.currentTarget.style.borderColor = '#cbd5e1';
+          }}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '18px', height: '18px' }}>
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+          </svg>
+        </button>
       </div>
     </div>
   );
@@ -117,6 +151,10 @@ export default function ProposalBuilder({
     style: 'balanced',
     cta: 'moderate',
   });
+
+  // Component preview state
+  const [showComponentPreview, setShowComponentPreview] = useState(false);
+  const [previewComponentId, setPreviewComponentId] = useState<string | null>(null);
 
   // PDF content ref
   const pdfContentRef = useRef<HTMLDivElement>(null);

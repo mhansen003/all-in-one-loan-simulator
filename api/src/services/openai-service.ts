@@ -139,23 +139,37 @@ async function analyzeImage(filePath: string): Promise<string> {
           content: [
             {
               type: 'text',
-              text: `Extract ALL transaction data from this bank statement image.
+              text: `⚠️ CRITICAL INSTRUCTIONS FOR IMAGE TRANSACTION EXTRACTION ⚠️
 
-For each transaction, provide:
-- Date (YYYY-MM-DD format)
-- Description
-- Amount (positive for deposits, negative for withdrawals)
+You are extracting transaction data from a bank statement image. This data will be used for financial analysis.
 
-Include:
-- All deposits (income, paychecks, transfers in)
-- All withdrawals (purchases, payments, transfers out)
-- Account balance information if visible
+🔴 MANDATORY REQUIREMENTS:
+1. Extract EVERY SINGLE TRANSACTION - no sampling, no skipping
+2. Use EXACT dates as shown in the image (do not modify or hallucinate dates)
+3. Use EXACT descriptions as shown in the image (do not summarize or shorten)
+4. Use EXACT amounts as shown in the image (preserve decimal precision)
+5. If the image has 200 transactions, your output must have 200 transactions
+6. Count transactions as you extract to ensure completeness
 
-Format each transaction on a new line like:
-2024-08-15 | Paycheck Deposit | +3500.00
-2024-08-16 | Grocery Store | -125.50
+FORMAT REQUIREMENT - Each transaction on a new line:
+YYYY-MM-DD | Full Description Text | +/-Amount
 
-Be thorough and extract EVERY transaction visible in the image.`,
+EXAMPLES:
+2024-10-24 | CMG MORTGAGE INC PAYROLL PPD ID: 9999922657 | +9233.45
+2024-10-24 | SO CAL EDISON CO BILL PAYMT 700689315083 | -155.38
+2024-10-23 | Payment to Chase card ending in 8435 10/23 | -295.88
+
+CRITICAL RULES:
+✓ EXTRACT EVERY TRANSACTION - Do not skip any rows
+✓ PRESERVE EXACT DATES - Copy dates exactly as shown (MM/DD/YYYY → YYYY-MM-DD)
+✓ PRESERVE EXACT DESCRIPTIONS - Do not abbreviate or summarize merchant names
+✓ PRESERVE EXACT AMOUNTS - Keep full precision (e.g., -155.38 not -155)
+✓ DETERMINISTIC - Same image must produce same output every time
+✓ NO FILTERING - Include all transaction types (credits, debits, transfers, fees)
+
+⚠️ VERIFICATION: After extraction, count your transactions and state the total count at the end.
+
+Begin extraction now:`,
             },
             {
               type: 'image_url',
@@ -166,8 +180,10 @@ Be thorough and extract EVERY transaction visible in the image.`,
           ],
         },
       ],
-      max_tokens: 2048, // Reduced for faster response (transaction extraction rarely needs more)
+      max_tokens: 16000, // Increased to handle large statements with many transactions
       temperature: 0, // Deterministic output for consistent results
+      top_p: 1, // Disable nucleus sampling for maximum consistency
+      seed: 42, // Fixed seed for reproducibility (may not be supported by all models)
     }, {
       timeout: TIMEOUT_MS, // SDK timeout as backup
     });
@@ -177,10 +193,15 @@ Be thorough and extract EVERY transaction visible in the image.`,
     const response = await Promise.race([apiCallPromise, timeoutPromise]);
 
     const elapsedTime = Date.now() - startTime;
+    const extractedContent = response.choices[0]?.message?.content || '';
     console.log(`✅ [5/5] API response received in ${(elapsedTime / 1000).toFixed(2)}s`);
-    console.log(`   📝 Response length: ${response.choices[0]?.message?.content?.length || 0} chars`);
+    console.log(`   📝 Response length: ${extractedContent.length} chars`);
 
-    return response.choices[0]?.message?.content || '';
+    // Count transactions in extracted data for verification
+    const transactionLines = extractedContent.split('\n').filter(line => line.includes('|')).length;
+    console.log(`   📊 Extracted transactions: ${transactionLines} lines`);
+
+    return extractedContent;
   } catch (error) {
     console.error('❌ Error analyzing image:', error);
 
@@ -238,23 +259,37 @@ async function analyzePdf(filePath: string): Promise<string> {
           content: [
             {
               type: 'text',
-              text: `Extract ALL transaction data from this bank statement PDF.
+              text: `⚠️ CRITICAL INSTRUCTIONS FOR PDF TRANSACTION EXTRACTION ⚠️
 
-For each transaction, provide:
-- Date (YYYY-MM-DD format)
-- Description
-- Amount (positive for deposits, negative for withdrawals)
+You are extracting transaction data from a bank statement PDF. This data will be used for financial analysis.
 
-Include:
-- All deposits (income, paychecks, transfers in)
-- All withdrawals (purchases, payments, transfers out)
-- Account balance information if visible
+🔴 MANDATORY REQUIREMENTS:
+1. Extract EVERY SINGLE TRANSACTION - no sampling, no skipping
+2. Use EXACT dates as shown in the PDF (do not modify or hallucinate dates)
+3. Use EXACT descriptions as shown in the PDF (do not summarize or shorten)
+4. Use EXACT amounts as shown in the PDF (preserve decimal precision)
+5. If the PDF has 500 transactions, your output must have 500 transactions
+6. Count transactions as you extract to ensure completeness
 
-Format each transaction on a new line like:
-2024-08-15 | Paycheck Deposit | +3500.00
-2024-08-16 | Grocery Store | -125.50
+FORMAT REQUIREMENT - Each transaction on a new line:
+YYYY-MM-DD | Full Description Text | +/-Amount
 
-Be thorough and extract EVERY transaction visible in the PDF.`,
+EXAMPLES:
+2024-10-24 | CMG MORTGAGE INC PAYROLL PPD ID: 9999922657 | +9233.45
+2024-10-24 | SO CAL EDISON CO BILL PAYMT 700689315083 | -155.38
+2024-10-23 | Payment to Chase card ending in 8435 10/23 | -295.88
+
+CRITICAL RULES:
+✓ EXTRACT EVERY TRANSACTION - Do not skip any rows
+✓ PRESERVE EXACT DATES - Copy dates exactly as shown (MM/DD/YYYY → YYYY-MM-DD)
+✓ PRESERVE EXACT DESCRIPTIONS - Do not abbreviate or summarize merchant names
+✓ PRESERVE EXACT AMOUNTS - Keep full precision (e.g., -155.38 not -155)
+✓ DETERMINISTIC - Same PDF must produce same output every time
+✓ NO FILTERING - Include all transaction types (credits, debits, transfers, fees)
+
+⚠️ VERIFICATION: After extraction, count your transactions and state the total count at the end.
+
+Begin extraction now:`,
             },
             {
               type: 'file' as any, // OpenRouter-specific file type
@@ -266,8 +301,10 @@ Be thorough and extract EVERY transaction visible in the PDF.`,
           ],
         },
       ],
-      max_tokens: 8000, // Optimized for faster response while handling multi-page PDFs
+      max_tokens: 16000, // Increased to handle 500+ transactions
       temperature: 0, // Deterministic output for consistent results
+      top_p: 1, // Disable nucleus sampling for maximum consistency
+      seed: 42, // Fixed seed for reproducibility (may not be supported by all models)
     } as any, {
       timeout: TIMEOUT_MS,
     });
@@ -276,10 +313,15 @@ Be thorough and extract EVERY transaction visible in the PDF.`,
     const response = await Promise.race([apiCallPromise, timeoutPromise]);
 
     const elapsedTime = Date.now() - startTime;
+    const extractedContent = response.choices[0]?.message?.content || '';
     console.log(`✅ [4/4] API response received in ${(elapsedTime / 1000).toFixed(2)}s`);
-    console.log(`   📝 Response length: ${response.choices[0]?.message?.content?.length || 0} chars`);
+    console.log(`   📝 Response length: ${extractedContent.length} chars`);
 
-    return response.choices[0]?.message?.content || '';
+    // Count transactions in extracted data for verification
+    const transactionLines = extractedContent.split('\n').filter(line => line.includes('|')).length;
+    console.log(`   📊 Extracted transactions: ${transactionLines} lines`);
+
+    return extractedContent;
   } catch (error) {
     console.error('❌ Error analyzing PDF:', error);
 
