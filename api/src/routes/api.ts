@@ -497,22 +497,54 @@ router.post('/generate-pitch', async (req, res) => {
 
     const prompt = `You are a professional mortgage loan officer at CMG Financial. Write a compelling, personalized sales pitch for ${clientName} about the All-In-One loan product based on their specific financial situation.
 
-KEY BENEFITS TO HIGHLIGHT:
-- They will save ${interestSavings} in total interest (${percentageSavings}% reduction)
-- They will pay off their mortgage ${timeSaved} faster
-- Current loan balance: ${loanBalance}
-- The All-In-One works like a checking account - deposits reduce interest immediately
-- Full flexibility - funds remain accessible unlike traditional extra payments
-- No prepayment penalties
+CLIENT'S SPECIFIC SAVINGS:
+- Total Interest Savings: ${interestSavings} (${percentageSavings}% reduction)
+- Payoff Acceleration: ${timeSaved} faster than traditional mortgage
+- Current Loan Balance: ${loanBalance}
 
-TONE:
-- Professional but conversational
-- Enthusiastic about the savings opportunity
-- Focus on the "why" not just the numbers
-- Address ${clientName} directly
-- Keep it concise (2-3 paragraphs, around 150-200 words)
+ALL-IN-ONE LOAN PRODUCT ADVANTAGES (weave these naturally into the pitch):
 
-Write a compelling pitch that would excite ${clientName} about this opportunity. Focus on the life-changing impact of saving ${interestSavings} and paying off the mortgage ${timeSaved} earlier.`;
+1. DAILY INTEREST CALCULATION ADVANTAGE
+   - Interest calculated on (Balance - Available Cash) EVERY DAY
+   - Traditional mortgages calculate monthly on full balance
+   - Every deposit immediately reduces interest-bearing balance
+   - Your paycheck works for you 24/7, not just on payment day
+
+2. FINANCIAL FLEXIBILITY & LIQUIDITY
+   - Works as your primary checking account (debit card, checks, online banking)
+   - All funds remain 100% accessible - withdraw anytime
+   - Unlike extra principal payments that lock funds away forever
+   - True financial freedom while accelerating payoff
+
+3. CASH FLOW OPTIMIZATION
+   - Deposits reduce interest the moment they hit the account
+   - Keep your money working for you between expenses
+   - No need to choose between liquidity and savings
+   - Smart money management built into the loan structure
+
+4. ZERO RESTRICTIONS & PENALTIES
+   - No prepayment penalties ever
+   - No minimum payment above interest
+   - No restrictions on deposits or withdrawals
+   - Complete control of your financial strategy
+
+5. PROVEN SAVINGS MODEL
+   - Typical clients save 30-40% on total interest
+   - Average 5-10 years faster payoff
+   - Based on their ACTUAL cash flow patterns
+   - Real results, not projections
+
+PITCH REQUIREMENTS:
+- Professional yet warm and conversational tone
+- Address ${clientName} directly and personally
+- Focus on the transformational life impact, not just numbers
+- Emphasize how DAILY interest calculation is revolutionary
+- Highlight the flexibility advantage over traditional mortgages
+- Paint a picture of financial freedom and accelerated wealth building
+- Length: 2-3 well-structured paragraphs (175-225 words)
+- End with a forward-looking statement about their financial future
+
+Write a pitch that makes ${clientName} excited about saving ${interestSavings} and becoming mortgage-free ${timeSaved} earlier.`;
 
     const completion = await openai.chat.completions.create({
       model: MODEL,

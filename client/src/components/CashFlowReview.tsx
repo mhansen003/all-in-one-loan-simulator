@@ -151,9 +151,9 @@ export default function CashFlowReview({
 
   const displayNetCashFlow = displayTotalIncome - displayTotalExpenses;
 
-  // Prepare unified chart data - group by month and calculate incoming/outgoing
+  // Prepare unified chart data - group by DAY and calculate incoming/outgoing
   const { chartData, oneTimeIncomeData, oneTimeExpenseData } = useMemo(() => {
-    const monthlyData: {
+    const dailyData: {
       [key: string]: {
         incoming: number;
         outgoing: number;
@@ -162,13 +162,13 @@ export default function CashFlowReview({
       }
     } = {};
 
-    // First, create month entries from ALL transactions to establish the x-axis range
+    // First, create day entries from ALL transactions to establish the x-axis range
     transactions.forEach(transaction => {
       const date = new Date(transaction.date);
-      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      const dayKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 
-      if (!monthlyData[monthKey]) {
-        monthlyData[monthKey] = { incoming: 0, outgoing: 0, oneTimeIncome: [], oneTimeExpense: [] };
+      if (!dailyData[dayKey]) {
+        dailyData[dayKey] = { incoming: 0, outgoing: 0, oneTimeIncome: [], oneTimeExpense: [] };
       }
     });
 
@@ -177,12 +177,12 @@ export default function CashFlowReview({
       .filter(t => t.category !== 'housing' && t.category !== 'one-time')
       .forEach(transaction => {
         const date = new Date(transaction.date);
-        const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+        const dayKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 
         if (transaction.category === 'income' || transaction.amount > 0) {
-          monthlyData[monthKey].incoming += Math.abs(transaction.amount);
+          dailyData[dayKey].incoming += Math.abs(transaction.amount);
         } else {
-          monthlyData[monthKey].outgoing += Math.abs(transaction.amount);
+          dailyData[dayKey].outgoing += Math.abs(transaction.amount);
         }
       });
 
@@ -191,7 +191,7 @@ export default function CashFlowReview({
       .filter(t => t.category === 'one-time')
       .forEach(transaction => {
         const date = new Date(transaction.date);
-        const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+        const dayKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
         const amount = Math.abs(transaction.amount);
         const isIncome = transaction.amount > 0;
 
@@ -202,40 +202,42 @@ export default function CashFlowReview({
         };
 
         if (isIncome) {
-          monthlyData[monthKey].oneTimeIncome.push(dataPoint);
+          dailyData[dayKey].oneTimeIncome.push(dataPoint);
         } else {
-          monthlyData[monthKey].oneTimeExpense.push(dataPoint);
+          dailyData[dayKey].oneTimeExpense.push(dataPoint);
         }
       });
 
     // Convert to array and sort by date
-    const chartArray = Object.entries(monthlyData)
-      .map(([month, data]) => ({
-        month,
-        monthLabel: new Date(month + '-01').toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+    const chartArray = Object.entries(dailyData)
+      .map(([day, data]) => ({
+        day,
+        dayLabel: new Date(day).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
         incoming: Math.round(data.incoming),
         outgoing: Math.round(data.outgoing),
         oneTimeIncome: data.oneTimeIncome,
         oneTimeExpense: data.oneTimeExpense
       }))
-      .sort((a, b) => a.month.localeCompare(b.month));
+      .sort((a, b) => a.day.localeCompare(b.day));
 
-    // Flatten one-time data for scatter plots while maintaining monthLabel reference
+    // Flatten one-time data for scatter plots while maintaining dayLabel reference
     const incomeScatter: any[] = [];
     const expenseScatter: any[] = [];
 
-    chartArray.forEach(month => {
-      month.oneTimeIncome.forEach(item => {
+    chartArray.forEach(dayData => {
+      dayData.oneTimeIncome.forEach(item => {
         incomeScatter.push({
-          monthLabel: month.monthLabel,
+          dayLabel: dayData.dayLabel,
+          day: dayData.day,
           amount: item.amount,
           description: item.description,
           excluded: item.excluded
         });
       });
-      month.oneTimeExpense.forEach(item => {
+      dayData.oneTimeExpense.forEach(item => {
         expenseScatter.push({
-          monthLabel: month.monthLabel,
+          dayLabel: dayData.dayLabel,
+          day: dayData.day,
           amount: item.amount,
           description: item.description,
           excluded: item.excluded
@@ -713,10 +715,10 @@ export default function CashFlowReview({
                 </button>
               </div>
               {!chartCollapsed && (
-                <ResponsiveContainer width="100%" height={300}>
+                <ResponsiveContainer width="100%" height={400}>
                 <ComposedChart
                   data={chartData}
-                  margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+                  margin={{ top: 20, right: 30, left: 10, bottom: 60 }}
                 >
                   <defs>
                     <linearGradient id="colorIncoming" x1="0" y1="0" x2="0" y2="1">
@@ -730,16 +732,21 @@ export default function CashFlowReview({
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                   <XAxis
-                    dataKey="monthLabel"
+                    dataKey="dayLabel"
                     stroke="#718096"
                     style={{ fontSize: '0.75rem' }}
                     type="category"
                     allowDuplicatedCategory={false}
+                    interval={4}
+                    angle={-45}
+                    textAnchor="end"
+                    height={60}
                   />
                   <YAxis
                     stroke="#718096"
                     style={{ fontSize: '0.75rem' }}
                     tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
+                    domain={[0, 'auto']}
                   />
                   <Tooltip
                     content={({ active, payload }) => {
@@ -805,7 +812,7 @@ export default function CashFlowReview({
                           }}
                         >
                           <div style={{ marginBottom: '0.5rem', fontWeight: '600', color: '#1a202c' }}>
-                            {payload[0]?.payload?.monthLabel}
+                            {payload[0]?.payload?.dayLabel}
                           </div>
                           {payload.map((entry: any, index: number) => (
                             <div key={index} style={{ fontSize: '0.875rem', color: '#4a5568', marginBottom: '0.25rem' }}>
