@@ -17,7 +17,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import html2pdf from 'html2pdf.js';
-import type { SimulationResult, MortgageDetails } from '../types';
+import type { SimulationResult, MortgageDetails, CashFlowAnalysis } from '../types';
 import PitchOptionsModal, { PitchOptions } from './PitchOptionsModal';
 import { CMG_BRANDING } from '../constants/cmgBranding';
 import './ProposalBuilder.css';
@@ -599,18 +599,18 @@ export default function ProposalBuilder({
                       <tbody>
                         <tr>
                           <td>Monthly Payment</td>
-                          <td>{formatCurrency(simulation.traditionalLoanLoan.monthlyPayment)}</td>
-                          <td>{formatCurrency(simulation.allInOneLoanLoan.monthlyPayment)}</td>
+                          <td>{formatCurrency(simulation.traditionalLoan.monthlyPayment)}</td>
+                          <td>{formatCurrency(simulation.allInOneLoan.monthlyPayment)}</td>
                         </tr>
                         <tr>
                           <td>Total Interest</td>
-                          <td>{formatCurrency(simulation.traditionalLoanLoan.totalInterestPaid)}</td>
-                          <td className="savings-cell">{formatCurrency(simulation.allInOneLoanLoan.totalInterestPaid)}</td>
+                          <td>{formatCurrency(simulation.traditionalLoan.totalInterestPaid)}</td>
+                          <td className="savings-cell">{formatCurrency(simulation.allInOneLoan.totalInterestPaid)}</td>
                         </tr>
                         <tr>
                           <td>Payoff Timeline</td>
-                          <td>{yearsMonthsFromMonths(simulation.traditionalLoanLoan.payoffMonths)}</td>
-                          <td className="savings-cell">{yearsMonthsFromMonths(simulation.allInOneLoanLoan.payoffMonths)}</td>
+                          <td>{yearsMonthsFromMonths(simulation.traditionalLoan.payoffMonths)}</td>
+                          <td className="savings-cell">{yearsMonthsFromMonths(simulation.allInOneLoan.payoffMonths)}</td>
                         </tr>
                       </tbody>
                     </table>
@@ -864,23 +864,23 @@ export default function ProposalBuilder({
                 <tbody>
                   <tr>
                     <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0', fontWeight: 600 }}>Monthly Payment</td>
-                    <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0' }}>{formatCurrency(simulation.traditionalLoanLoan.monthlyPayment)}</td>
-                    <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0' }}>{formatCurrency(simulation.allInOneLoanLoan.monthlyPayment)}</td>
+                    <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0' }}>{formatCurrency(simulation.traditionalLoan.monthlyPayment)}</td>
+                    <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0' }}>{formatCurrency(simulation.allInOneLoan.monthlyPayment)}</td>
                   </tr>
                   <tr>
                     <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0', fontWeight: 600 }}>Total Interest Paid</td>
-                    <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0' }}>{formatCurrency(simulation.traditionalLoanLoan.totalInterestPaid)}</td>
-                    <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0', background: '#f0f8e9', color: '#48bb78', fontWeight: 700 }}>{formatCurrency(simulation.allInOneLoanLoan.totalInterestPaid)}</td>
+                    <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0' }}>{formatCurrency(simulation.traditionalLoan.totalInterestPaid)}</td>
+                    <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0', background: '#f0f8e9', color: '#48bb78', fontWeight: 700 }}>{formatCurrency(simulation.allInOneLoan.totalInterestPaid)}</td>
                   </tr>
                   <tr>
                     <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0', fontWeight: 600 }}>Payoff Timeline</td>
-                    <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0' }}>{yearsMonthsFromMonths(simulation.traditionalLoanLoan.payoffMonths)}</td>
-                    <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0', background: '#f0f8e9', color: '#48bb78', fontWeight: 700 }}>{yearsMonthsFromMonths(simulation.allInOneLoanLoan.payoffMonths)}</td>
+                    <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0' }}>{yearsMonthsFromMonths(simulation.traditionalLoan.payoffMonths)}</td>
+                    <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0', background: '#f0f8e9', color: '#48bb78', fontWeight: 700 }}>{yearsMonthsFromMonths(simulation.allInOneLoan.payoffMonths)}</td>
                   </tr>
                   <tr>
                     <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0', fontWeight: 600 }}>Payoff Date</td>
-                    <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0' }}>{new Date(simulation.traditionalLoanLoan.payoffDate).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</td>
-                    <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0', background: '#f0f8e9', color: '#48bb78', fontWeight: 700 }}>{new Date(simulation.allInOneLoanLoan.payoffDate).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</td>
+                    <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0' }}>{new Date(simulation.traditionalLoan.payoffDate).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</td>
+                    <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0', background: '#f0f8e9', color: '#48bb78', fontWeight: 700 }}>{new Date(simulation.allInOneLoan.payoffDate).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</td>
                   </tr>
                 </tbody>
               </table>

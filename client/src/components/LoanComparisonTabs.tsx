@@ -665,7 +665,7 @@ function BreakdownTab({ comparison, weeklyBreakdown }: any) {
 }
 
 // Visualize Tab Component
-function VisualizeTab({ comparison, weeklyBreakdown, loanAmount }: any) {
+function VisualizeTab({ comparison, weeklyBreakdown, loanAmount, traditionalRate }: any) {
   // Sample balance data every 6 months for traditional, every month for AIO
   const traditionalMonths = comparison.traditional.monthsToPayoff;
   const aioMonths = comparison.aio.monthsToPayoff;
