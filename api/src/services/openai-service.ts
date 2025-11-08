@@ -656,33 +656,22 @@ CRITICAL RULES - READ CAREFULLY:
 ✓ NO SAMPLING - Include 100% of transactions, not a sample
 ✓ CATEGORIZE ONLY - You are categorizing existing data, not extracting new data
 
-Return your response in the following JSON format (with ALL transactions):
+Return COMPACT JSON (minimize whitespace, omit empty flagReason for unflagged items):
 {
   "transactions": [
-    {
-      "date": "YYYY-MM-DD",
-      "description": "Original description from input",
-      "amount": 1234.56,
-      "category": "income" | "expense" | "housing" | "one-time",
-      "flagged": true/false,
-      "flagReason": "Specific reason if flagged",
-      "monthYear": "2024-08"
-    }
+    {"date": "YYYY-MM-DD", "description": "Description", "amount": 1234.56, "category": "income", "flagged": false, "monthYear": "2024-08"},
+    {"date": "YYYY-MM-DD", "description": "Description", "amount": -125.50, "category": "expense", "flagged": true, "flagReason": "One-time: Large purchase", "monthYear": "2024-08"}
   ],
   "monthlyBreakdown": [
-    {
-      "month": "2024-08",
-      "income": 5000.00,
-      "expenses": 2500.00,
-      "netCashFlow": 2500.00,
-      "transactionCount": 45
-    }
+    {"month": "2024-08", "income": 5000.00, "expenses": 2500.00, "netCashFlow": 2500.00, "transactionCount": 45}
   ],
   "totalIncome": 5000.00,
   "totalExpenses": 2500.00,
   "netCashFlow": 2500.00,
   "confidence": 0.85
-}`;
+}
+
+⚠️ IMPORTANT: Use compact formatting. Omit "flagReason" key entirely when flagged=false to save tokens.`;
 
     // Create a timeout promise for the main analysis call
     const ANALYSIS_TIMEOUT_MS = 120000; // 120 seconds
@@ -713,7 +702,7 @@ Return your response in the following JSON format (with ALL transactions):
       temperature: 0, // Fully deterministic for consistent JSON formatting
       top_p: 1, // Disable nucleus sampling for maximum determinism
       seed: 42, // Fixed seed for reproducible results across identical inputs
-      max_tokens: 32000, // Large enough for 1000+ transactions with full details
+      max_tokens: 16384, // GPT-4o's maximum output token limit
     }, {
       timeout: ANALYSIS_TIMEOUT_MS,
     });
