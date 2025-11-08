@@ -75,6 +75,17 @@ export interface SimulationResult {
 // OpenAI analysis types
 export interface OpenAIAnalysisResult {
   transactions: Transaction[];
-  summary: string;
+  monthlyBreakdown: MonthlyBreakdown[];
+  totalIncome: number;
+  totalExpenses: number;
+  netCashFlow: number;
   confidence: number;
+}
+
+export interface MonthlyBreakdown {
+  month: string;
+  income: number;
+  expenses: number;
+  netCashFlow: number;
+  transactionCount: number;
 }
