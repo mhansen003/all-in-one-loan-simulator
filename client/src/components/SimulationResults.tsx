@@ -9,7 +9,6 @@ interface SimulationResultsProps {
   cashFlow?: CashFlowAnalysis;
   onReset: () => void;
   onGenerateReport?: () => void;
-  onCreateProposal?: () => void;
 }
 
 type TabView = 'results' | 'paydown' | 'charts' | 'duplicates' | 'proposal' | 'signature';
@@ -20,7 +19,6 @@ export default function SimulationResults({
   cashFlow,
   onReset,
   onGenerateReport,
-  onCreateProposal,
 }: SimulationResultsProps) {
   const [activeTab, setActiveTab] = useState<TabView>('results');
   const formatCurrency = (amount: number): string => {
