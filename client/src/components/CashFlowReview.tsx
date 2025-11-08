@@ -19,7 +19,7 @@ export default function CashFlowReview({
   hideSummary = false
 }: CashFlowReviewProps) {
   // No more tabs - single view
-  const [transactionSubTab, setTransactionSubTab] = useState<'all' | 'income' | 'expense' | 'housing' | 'one-time'>('all');
+  const [transactionSubTab, setTransactionSubTab] = useState<'all' | 'income' | 'expense' | 'housing' | 'one-time'>('income'); // Default to income
   const [transactions, setTransactions] = useState<Transaction[]>(() => {
     // Auto-exclude housing and one-time transactions on initial load
     return cashFlow.transactions.map(t => ({
@@ -32,6 +32,7 @@ export default function CashFlowReview({
     (cashFlow.depositFrequency as 'weekly' | 'biweekly' | 'semi-monthly' | 'monthly') || 'monthly'
   );
   const aiRecommendedFrequency = (cashFlow.depositFrequency as 'weekly' | 'biweekly' | 'semi-monthly' | 'monthly') || 'monthly';
+  const [chartCollapsed, setChartCollapsed] = useState(false);
 
   // Calculate actual months from transaction data
   const calculateActualMonths = (transactions: Transaction[]): number => {
@@ -312,9 +313,66 @@ export default function CashFlowReview({
     <div className="cash-flow-review">
       {!hideSummary && (
         <>
-          <div className="form-header">
-            <h2>Cash Flow Analysis Complete</h2>
-            <p>Review the AI-generated analysis of your bank statements</p>
+          {/* Header with Combined Stats on Right */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem', gap: '2rem' }}>
+            <div className="form-header" style={{ margin: 0, flex: '1' }}>
+              <h2 style={{ margin: '0 0 0.5rem 0' }}>Cash Flow Analysis Complete</h2>
+              <p style={{ margin: 0 }}>Review the AI-generated analysis of your bank statements</p>
+            </div>
+
+            {/* Combined Confidence & Suitability Tile */}
+            <div style={{
+              background: 'white',
+              border: '2px solid #e2e8f0',
+              borderRadius: '12px',
+              padding: '1rem 1.25rem',
+              minWidth: '320px',
+              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
+                <div style={{
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '50%',
+                  background: confidenceColor,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0
+                }}>
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="white" style={{ width: '20px', height: '20px' }}>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <div>
+                  <div style={{ fontSize: '0.875rem', fontWeight: '600', color: '#1a202c' }}>
+                    Analysis Confidence: {confidenceLabel}
+                  </div>
+                  <div style={{ fontSize: '0.75rem', color: '#718096' }}>
+                    AI score: {(cashFlow.confidence * 100).toFixed(0)}%
+                  </div>
+                </div>
+              </div>
+              <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '0.75rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
+                  <span style={{ fontSize: '1.25rem' }}>{temperatureRating.icon}</span>
+                  <div>
+                    <div style={{ fontSize: '0.875rem', fontWeight: '600', color: temperatureRating.color }}>
+                      {temperatureRating.rating}
+                    </div>
+                    <div style={{ fontSize: '0.75rem', color: '#718096' }}>
+                      AIO Loan Suitability
+                    </div>
+                  </div>
+                </div>
+                <div style={{ fontSize: '0.75rem', color: '#475569', textAlign: 'center', padding: '0.5rem', background: '#f7fafc', borderRadius: '6px' }}>
+                  ${formatCurrency(displayNetCashFlow)}/month cash flow
+                  <span style={{ color: '#94a3b8', marginLeft: '0.25rem' }}>
+                    ({Math.round((displayNetCashFlow / 3000) * 100)}% of optimal)
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Top Continue Button */}
@@ -340,71 +398,21 @@ export default function CashFlowReview({
             </button>
           </div>
 
-          {/* Confidence and Suitability Side-by-Side */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '2rem' }}>
-            <div className="confidence-banner" style={{ borderColor: confidenceColor, marginBottom: 0 }}>
-              <div className="confidence-icon" style={{ background: confidenceColor }}>
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <div>
-                <strong>Analysis Confidence: {confidenceLabel}</strong>
-                <p>AI confidence score: {(cashFlow.confidence * 100).toFixed(0)}%</p>
-              </div>
-            </div>
-
-            <div className="confidence-banner" style={{ borderColor: temperatureRating.color, marginBottom: 0, flexDirection: 'column' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.75rem' }}>
-                <div className="confidence-icon" style={{ background: temperatureRating.color }}>
-                  <span style={{ fontSize: '1.5rem' }}>{temperatureRating.icon}</span>
-                </div>
-                <div>
-                  <strong>{temperatureRating.rating}</strong>
-                  <p style={{ margin: 0 }}>AIO Loan Suitability</p>
-                </div>
-              </div>
-              {/* Sustainability Gauge */}
-              <div style={{ width: '100%' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', marginBottom: '0.5rem', color: '#64748b' }}>
-                  <span>Not Suitable</span>
-                  <span>Excellent</span>
-                </div>
-                <div style={{
-                  position: 'relative',
-                  width: '100%',
-                  height: '12px',
-                  background: 'linear-gradient(to right, #ef4444 0%, #eab308 33%, #48bb78 66%, #10b981 100%)',
-                  borderRadius: '9999px',
-                  overflow: 'hidden'
-                }}>
-                  {/* Marker */}
-                  <div style={{
-                    position: 'absolute',
-                    left: `${Math.min(Math.max((displayNetCashFlow / 3000) * 100, 0), 100)}%`,
-                    top: '-4px',
-                    width: '20px',
-                    height: '20px',
-                    background: 'white',
-                    border: `3px solid ${temperatureRating.color}`,
-                    borderRadius: '50%',
-                    transform: 'translateX(-50%)',
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-                    zIndex: 10
-                  }} />
-                </div>
-                <div style={{ fontSize: '0.75rem', marginTop: '0.5rem', textAlign: 'center', color: '#475569' }}>
-                  ${formatCurrency(displayNetCashFlow)}/month cash flow
-                  <span style={{ color: '#94a3b8', marginLeft: '0.5rem' }}>
-                    ({Math.round((displayNetCashFlow / 3000) * 100)}% of optimal)
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Always Visible Summary Cards */}
-          <div className="summary-cards">
+          {/* Sticky Summary Cards at Top */}
+          <div style={{
+            position: 'sticky',
+            top: '0',
+            zIndex: 100,
+            background: '#f7fafc',
+            padding: '1rem 0',
+            marginBottom: '2rem',
+            marginLeft: '-2rem',
+            marginRight: '-2rem',
+            paddingLeft: '2rem',
+            paddingRight: '2rem',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+          }}>
+            <div className="summary-cards">
             <div className="summary-card income-card">
               <div className="card-icon">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -451,6 +459,7 @@ export default function CashFlowReview({
                 </div>
               </div>
             </div>
+            </div>
           </div>
 
           {/* Deposit Frequency Selector */}
@@ -461,7 +470,7 @@ export default function CashFlowReview({
               </svg>
               <div>
                 <h3>Deposit Frequency</h3>
-                <p>AI detected: <strong>{depositFrequency}</strong>. You can change this if needed.</p>
+                <p>AI detected: <strong>{aiRecommendedFrequency}</strong>. You can change this if needed.</p>
               </div>
             </div>
             <div className="frequency-options">
@@ -573,24 +582,61 @@ export default function CashFlowReview({
               marginBottom: '2rem',
               boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
             }}>
-              <h3 style={{
-                fontSize: '1.125rem',
-                fontWeight: '600',
-                color: '#1a202c',
-                marginBottom: '1rem',
-                marginTop: '0'
-              }}>
-                Cash Flow Over Time
-              </h3>
-              <p style={{
-                fontSize: '0.875rem',
-                color: '#718096',
-                marginBottom: '1.5rem',
-                marginTop: '0'
-              }}>
-                Showing {chartData.length} month{chartData.length !== 1 ? 's' : ''} of transaction data
-              </p>
-              <ResponsiveContainer width="100%" height={300}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                <div>
+                  <h3 style={{
+                    fontSize: '1.125rem',
+                    fontWeight: '600',
+                    color: '#1a202c',
+                    margin: '0 0 0.25rem 0'
+                  }}>
+                    Cash Flow Over Time
+                  </h3>
+                  <p style={{
+                    fontSize: '0.875rem',
+                    color: '#718096',
+                    margin: '0'
+                  }}>
+                    Showing {chartData.length} month{chartData.length !== 1 ? 's' : ''} of transaction data
+                  </p>
+                </div>
+                <button
+                  onClick={() => setChartCollapsed(!chartCollapsed)}
+                  style={{
+                    background: '#f7fafc',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '6px',
+                    padding: '0.5rem 1rem',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    fontSize: '0.875rem',
+                    color: '#4a5568',
+                    transition: 'all 0.2s'
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = '#edf2f7'}
+                  onMouseLeave={(e) => e.currentTarget.style.background = '#f7fafc'}
+                >
+                  {chartCollapsed ? 'Show Chart' : 'Hide Chart'}
+                  <svg
+                    style={{
+                      width: '16px',
+                      height: '16px',
+                      transform: chartCollapsed ? 'rotate(0deg)' : 'rotate(180deg)',
+                      transition: 'transform 0.2s'
+                    }}
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+              </div>
+              {!chartCollapsed && (
+                <ResponsiveContainer width="100%" height={300}>
                 <ComposedChart
                   data={chartData}
                   margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
@@ -654,6 +700,7 @@ export default function CashFlowReview({
                   />
                   <Scatter
                     data={oneTimeIncomeData}
+                    dataKey="amount"
                     fill="#10b981"
                     name="One-Time Income"
                     shape="circle"
@@ -661,6 +708,7 @@ export default function CashFlowReview({
                   />
                   <Scatter
                     data={oneTimeExpenseData}
+                    dataKey="amount"
                     fill="#ef4444"
                     name="One-Time Expense"
                     shape="circle"
@@ -668,6 +716,7 @@ export default function CashFlowReview({
                   />
                 </ComposedChart>
               </ResponsiveContainer>
+              )}
             </div>
           )}
         </>

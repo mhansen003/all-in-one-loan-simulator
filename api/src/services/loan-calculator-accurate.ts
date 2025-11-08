@@ -6,7 +6,7 @@
  * and 21-day payment delay.
  */
 
-import { CalendarGenerator, CalendarDay } from './calendar-generator';
+import { CalendarGenerator, CalendarDay } from './calendar-generator.js';
 
 export interface AccurateCalculationInput {
   // Loan details

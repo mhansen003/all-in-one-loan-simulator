@@ -430,19 +430,19 @@ export default function SimulationResults({
               <table style={{
                 width: '100%',
                 borderCollapse: 'collapse',
-                fontSize: '0.85rem'
+                fontSize: '0.9rem'
               }}>
                 <thead style={{ position: 'sticky', top: 0, zIndex: 10 }}>
                   <tr style={{ background: '#1e293b', color: 'white' }}>
-                    <th style={{ padding: '1rem', textAlign: 'left', borderBottom: '2px solid #cbd5e1' }}>Year</th>
-                    {paydownView === 'monthly' && (
-                      <th style={{ padding: '1rem', textAlign: 'left', borderBottom: '2px solid #cbd5e1' }}>Month</th>
-                    )}
-                    <th style={{ padding: '1rem', textAlign: 'right', borderBottom: '2px solid #cbd5e1' }}>Traditional Balance</th>
-                    <th style={{ padding: '1rem', textAlign: 'right', borderBottom: '2px solid #cbd5e1' }}>Principal Paid</th>
-                    <th style={{ padding: '1rem', textAlign: 'right', borderBottom: '2px solid #cbd5e1' }}>AIO Balance</th>
-                    <th style={{ padding: '1rem', textAlign: 'right', borderBottom: '2px solid #cbd5e1' }}>Principal Paid</th>
-                    <th style={{ padding: '1rem', textAlign: 'right', borderBottom: '2px solid #cbd5e1' }}>Savings</th>
+                    <th style={{ padding: '1rem', textAlign: 'left', borderBottom: '2px solid #cbd5e1', minWidth: '100px' }}>
+                      {paydownView === 'monthly' ? 'Period' : 'Year'}
+                    </th>
+                    <th style={{ padding: '1rem', textAlign: 'center', borderBottom: '2px solid #cbd5e1', minWidth: '280px' }}>
+                      Loan Balance Comparison
+                    </th>
+                    <th style={{ padding: '1rem', textAlign: 'center', borderBottom: '2px solid #cbd5e1', minWidth: '280px' }}>
+                      Principal Paid Comparison
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -501,7 +501,8 @@ export default function SimulationResults({
                           }
                         }
 
-                        const savings = tradTotalInterest - aioTotalInterest;
+                        const balanceDelta = tradBalance - aioBalance;
+                        const principalDelta = yearAioPrincipal - yearTradPrincipal;
 
                         rows.push(
                           <tr key={year} style={{
@@ -509,20 +510,118 @@ export default function SimulationResults({
                             borderBottom: '1px solid #e2e8f0'
                           }}>
                             <td style={{ padding: '0.75rem', fontWeight: '700', color: '#334155' }}>{year}</td>
-                            <td style={{ padding: '0.75rem', textAlign: 'right', color: '#4299e1', fontWeight: '600' }}>
-                              {formatCurrency(tradBalance)}
+
+                            {/* Balance Comparison Column */}
+                            <td style={{ padding: '0.75rem' }}>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                {/* Traditional Balance */}
+                                <div style={{
+                                  display: 'flex',
+                                  justifyContent: 'space-between',
+                                  alignItems: 'center',
+                                  padding: '0.5rem 0.75rem',
+                                  background: '#eff6ff',
+                                  borderRadius: '6px',
+                                  border: '1px solid #bfdbfe'
+                                }}>
+                                  <span style={{ fontSize: '0.75rem', color: '#1e40af', fontWeight: '600' }}>Traditional</span>
+                                  <span style={{ fontSize: '0.9rem', fontWeight: '700', color: '#1e40af' }}>
+                                    {formatCurrency(tradBalance)}
+                                  </span>
+                                </div>
+
+                                {/* AIO Balance with Delta Badge */}
+                                <div style={{
+                                  display: 'flex',
+                                  justifyContent: 'space-between',
+                                  alignItems: 'center',
+                                  padding: '0.5rem 0.75rem',
+                                  background: '#f0fdf4',
+                                  borderRadius: '6px',
+                                  border: '1px solid #86efac',
+                                  position: 'relative'
+                                }}>
+                                  <span style={{ fontSize: '0.75rem', color: '#15803d', fontWeight: '600' }}>All-In-One</span>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    {aioBalance > 0.01 ? (
+                                      <>
+                                        <span style={{ fontSize: '0.9rem', fontWeight: '700', color: '#15803d' }}>
+                                          {formatCurrency(aioBalance)}
+                                        </span>
+                                        {balanceDelta > 0 && (
+                                          <span style={{
+                                            fontSize: '0.7rem',
+                                            fontWeight: '700',
+                                            color: '#10b981',
+                                            background: '#d1fae5',
+                                            padding: '0.15rem 0.5rem',
+                                            borderRadius: '9999px',
+                                            border: '1px solid #10b981'
+                                          }}>
+                                            ▼ {formatCurrency(balanceDelta)}
+                                          </span>
+                                        )}
+                                      </>
+                                    ) : (
+                                      <span style={{ fontSize: '0.85rem', fontWeight: '700', color: '#10b981' }}>
+                                        ✓ PAID OFF
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
                             </td>
-                            <td style={{ padding: '0.75rem', textAlign: 'right', color: '#718096' }}>
-                              {formatCurrency(yearTradPrincipal)}
-                            </td>
-                            <td style={{ padding: '0.75rem', textAlign: 'right', color: '#9bc53d', fontWeight: '600' }}>
-                              {aioBalance > 0.01 ? formatCurrency(aioBalance) : <span style={{ color: '#10b981', fontWeight: '700' }}>PAID OFF ✓</span>}
-                            </td>
-                            <td style={{ padding: '0.75rem', textAlign: 'right', color: '#718096' }}>
-                              {formatCurrency(yearAioPrincipal)}
-                            </td>
-                            <td style={{ padding: '0.75rem', textAlign: 'right', fontWeight: '700', color: '#10b981' }}>
-                              {formatCurrency(savings)}
+
+                            {/* Principal Paid Comparison Column */}
+                            <td style={{ padding: '0.75rem' }}>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                {/* Traditional Principal */}
+                                <div style={{
+                                  display: 'flex',
+                                  justifyContent: 'space-between',
+                                  alignItems: 'center',
+                                  padding: '0.5rem 0.75rem',
+                                  background: '#eff6ff',
+                                  borderRadius: '6px',
+                                  border: '1px solid #bfdbfe'
+                                }}>
+                                  <span style={{ fontSize: '0.75rem', color: '#1e40af', fontWeight: '600' }}>Traditional</span>
+                                  <span style={{ fontSize: '0.9rem', fontWeight: '600', color: '#1e40af' }}>
+                                    {formatCurrency(yearTradPrincipal)}
+                                  </span>
+                                </div>
+
+                                {/* AIO Principal with Delta Badge */}
+                                <div style={{
+                                  display: 'flex',
+                                  justifyContent: 'space-between',
+                                  alignItems: 'center',
+                                  padding: '0.5rem 0.75rem',
+                                  background: '#f0fdf4',
+                                  borderRadius: '6px',
+                                  border: '1px solid #86efac'
+                                }}>
+                                  <span style={{ fontSize: '0.75rem', color: '#15803d', fontWeight: '600' }}>All-In-One</span>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    <span style={{ fontSize: '0.9rem', fontWeight: '600', color: '#15803d' }}>
+                                      {formatCurrency(yearAioPrincipal)}
+                                    </span>
+                                    {principalDelta > 0 && (
+                                      <span style={{
+                                        fontSize: '0.7rem',
+                                        fontWeight: '700',
+                                        color: '#10b981',
+                                        background: '#d1fae5',
+                                        padding: '0.15rem 0.5rem',
+                                        borderRadius: '9999px',
+                                        border: '1px solid #10b981'
+                                      }}>
+                                        ▲ {formatCurrency(principalDelta)}
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
                             </td>
                           </tr>
                         );
@@ -534,8 +633,6 @@ export default function SimulationResults({
                       // Monthly view - show each month with yearly subtotals
                       let yearTradPrincipal = 0;
                       let yearAioPrincipal = 0;
-                      let yearStartTradInterest = tradTotalInterest;
-                      let yearStartAioInterest = aioTotalInterest;
 
                       for (let month = 1; month <= maxMonths; month++) {
                         const year = Math.ceil(month / 12);
@@ -564,36 +661,135 @@ export default function SimulationResults({
                           yearAioPrincipal += aioPrincipal;
                         }
 
-                        const savings = tradTotalInterest - aioTotalInterest;
+                        const balanceDelta = tradBalance - aioBalance;
+                        const principalDelta = aioPrincipal - tradPrincipal;
 
                         rows.push(
                           <tr key={`m${month}`} style={{
                             background: 'white',
                             borderBottom: '1px solid #e2e8f0'
                           }}>
-                            <td style={{ padding: '0.75rem', color: '#94a3b8' }}>{year}</td>
-                            <td style={{ padding: '0.75rem', fontWeight: '600', color: '#334155' }}>{monthInYear}</td>
-                            <td style={{ padding: '0.75rem', textAlign: 'right', color: '#4299e1', fontWeight: '600' }}>
-                              {formatCurrency(tradBalance)}
+                            <td style={{ padding: '0.75rem', fontWeight: '600', color: '#334155' }}>
+                              Y{year}-M{monthInYear}
                             </td>
-                            <td style={{ padding: '0.75rem', textAlign: 'right', color: '#718096' }}>
-                              {formatCurrency(tradPrincipal)}
+
+                            {/* Balance Comparison Column */}
+                            <td style={{ padding: '0.75rem' }}>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                {/* Traditional Balance */}
+                                <div style={{
+                                  display: 'flex',
+                                  justifyContent: 'space-between',
+                                  alignItems: 'center',
+                                  padding: '0.5rem 0.75rem',
+                                  background: '#eff6ff',
+                                  borderRadius: '6px',
+                                  border: '1px solid #bfdbfe'
+                                }}>
+                                  <span style={{ fontSize: '0.75rem', color: '#1e40af', fontWeight: '600' }}>Traditional</span>
+                                  <span style={{ fontSize: '0.9rem', fontWeight: '700', color: '#1e40af' }}>
+                                    {formatCurrency(tradBalance)}
+                                  </span>
+                                </div>
+
+                                {/* AIO Balance with Delta Badge */}
+                                <div style={{
+                                  display: 'flex',
+                                  justifyContent: 'space-between',
+                                  alignItems: 'center',
+                                  padding: '0.5rem 0.75rem',
+                                  background: '#f0fdf4',
+                                  borderRadius: '6px',
+                                  border: '1px solid #86efac'
+                                }}>
+                                  <span style={{ fontSize: '0.75rem', color: '#15803d', fontWeight: '600' }}>All-In-One</span>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    {aioBalance > 0.01 ? (
+                                      <>
+                                        <span style={{ fontSize: '0.9rem', fontWeight: '700', color: '#15803d' }}>
+                                          {formatCurrency(aioBalance)}
+                                        </span>
+                                        {balanceDelta > 0 && (
+                                          <span style={{
+                                            fontSize: '0.7rem',
+                                            fontWeight: '700',
+                                            color: '#10b981',
+                                            background: '#d1fae5',
+                                            padding: '0.15rem 0.5rem',
+                                            borderRadius: '9999px',
+                                            border: '1px solid #10b981'
+                                          }}>
+                                            ▼ {formatCurrency(balanceDelta)}
+                                          </span>
+                                        )}
+                                      </>
+                                    ) : (
+                                      <span style={{ fontSize: '0.85rem', fontWeight: '700', color: '#10b981' }}>
+                                        ✓ PAID OFF
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
                             </td>
-                            <td style={{ padding: '0.75rem', textAlign: 'right', color: '#9bc53d', fontWeight: '600' }}>
-                              {aioBalance > 0.01 ? formatCurrency(aioBalance) : <span style={{ color: '#10b981', fontWeight: '700', fontSize: '0.8rem' }}>PAID OFF ✓</span>}
-                            </td>
-                            <td style={{ padding: '0.75rem', textAlign: 'right', color: '#718096' }}>
-                              {formatCurrency(aioPrincipal)}
-                            </td>
-                            <td style={{ padding: '0.75rem', textAlign: 'right', fontWeight: '700', color: '#10b981' }}>
-                              {formatCurrency(savings)}
+
+                            {/* Principal Paid Comparison Column */}
+                            <td style={{ padding: '0.75rem' }}>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                {/* Traditional Principal */}
+                                <div style={{
+                                  display: 'flex',
+                                  justifyContent: 'space-between',
+                                  alignItems: 'center',
+                                  padding: '0.5rem 0.75rem',
+                                  background: '#eff6ff',
+                                  borderRadius: '6px',
+                                  border: '1px solid #bfdbfe'
+                                }}>
+                                  <span style={{ fontSize: '0.75rem', color: '#1e40af', fontWeight: '600' }}>Traditional</span>
+                                  <span style={{ fontSize: '0.9rem', fontWeight: '600', color: '#1e40af' }}>
+                                    {formatCurrency(tradPrincipal)}
+                                  </span>
+                                </div>
+
+                                {/* AIO Principal with Delta Badge */}
+                                <div style={{
+                                  display: 'flex',
+                                  justifyContent: 'space-between',
+                                  alignItems: 'center',
+                                  padding: '0.5rem 0.75rem',
+                                  background: '#f0fdf4',
+                                  borderRadius: '6px',
+                                  border: '1px solid #86efac'
+                                }}>
+                                  <span style={{ fontSize: '0.75rem', color: '#15803d', fontWeight: '600' }}>All-In-One</span>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    <span style={{ fontSize: '0.9rem', fontWeight: '600', color: '#15803d' }}>
+                                      {formatCurrency(aioPrincipal)}
+                                    </span>
+                                    {principalDelta > 0 && (
+                                      <span style={{
+                                        fontSize: '0.7rem',
+                                        fontWeight: '700',
+                                        color: '#10b981',
+                                        background: '#d1fae5',
+                                        padding: '0.15rem 0.5rem',
+                                        borderRadius: '9999px',
+                                        border: '1px solid #10b981'
+                                      }}>
+                                        ▲ {formatCurrency(principalDelta)}
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
                             </td>
                           </tr>
                         );
 
                         // Add year subtotal row at end of each year
                         if (monthInYear === 12 || month === maxMonths || (tradBalance <= 0.01 && aioBalance <= 0.01)) {
-                          const yearSavings = (tradTotalInterest - yearStartTradInterest) - (aioTotalInterest - yearStartAioInterest);
+                          const yearPrincipalDelta = yearAioPrincipal - yearTradPrincipal;
 
                           rows.push(
                             <tr key={`subtotal${year}`} style={{
@@ -602,17 +798,31 @@ export default function SimulationResults({
                               fontWeight: '700',
                               borderBottom: '2px solid #cbd5e1'
                             }}>
-                              <td style={{ padding: '0.75rem' }} colSpan={2}>Year {year} Total</td>
-                              <td style={{ padding: '0.75rem', textAlign: 'right' }}>—</td>
-                              <td style={{ padding: '0.75rem', textAlign: 'right' }}>
-                                {formatCurrency(yearTradPrincipal)}
+                              <td style={{ padding: '1rem', fontSize: '1rem' }}>
+                                Year {year} Total
                               </td>
-                              <td style={{ padding: '0.75rem', textAlign: 'right' }}>—</td>
-                              <td style={{ padding: '0.75rem', textAlign: 'right' }}>
-                                {formatCurrency(yearAioPrincipal)}
+                              <td style={{ padding: '1rem', textAlign: 'center' }}>
+                                —
                               </td>
-                              <td style={{ padding: '0.75rem', textAlign: 'right', color: '#10b981' }}>
-                                {formatCurrency(yearSavings)}
+                              <td style={{ padding: '1rem' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                  <span style={{ fontSize: '0.9rem' }}>Total Principal:</span>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                    <span style={{ color: '#93c5fd' }}>{formatCurrency(yearTradPrincipal)}</span>
+                                    <span style={{ color: '#6ee7b7' }}>{formatCurrency(yearAioPrincipal)}</span>
+                                    {yearPrincipalDelta > 0 && (
+                                      <span style={{
+                                        fontSize: '0.8rem',
+                                        color: '#10b981',
+                                        background: 'rgba(16, 185, 129, 0.2)',
+                                        padding: '0.25rem 0.75rem',
+                                        borderRadius: '9999px'
+                                      }}>
+                                        ▲ {formatCurrency(yearPrincipalDelta)}
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
                               </td>
                             </tr>
                           );
@@ -620,8 +830,6 @@ export default function SimulationResults({
                           // Reset year totals
                           yearTradPrincipal = 0;
                           yearAioPrincipal = 0;
-                          yearStartTradInterest = tradTotalInterest;
-                          yearStartAioInterest = aioTotalInterest;
                         }
 
                         // Stop if both loans are paid off

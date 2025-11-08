@@ -135,6 +135,10 @@ export default function ProposalBuilder({
   const [clientEmail, setClientEmail] = useState('');
   const [includeFooter, setIncludeFooter] = useState(true);
 
+  // Loan Officer Email for signature lookup
+  const [loanOfficerEmail, setLoanOfficerEmail] = useState('');
+  const [signatureFound, setSignatureFound] = useState(false);
+
   // AI Pitch state
   const [aiPitch, setAiPitch] = useState('');
   const [isGeneratingPitch, setIsGeneratingPitch] = useState(false);
@@ -156,13 +160,21 @@ export default function ProposalBuilder({
   const [showComponentPreview, setShowComponentPreview] = useState(false);
   const [previewComponentId, setPreviewComponentId] = useState<string | null>(null);
 
-  // Email signature state
+  // Email signature state - Enhanced with all CMG fields
   const [signatureName, setSignatureName] = useState('');
   const [signatureTitle, setSignatureTitle] = useState('');
   const [signatureEmail, setSignatureEmail] = useState('');
   const [signaturePhone, setSignaturePhone] = useState('');
   const [signatureCompany, setSignatureCompany] = useState('CMG Financial');
   const [signatureNMLS, setSignatureNMLS] = useState('');
+  const [signatureWebsite, setSignatureWebsite] = useState('');
+  const [signatureAddress, setSignatureAddress] = useState('');
+  const [signatureTagline, setSignatureTagline] = useState('HOME LOANS SIMPLIFIED');
+  const [signaturePhotoURL, setSignaturePhotoURL] = useState('');
+  const [signatureLinkedIn, setSignatureLinkedIn] = useState('');
+  const [signatureFacebook, setSignatureFacebook] = useState('');
+  const [signatureTwitter, setSignatureTwitter] = useState('');
+  const [signatureInstagram, setSignatureInstagram] = useState('');
 
   // PDF content ref
   const pdfContentRef = useRef<HTMLDivElement>(null);
@@ -213,6 +225,78 @@ export default function ProposalBuilder({
       coordinateGetter: sortableKeyboardCoordinates,
     })
   );
+
+  // Signature storage/lookup functions
+  const loadSignatureFromStorage = (email: string): boolean => {
+    try {
+      const storageKey = `cmg_signature_${email.toLowerCase().trim()}`;
+      const savedSignature = localStorage.getItem(storageKey);
+
+      if (savedSignature) {
+        const signature = JSON.parse(savedSignature);
+        setSignatureName(signature.name || '');
+        setSignatureTitle(signature.title || '');
+        setSignatureEmail(signature.email || '');
+        setSignaturePhone(signature.phone || '');
+        setSignatureCompany(signature.company || 'CMG Financial');
+        setSignatureNMLS(signature.nmls || '');
+        setSignatureWebsite(signature.website || '');
+        setSignatureAddress(signature.address || '');
+        setSignatureTagline(signature.tagline || 'HOME LOANS SIMPLIFIED');
+        setSignaturePhotoURL(signature.photoURL || '');
+        setSignatureLinkedIn(signature.linkedIn || '');
+        setSignatureFacebook(signature.facebook || '');
+        setSignatureTwitter(signature.twitter || '');
+        setSignatureInstagram(signature.instagram || '');
+        setSignatureFound(true);
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Error loading signature:', error);
+      return false;
+    }
+  };
+
+  const saveSignatureToStorage = (email: string) => {
+    try {
+      const storageKey = `cmg_signature_${email.toLowerCase().trim()}`;
+      const signature = {
+        name: signatureName,
+        title: signatureTitle,
+        email: signatureEmail,
+        phone: signaturePhone,
+        company: signatureCompany,
+        nmls: signatureNMLS,
+        website: signatureWebsite,
+        address: signatureAddress,
+        tagline: signatureTagline,
+        photoURL: signaturePhotoURL,
+        linkedIn: signatureLinkedIn,
+        facebook: signatureFacebook,
+        twitter: signatureTwitter,
+        instagram: signatureInstagram,
+        savedAt: new Date().toISOString()
+      };
+      localStorage.setItem(storageKey, JSON.stringify(signature));
+      console.log('✅ Signature saved for', email);
+    } catch (error) {
+      console.error('Error saving signature:', error);
+    }
+  };
+
+  const handleLoanOfficerEmailChange = (email: string) => {
+    setLoanOfficerEmail(email);
+    setSignatureFound(false);
+
+    // Try to load signature if email looks valid
+    if (email.includes('@') && email.includes('.')) {
+      const found = loadSignatureFromStorage(email);
+      if (found) {
+        console.log('✅ Signature found and loaded for', email);
+      }
+    }
+  };
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
@@ -318,6 +402,10 @@ export default function ProposalBuilder({
 
   const handleNextStep = () => {
     if (canProceedToNextStep() && currentStep < 5) {
+      // Save signature when leaving step 4 if loan officer email is provided
+      if (currentStep === 4 && loanOfficerEmail && signatureName) {
+        saveSignatureToStorage(loanOfficerEmail);
+      }
       setCurrentStep((currentStep + 1) as WizardStep);
     }
   };
@@ -438,7 +526,7 @@ export default function ProposalBuilder({
       </div>
 
       <div className="proposal-content">
-        {/* Step 1: Client Information */}
+        {/* Step 1: Client Information & Loan Officer Email */}
         {currentStep === 1 && (
           <div className="section-card">
             <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
@@ -458,10 +546,82 @@ export default function ProposalBuilder({
                 </svg>
               </div>
               <h2 style={{ fontSize: '2rem', marginBottom: '0.5rem', color: '#1e293b' }}>Let's Get Started</h2>
-              <p className="section-description" style={{ fontSize: '1.1rem' }}>Tell us who this proposal is for</p>
+              <p className="section-description" style={{ fontSize: '1.1rem' }}>First, enter your email to look up your signature</p>
             </div>
 
             <div style={{ maxWidth: '600px', margin: '0 auto' }}>
+              {/* Loan Officer Email - First */}
+              <div className="form-group" style={{ marginBottom: '2rem' }}>
+                <label htmlFor="loanOfficerEmail" style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  marginBottom: '0.75rem',
+                  fontSize: '1rem',
+                  fontWeight: '600',
+                  color: '#334155'
+                }}>
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '20px', height: '20px', color: '#8b5cf6' }}>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                  Your Email (Loan Officer)
+                </label>
+                <input
+                  id="loanOfficerEmail"
+                  type="email"
+                  className="form-input"
+                  placeholder="your.email@cmgfi.com"
+                  value={loanOfficerEmail}
+                  onChange={(e) => handleLoanOfficerEmailChange(e.target.value)}
+                  style={{
+                    fontSize: '1.1rem',
+                    padding: '1rem',
+                    border: signatureFound ? '2px solid #10b981' : '2px solid #e2e8f0',
+                    transition: 'all 0.2s'
+                  }}
+                />
+                {signatureFound && (
+                  <div style={{
+                    marginTop: '0.5rem',
+                    padding: '0.75rem',
+                    background: '#f0fdf4',
+                    border: '1px solid #86efac',
+                    borderRadius: '6px',
+                    color: '#15803d',
+                    fontSize: '0.9rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem'
+                  }}>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '18px', height: '18px' }}>
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    ✅ Signature found! Your details have been pre-filled.
+                  </div>
+                )}
+                {!signatureFound && loanOfficerEmail.includes('@') && (
+                  <div style={{ marginTop: '0.5rem', color: '#64748b', fontSize: '0.9rem' }}>
+                    💡 No saved signature found. You'll build one in Step 4, and we'll save it for next time.
+                  </div>
+                )}
+              </div>
+
+              <div style={{
+                margin: '2rem 0',
+                height: '1px',
+                background: 'linear-gradient(to right, transparent, #e2e8f0, transparent)'
+              }} />
+
+              <p style={{
+                textAlign: 'center',
+                color: '#64748b',
+                fontSize: '1rem',
+                marginBottom: '1.5rem'
+              }}>
+                Now, tell us who this proposal is for
+              </p>
+
+              {/* Client Name */}
               <div className="form-group" style={{ marginBottom: '1.5rem' }}>
                 <label htmlFor="clientName" style={{
                   display: 'flex',
@@ -508,6 +668,7 @@ export default function ProposalBuilder({
                 )}
               </div>
 
+              {/* Client Email */}
               <div className="form-group" style={{ marginBottom: '1.5rem' }}>
                 <label htmlFor="clientEmail" style={{
                   display: 'flex',
@@ -538,9 +699,6 @@ export default function ProposalBuilder({
                     transition: 'all 0.2s'
                   }}
                 />
-                <div style={{ marginTop: '0.5rem', color: '#64748b', fontSize: '0.9rem' }}>
-                  💡 We'll use this to look up your email signature later
-                </div>
               </div>
 
               {!clientName.trim() && (
@@ -740,7 +898,28 @@ export default function ProposalBuilder({
               <p className="section-description" style={{ fontSize: '1.1rem' }}>Customize your professional email signature</p>
             </div>
 
-            <div style={{ maxWidth: '700px', margin: '0 auto' }}>
+            <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+              {signatureFound && (
+                <div style={{
+                  marginBottom: '2rem',
+                  padding: '1rem',
+                  background: '#f0fdf4',
+                  border: '2px solid #86efac',
+                  borderRadius: '8px',
+                  color: '#15803d',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.75rem'
+                }}>
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '24px', height: '24px' }}>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span><strong>Signature loaded!</strong> Review and update your information below if needed.</span>
+                </div>
+              )}
+
+              {/* Basic Information */}
+              <h3 style={{ fontSize: '1.2rem', marginBottom: '1rem', color: '#334155', fontWeight: '600' }}>Basic Information</h3>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '2rem' }}>
                 {/* Full Name */}
                 <div className="form-group">
@@ -749,11 +928,11 @@ export default function ProposalBuilder({
                     alignItems: 'center',
                     gap: '0.5rem',
                     marginBottom: '0.75rem',
-                    fontSize: '1rem',
+                    fontSize: '0.95rem',
                     fontWeight: '600',
                     color: '#334155'
                   }}>
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '20px', height: '20px', color: '#8b5cf6' }}>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '18px', height: '18px', color: '#8b5cf6' }}>
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                     </svg>
                     Full Name
@@ -765,7 +944,7 @@ export default function ProposalBuilder({
                     placeholder="John Smith"
                     value={signatureName}
                     onChange={(e) => setSignatureName(e.target.value)}
-                    style={{ fontSize: '1rem', padding: '0.875rem' }}
+                    style={{ fontSize: '0.95rem', padding: '0.75rem' }}
                   />
                 </div>
 
@@ -776,11 +955,11 @@ export default function ProposalBuilder({
                     alignItems: 'center',
                     gap: '0.5rem',
                     marginBottom: '0.75rem',
-                    fontSize: '1rem',
+                    fontSize: '0.95rem',
                     fontWeight: '600',
                     color: '#334155'
                   }}>
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '20px', height: '20px', color: '#8b5cf6' }}>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '18px', height: '18px', color: '#8b5cf6' }}>
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                     </svg>
                     Job Title
@@ -792,61 +971,7 @@ export default function ProposalBuilder({
                     placeholder="Senior Loan Officer"
                     value={signatureTitle}
                     onChange={(e) => setSignatureTitle(e.target.value)}
-                    style={{ fontSize: '1rem', padding: '0.875rem' }}
-                  />
-                </div>
-
-                {/* Email */}
-                <div className="form-group">
-                  <label htmlFor="signatureEmail" style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem',
-                    marginBottom: '0.75rem',
-                    fontSize: '1rem',
-                    fontWeight: '600',
-                    color: '#334155'
-                  }}>
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '20px', height: '20px', color: '#8b5cf6' }}>
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                    </svg>
-                    Email Address
-                  </label>
-                  <input
-                    id="signatureEmail"
-                    type="email"
-                    className="form-input"
-                    placeholder="john.smith@cmgfi.com"
-                    value={signatureEmail}
-                    onChange={(e) => setSignatureEmail(e.target.value)}
-                    style={{ fontSize: '1rem', padding: '0.875rem' }}
-                  />
-                </div>
-
-                {/* Phone */}
-                <div className="form-group">
-                  <label htmlFor="signaturePhone" style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem',
-                    marginBottom: '0.75rem',
-                    fontSize: '1rem',
-                    fontWeight: '600',
-                    color: '#334155'
-                  }}>
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '20px', height: '20px', color: '#8b5cf6' }}>
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                    </svg>
-                    Phone Number
-                  </label>
-                  <input
-                    id="signaturePhone"
-                    type="tel"
-                    className="form-input"
-                    placeholder="(555) 123-4567"
-                    value={signaturePhone}
-                    onChange={(e) => setSignaturePhone(e.target.value)}
-                    style={{ fontSize: '1rem', padding: '0.875rem' }}
+                    style={{ fontSize: '0.95rem', padding: '0.75rem' }}
                   />
                 </div>
 
@@ -857,11 +982,11 @@ export default function ProposalBuilder({
                     alignItems: 'center',
                     gap: '0.5rem',
                     marginBottom: '0.75rem',
-                    fontSize: '1rem',
+                    fontSize: '0.95rem',
                     fontWeight: '600',
                     color: '#334155'
                   }}>
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '20px', height: '20px', color: '#8b5cf6' }}>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '18px', height: '18px', color: '#8b5cf6' }}>
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                     </svg>
                     Company Name
@@ -873,7 +998,7 @@ export default function ProposalBuilder({
                     placeholder="CMG Financial"
                     value={signatureCompany}
                     onChange={(e) => setSignatureCompany(e.target.value)}
-                    style={{ fontSize: '1rem', padding: '0.875rem' }}
+                    style={{ fontSize: '0.95rem', padding: '0.75rem' }}
                   />
                 </div>
 
@@ -884,11 +1009,11 @@ export default function ProposalBuilder({
                     alignItems: 'center',
                     gap: '0.5rem',
                     marginBottom: '0.75rem',
-                    fontSize: '1rem',
+                    fontSize: '0.95rem',
                     fontWeight: '600',
                     color: '#334155'
                   }}>
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '20px', height: '20px', color: '#8b5cf6' }}>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '18px', height: '18px', color: '#8b5cf6' }}>
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
                     NMLS #
@@ -901,7 +1026,286 @@ export default function ProposalBuilder({
                     placeholder="123456"
                     value={signatureNMLS}
                     onChange={(e) => setSignatureNMLS(e.target.value)}
-                    style={{ fontSize: '1rem', padding: '0.875rem' }}
+                    style={{ fontSize: '0.95rem', padding: '0.75rem' }}
+                  />
+                </div>
+              </div>
+
+              {/* Contact Information */}
+              <h3 style={{ fontSize: '1.2rem', marginBottom: '1rem', color: '#334155', fontWeight: '600' }}>Contact Information</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '2rem' }}>
+                {/* Email */}
+                <div className="form-group">
+                  <label htmlFor="signatureEmail" style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    marginBottom: '0.75rem',
+                    fontSize: '0.95rem',
+                    fontWeight: '600',
+                    color: '#334155'
+                  }}>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '18px', height: '18px', color: '#8b5cf6' }}>
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                    Email Address
+                  </label>
+                  <input
+                    id="signatureEmail"
+                    type="email"
+                    className="form-input"
+                    placeholder="john.smith@cmgfi.com"
+                    value={signatureEmail}
+                    onChange={(e) => setSignatureEmail(e.target.value)}
+                    style={{ fontSize: '0.95rem', padding: '0.75rem' }}
+                  />
+                </div>
+
+                {/* Phone */}
+                <div className="form-group">
+                  <label htmlFor="signaturePhone" style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    marginBottom: '0.75rem',
+                    fontSize: '0.95rem',
+                    fontWeight: '600',
+                    color: '#334155'
+                  }}>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '18px', height: '18px', color: '#8b5cf6' }}>
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                    </svg>
+                    Phone Number
+                  </label>
+                  <input
+                    id="signaturePhone"
+                    type="tel"
+                    className="form-input"
+                    placeholder="(555) 123-4567"
+                    value={signaturePhone}
+                    onChange={(e) => setSignaturePhone(e.target.value)}
+                    style={{ fontSize: '0.95rem', padding: '0.75rem' }}
+                  />
+                </div>
+
+                {/* Website */}
+                <div className="form-group">
+                  <label htmlFor="signatureWebsite" style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    marginBottom: '0.75rem',
+                    fontSize: '0.95rem',
+                    fontWeight: '600',
+                    color: '#334155'
+                  }}>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '18px', height: '18px', color: '#8b5cf6' }}>
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+                    </svg>
+                    Website
+                    <span style={{ fontSize: '0.85rem', fontWeight: '400', color: '#94a3b8' }}>(optional)</span>
+                  </label>
+                  <input
+                    id="signatureWebsite"
+                    type="url"
+                    className="form-input"
+                    placeholder="www.cmgfi.com"
+                    value={signatureWebsite}
+                    onChange={(e) => setSignatureWebsite(e.target.value)}
+                    style={{ fontSize: '0.95rem', padding: '0.75rem' }}
+                  />
+                </div>
+
+                {/* Address */}
+                <div className="form-group">
+                  <label htmlFor="signatureAddress" style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    marginBottom: '0.75rem',
+                    fontSize: '0.95rem',
+                    fontWeight: '600',
+                    color: '#334155'
+                  }}>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '18px', height: '18px', color: '#8b5cf6' }}>
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    Address
+                    <span style={{ fontSize: '0.85rem', fontWeight: '400', color: '#94a3b8' }}>(optional)</span>
+                  </label>
+                  <input
+                    id="signatureAddress"
+                    type="text"
+                    className="form-input"
+                    placeholder="San Ramon, CA"
+                    value={signatureAddress}
+                    onChange={(e) => setSignatureAddress(e.target.value)}
+                    style={{ fontSize: '0.95rem', padding: '0.75rem' }}
+                  />
+                </div>
+              </div>
+
+              {/* Branding */}
+              <h3 style={{ fontSize: '1.2rem', marginBottom: '1rem', color: '#334155', fontWeight: '600' }}>Branding</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '2rem' }}>
+                {/* Tagline */}
+                <div className="form-group">
+                  <label htmlFor="signatureTagline" style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    marginBottom: '0.75rem',
+                    fontSize: '0.95rem',
+                    fontWeight: '600',
+                    color: '#334155'
+                  }}>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '18px', height: '18px', color: '#8b5cf6' }}>
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
+                    </svg>
+                    Tagline
+                    <span style={{ fontSize: '0.85rem', fontWeight: '400', color: '#94a3b8' }}>(optional)</span>
+                  </label>
+                  <input
+                    id="signatureTagline"
+                    type="text"
+                    className="form-input"
+                    placeholder="HOME LOANS SIMPLIFIED"
+                    value={signatureTagline}
+                    onChange={(e) => setSignatureTagline(e.target.value)}
+                    style={{ fontSize: '0.95rem', padding: '0.75rem' }}
+                  />
+                </div>
+
+                {/* Photo URL */}
+                <div className="form-group">
+                  <label htmlFor="signaturePhotoURL" style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    marginBottom: '0.75rem',
+                    fontSize: '0.95rem',
+                    fontWeight: '600',
+                    color: '#334155'
+                  }}>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '18px', height: '18px', color: '#8b5cf6' }}>
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    Photo URL
+                    <span style={{ fontSize: '0.85rem', fontWeight: '400', color: '#94a3b8' }}>(optional)</span>
+                  </label>
+                  <input
+                    id="signaturePhotoURL"
+                    type="url"
+                    className="form-input"
+                    placeholder="https://example.com/photo.jpg"
+                    value={signaturePhotoURL}
+                    onChange={(e) => setSignaturePhotoURL(e.target.value)}
+                    style={{ fontSize: '0.95rem', padding: '0.75rem' }}
+                  />
+                </div>
+              </div>
+
+              {/* Social Media Links */}
+              <h3 style={{ fontSize: '1.2rem', marginBottom: '1rem', color: '#334155', fontWeight: '600' }}>Social Media <span style={{ fontSize: '0.9rem', fontWeight: '400', color: '#94a3b8' }}>(All optional)</span></h3>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '2rem' }}>
+                {/* LinkedIn */}
+                <div className="form-group">
+                  <label htmlFor="signatureLinkedIn" style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    marginBottom: '0.75rem',
+                    fontSize: '0.95rem',
+                    fontWeight: '600',
+                    color: '#334155'
+                  }}>
+                    <span style={{ fontSize: '1rem' }}>💼</span>
+                    LinkedIn URL
+                  </label>
+                  <input
+                    id="signatureLinkedIn"
+                    type="url"
+                    className="form-input"
+                    placeholder="https://linkedin.com/in/yourname"
+                    value={signatureLinkedIn}
+                    onChange={(e) => setSignatureLinkedIn(e.target.value)}
+                    style={{ fontSize: '0.95rem', padding: '0.75rem' }}
+                  />
+                </div>
+
+                {/* Facebook */}
+                <div className="form-group">
+                  <label htmlFor="signatureFacebook" style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    marginBottom: '0.75rem',
+                    fontSize: '0.95rem',
+                    fontWeight: '600',
+                    color: '#334155'
+                  }}>
+                    <span style={{ fontSize: '1rem' }}>📘</span>
+                    Facebook URL
+                  </label>
+                  <input
+                    id="signatureFacebook"
+                    type="url"
+                    className="form-input"
+                    placeholder="https://facebook.com/yourname"
+                    value={signatureFacebook}
+                    onChange={(e) => setSignatureFacebook(e.target.value)}
+                    style={{ fontSize: '0.95rem', padding: '0.75rem' }}
+                  />
+                </div>
+
+                {/* Twitter */}
+                <div className="form-group">
+                  <label htmlFor="signatureTwitter" style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    marginBottom: '0.75rem',
+                    fontSize: '0.95rem',
+                    fontWeight: '600',
+                    color: '#334155'
+                  }}>
+                    <span style={{ fontSize: '1rem' }}>🐦</span>
+                    Twitter/X URL
+                  </label>
+                  <input
+                    id="signatureTwitter"
+                    type="url"
+                    className="form-input"
+                    placeholder="https://twitter.com/yourname"
+                    value={signatureTwitter}
+                    onChange={(e) => setSignatureTwitter(e.target.value)}
+                    style={{ fontSize: '0.95rem', padding: '0.75rem' }}
+                  />
+                </div>
+
+                {/* Instagram */}
+                <div className="form-group">
+                  <label htmlFor="signatureInstagram" style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    marginBottom: '0.75rem',
+                    fontSize: '0.95rem',
+                    fontWeight: '600',
+                    color: '#334155'
+                  }}>
+                    <span style={{ fontSize: '1rem' }}>📷</span>
+                    Instagram URL
+                  </label>
+                  <input
+                    id="signatureInstagram"
+                    type="url"
+                    className="form-input"
+                    placeholder="https://instagram.com/yourname"
+                    value={signatureInstagram}
+                    onChange={(e) => setSignatureInstagram(e.target.value)}
+                    style={{ fontSize: '0.95rem', padding: '0.75rem' }}
                   />
                 </div>
               </div>
@@ -916,7 +1320,7 @@ export default function ProposalBuilder({
                   borderRadius: '12px',
                   boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05)'
                 }}>
-                  <h3 style={{ margin: '0 0 1.5rem 0', fontSize: '1.1rem', color: '#64748b', textAlign: 'center' }}>Preview</h3>
+                  <h3 style={{ margin: '0 0 1.5rem 0', fontSize: '1.1rem', color: '#64748b', textAlign: 'center' }}>Signature Preview</h3>
                   <div style={{
                     fontFamily: 'Arial, sans-serif',
                     borderLeft: '4px solid #8b5cf6',
@@ -928,7 +1332,7 @@ export default function ProposalBuilder({
                       </div>
                     )}
                     {signatureTitle && (
-                      <div style={{ fontSize: '1rem', color: '#475569', marginBottom: '0.75rem' }}>
+                      <div style={{ fontSize: '1rem', color: '#475569', marginBottom: '0.5rem', fontStyle: 'italic' }}>
                         {signatureTitle}
                       </div>
                     )}
@@ -954,9 +1358,39 @@ export default function ProposalBuilder({
                           <span>{signaturePhone}</span>
                         </div>
                       )}
+                      {signatureWebsite && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '16px', height: '16px', color: '#8b5cf6' }}>
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+                          </svg>
+                          <a href={`https://${signatureWebsite.replace(/^https?:\/\//, '')}`} style={{ color: '#8b5cf6', textDecoration: 'none' }}>{signatureWebsite.replace(/^https?:\/\//, '')}</a>
+                        </div>
+                      )}
+                      {signatureAddress && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '16px', height: '16px', color: '#8b5cf6' }}>
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                          </svg>
+                          <span>{signatureAddress}</span>
+                        </div>
+                      )}
                       {signatureNMLS && (
                         <div style={{ marginTop: '0.5rem', fontSize: '0.85rem', color: '#94a3b8' }}>
                           NMLS# {signatureNMLS}
+                        </div>
+                      )}
+                      {signatureTagline && (
+                        <div style={{ marginTop: '0.75rem', fontSize: '0.85rem', fontWeight: '600', color: '#8b5cf6', letterSpacing: '0.05em' }}>
+                          {signatureTagline}
+                        </div>
+                      )}
+                      {(signatureLinkedIn || signatureFacebook || signatureTwitter || signatureInstagram) && (
+                        <div style={{ marginTop: '1rem', display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                          {signatureLinkedIn && <span style={{ fontSize: '1.25rem' }}>💼</span>}
+                          {signatureFacebook && <span style={{ fontSize: '1.25rem' }}>📘</span>}
+                          {signatureTwitter && <span style={{ fontSize: '1.25rem' }}>🐦</span>}
+                          {signatureInstagram && <span style={{ fontSize: '1.25rem' }}>📷</span>}
                         </div>
                       )}
                     </div>
@@ -1178,7 +1612,7 @@ export default function ProposalBuilder({
                         </div>
                       )}
                       {signatureTitle && (
-                        <div style={{ fontSize: '1rem', color: '#475569', marginBottom: '0.75rem' }}>
+                        <div style={{ fontSize: '1rem', color: '#475569', marginBottom: '0.5rem', fontStyle: 'italic' }}>
                           {signatureTitle}
                         </div>
                       )}
@@ -1204,9 +1638,39 @@ export default function ProposalBuilder({
                             <span>{signaturePhone}</span>
                           </div>
                         )}
+                        {signatureWebsite && (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '16px', height: '16px', color: '#8b5cf6' }}>
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+                            </svg>
+                            <a href={`https://${signatureWebsite.replace(/^https?:\/\//, '')}`} style={{ color: '#8b5cf6', textDecoration: 'none' }}>{signatureWebsite.replace(/^https?:\/\//, '')}</a>
+                          </div>
+                        )}
+                        {signatureAddress && (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '16px', height: '16px', color: '#8b5cf6' }}>
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                            <span>{signatureAddress}</span>
+                          </div>
+                        )}
                         {signatureNMLS && (
                           <div style={{ marginTop: '0.5rem', fontSize: '0.85rem', color: '#94a3b8' }}>
                             NMLS# {signatureNMLS}
+                          </div>
+                        )}
+                        {signatureTagline && (
+                          <div style={{ marginTop: '0.75rem', fontSize: '0.85rem', fontWeight: '600', color: '#8b5cf6', letterSpacing: '0.05em' }}>
+                            {signatureTagline}
+                          </div>
+                        )}
+                        {(signatureLinkedIn || signatureFacebook || signatureTwitter || signatureInstagram) && (
+                          <div style={{ marginTop: '1rem', display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                            {signatureLinkedIn && <span style={{ fontSize: '1.25rem' }}>💼</span>}
+                            {signatureFacebook && <span style={{ fontSize: '1.25rem' }}>📘</span>}
+                            {signatureTwitter && <span style={{ fontSize: '1.25rem' }}>🐦</span>}
+                            {signatureInstagram && <span style={{ fontSize: '1.25rem' }}>📷</span>}
                           </div>
                         )}
                       </div>
@@ -1499,7 +1963,7 @@ export default function ProposalBuilder({
                   </div>
                 )}
                 {signatureTitle && (
-                  <div style={{ fontSize: '0.95rem', color: '#475569', marginBottom: '0.5rem' }}>
+                  <div style={{ fontSize: '0.95rem', color: '#475569', marginBottom: '0.5rem', fontStyle: 'italic' }}>
                     {signatureTitle}
                   </div>
                 )}
@@ -1519,9 +1983,32 @@ export default function ProposalBuilder({
                       📱 {signaturePhone}
                     </div>
                   )}
+                  {signatureWebsite && (
+                    <div style={{ marginBottom: '0.15rem' }}>
+                      🌐 {signatureWebsite.replace(/^https?:\/\//, '')}
+                    </div>
+                  )}
+                  {signatureAddress && (
+                    <div style={{ marginBottom: '0.15rem' }}>
+                      📍 {signatureAddress}
+                    </div>
+                  )}
                   {signatureNMLS && (
                     <div style={{ marginTop: '0.25rem', fontSize: '0.8rem', color: '#94a3b8' }}>
                       NMLS# {signatureNMLS}
+                    </div>
+                  )}
+                  {signatureTagline && (
+                    <div style={{ marginTop: '0.5rem', fontSize: '0.8rem', fontWeight: '600', color: '#8b5cf6', letterSpacing: '0.05em' }}>
+                      {signatureTagline}
+                    </div>
+                  )}
+                  {(signatureLinkedIn || signatureFacebook || signatureTwitter || signatureInstagram) && (
+                    <div style={{ marginTop: '0.75rem', fontSize: '0.8rem' }}>
+                      {signatureLinkedIn && <span style={{ marginRight: '0.5rem' }}>💼 LinkedIn</span>}
+                      {signatureFacebook && <span style={{ marginRight: '0.5rem' }}>📘 Facebook</span>}
+                      {signatureTwitter && <span style={{ marginRight: '0.5rem' }}>🐦 Twitter</span>}
+                      {signatureInstagram && <span style={{ marginRight: '0.5rem' }}>📷 Instagram</span>}
                     </div>
                   )}
                 </div>

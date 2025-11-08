@@ -15,9 +15,9 @@ export function simulateLoan(
   mortgageDetails: MortgageDetails,
   cashFlow: CashFlowAnalysis
 ): SimulationResult {
-  const loanBalance = mortgageDetails.currentBalance || mortgageDetails.loanBalance || 0;
+  const loanBalance = mortgageDetails.currentBalance || 0;
   const tradRate = (mortgageDetails.interestRate || 0) / 100;
-  const aioRate = (mortgageDetails.aioInterestRate || tradRate) / 100;
+  const aioRate = tradRate; // Use same interest rate for AIO
   const remainingMonths = mortgageDetails.remainingTermMonths || 300;
 
   // Calculate traditional mortgage projection
