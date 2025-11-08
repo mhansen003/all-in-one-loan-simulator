@@ -555,6 +555,8 @@ export async function analyzeStatements(
     // Use GPT-4 to analyze the transactions with enhanced anomaly detection
     const prompt = `You are a financial analysis expert. Analyze the following bank statement data covering multiple months of transactions.
 
+IMPORTANT: You must be CONSISTENT and DETERMINISTIC. Analyze the same data the same way every time.
+
 Current housing payment (to exclude): $${currentHousingPayment}
 
 Bank Statement Data:
@@ -563,8 +565,18 @@ ${dataToAnalyze}
 Please perform a COMPREHENSIVE analysis with the following objectives:
 
 1. **EXTRACT & CATEGORIZE ALL TRANSACTIONS**:
-   - "income": Regular income deposits (salary, wages, business income)
-   - "expense": Regular recurring monthly expenses (groceries, utilities, insurance, subscriptions, etc.)
+
+   EXTRACTION RULES (follow exactly):
+   - Extract EVERY monetary transaction with a date, description, and amount
+   - DO NOT skip transactions just because they're small or seem insignificant
+   - DO include internal transfers, credits, debits, and adjustments
+   - DO include pending transactions if they have a date
+   - DO NOT include running balances, available balances, or summary lines
+   - DO NOT include header rows, footer rows, or non-transaction text
+
+   CATEGORIZATION:
+   - "income": Regular income deposits (salary, wages, business income, regular deposits)
+   - "expense": Regular recurring monthly expenses (groceries, utilities, insurance, subscriptions)
    - "housing": Current rent/mortgage payments (around $${currentHousingPayment})
    - "one-time": One-time or irregular transactions
 
@@ -592,12 +604,16 @@ Please perform a COMPREHENSIVE analysis with the following objectives:
 
 5. **CONFIDENCE SCORE**: Your confidence in the analysis (0-1 scale)
 
-CRITICAL RULES:
+CRITICAL RULES FOR CONSISTENCY:
+- ALWAYS extract the SAME transactions from the SAME data
+- DO NOT randomly include or exclude transactions between runs
 - EXCLUDE current housing payments ($${currentHousingPayment}) from expense calculations
 - FLAG any transaction that seems irregular, luxury, or one-time
 - Only include predictable recurring expenses in the final average
 - Look back at as much historical data as possible
 - Be conservative: when in doubt, flag it for user review
+- Process transactions in chronological order (oldest to newest) for consistency
+- When a transaction could be multiple categories, use this priority: housing > income > one-time > expense
 
 Return your response in the following JSON format:
 {
@@ -639,12 +655,13 @@ Return your response in the following JSON format:
     // Use OpenAI Direct (GPT-4o) for final text analysis
     // This analyzes the extracted transaction text (from CSV or vision extraction)
     console.log(`🧠 Using OpenAI Direct (${TEXT_MODEL}) for transaction analysis...`);
+    console.log(`🔒 Deterministic mode: temperature=0, top_p=1, seed=42 for consistent results`);
     const analysisApiCallPromise = openaiDirect.chat.completions.create({
       model: TEXT_MODEL,
       messages: [
         {
           role: 'system',
-          content: 'You are a financial analyst specialized in cash flow analysis. Always respond with valid JSON.',
+          content: 'You are a financial analyst specialized in cash flow analysis. You must be consistent and deterministic. Always respond with valid JSON. Extract the same transactions from the same data every time.',
         },
         {
           role: 'user',
@@ -653,6 +670,8 @@ Return your response in the following JSON format:
       ],
       response_format: { type: 'json_object' },
       temperature: 0, // Fully deterministic for consistent JSON formatting
+      top_p: 1, // Disable nucleus sampling for maximum determinism
+      seed: 42, // Fixed seed for reproducible results across identical inputs
       max_tokens: 8000, // Sufficient for comprehensive analysis
     }, {
       timeout: ANALYSIS_TIMEOUT_MS,
@@ -662,6 +681,11 @@ Return your response in the following JSON format:
     // Race the API call against the timeout
     const response = await Promise.race([analysisApiCallPromise, analysisTimeoutPromise]);
     console.log('✅ AI analysis completed successfully');
+
+    // Log system fingerprint for reproducibility verification
+    if (response.system_fingerprint) {
+      console.log(`🔑 System fingerprint: ${response.system_fingerprint} (use this to verify consistent backend)`);
+    }
 
     // Parse JSON with better error handling
     const rawContent = response.choices[0]?.message?.content || '{}';
