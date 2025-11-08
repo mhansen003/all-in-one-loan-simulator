@@ -59,10 +59,32 @@ async function extractDataFromSpreadsheet(filePath: string): Promise<string> {
       console.log(`📋 First row sample:`, jsonData[0]);
     }
 
+    // Helper to convert Excel serial date to ISO date string
+    const excelDateToISO = (excelDate: any): string | null => {
+      // If it's already a string date, return as-is
+      if (typeof excelDate === 'string') return excelDate;
+
+      // If it's a number, it's an Excel serial date
+      if (typeof excelDate === 'number') {
+        // Excel dates are days since 12/31/1899
+        // JavaScript dates are milliseconds since 1/1/1970
+        // Difference: 25569 days
+        const jsDate = new Date((excelDate - 25569) * 86400 * 1000);
+
+        // Verify it's a valid date
+        if (!isNaN(jsDate.getTime())) {
+          return jsDate.toISOString().split('T')[0]; // Return YYYY-MM-DD
+        }
+      }
+
+      return null;
+    };
+
     // Compress data: Extract only essential fields
     const compressedData = jsonData.map((row: any) => {
       // Try common field names for date, description, amount
-      const date = row['Posting Date'] || row['Date'] || row['Transaction Date'] || row['date'];
+      const rawDate = row['Posting Date'] || row['Date'] || row['Transaction Date'] || row['date'];
+      const date = excelDateToISO(rawDate);
       const description = row['Description'] || row['Merchant'] || row['description'] || row['memo'];
       const amount = row['Amount'] || row['amount'] || row['Debit'] || row['Credit'];
       const type = row['Type'] || row['Transaction Type'] || row['Category'];
@@ -691,7 +713,7 @@ Return your response in the following JSON format (with ALL transactions):
       temperature: 0, // Fully deterministic for consistent JSON formatting
       top_p: 1, // Disable nucleus sampling for maximum determinism
       seed: 42, // Fixed seed for reproducible results across identical inputs
-      max_tokens: 16000, // Increased to handle large transaction sets (800+ transactions)
+      max_tokens: 32000, // Large enough for 1000+ transactions with full details
     }, {
       timeout: ANALYSIS_TIMEOUT_MS,
     });

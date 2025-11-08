@@ -222,6 +222,11 @@ export default function ProposalBuilder({
     );
   };
 
+  // Preview functionality removed
+  const handlePreviewComponent = (_id: string) => {
+    // No-op: Preview feature not implemented
+  };
+
   const handleGeneratePitch = async () => {
     setIsGeneratingPitch(true);
     try {
@@ -667,6 +672,7 @@ export default function ProposalBuilder({
                     id={component.id}
                     component={component}
                     onToggle={handleToggle}
+                    onPreview={handlePreviewComponent}
                   />
                 ))}
               </div>
