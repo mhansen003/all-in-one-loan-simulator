@@ -377,38 +377,127 @@ export default function ProposalBuilder({
         {/* Step 1: Client Information */}
         {currentStep === 1 && (
           <div className="section-card">
-            <h2>Client Information</h2>
-            <p className="section-description">Personalize the proposal for your client</p>
+            <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+              <div style={{
+                width: '80px',
+                height: '80px',
+                margin: '0 auto 1.5rem',
+                background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 8px 20px rgba(59, 130, 246, 0.3)'
+              }}>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="white" style={{ width: '40px', height: '40px' }}>
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+              </div>
+              <h2 style={{ fontSize: '2rem', marginBottom: '0.5rem', color: '#1e293b' }}>Let's Get Started</h2>
+              <p className="section-description" style={{ fontSize: '1.1rem' }}>Tell us who this proposal is for</p>
+            </div>
 
-            <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="clientName">Client Name *</label>
+            <div style={{ maxWidth: '600px', margin: '0 auto' }}>
+              <div className="form-group" style={{ marginBottom: '1.5rem' }}>
+                <label htmlFor="clientName" style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  marginBottom: '0.75rem',
+                  fontSize: '1rem',
+                  fontWeight: '600',
+                  color: '#334155'
+                }}>
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '20px', height: '20px', color: '#3b82f6' }}>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                  Client Name *
+                </label>
                 <input
                   id="clientName"
                   type="text"
                   className="form-input"
-                  placeholder="Enter client's name"
+                  placeholder="John Smith"
                   value={clientName}
                   onChange={(e) => setClientName(e.target.value)}
+                  style={{
+                    fontSize: '1.1rem',
+                    padding: '1rem',
+                    border: clientName.trim() ? '2px solid #10b981' : '2px solid #e2e8f0',
+                    transition: 'all 0.2s'
+                  }}
                 />
+                {clientName.trim() && (
+                  <div style={{
+                    marginTop: '0.5rem',
+                    color: '#10b981',
+                    fontSize: '0.9rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem'
+                  }}>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '16px', height: '16px' }}>
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    Looks good!
+                  </div>
+                )}
               </div>
 
-              <div className="form-group">
-                <label htmlFor="clientEmail">Client Email (optional)</label>
+              <div className="form-group" style={{ marginBottom: '1.5rem' }}>
+                <label htmlFor="clientEmail" style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  marginBottom: '0.75rem',
+                  fontSize: '1rem',
+                  fontWeight: '600',
+                  color: '#334155'
+                }}>
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '20px', height: '20px', color: '#3b82f6' }}>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                  Client Email
+                  <span style={{ fontSize: '0.85rem', fontWeight: '400', color: '#94a3b8' }}>(optional)</span>
+                </label>
                 <input
                   id="clientEmail"
                   type="email"
                   className="form-input"
-                  placeholder="client@example.com"
+                  placeholder="john.smith@example.com"
                   value={clientEmail}
                   onChange={(e) => setClientEmail(e.target.value)}
+                  style={{
+                    fontSize: '1.1rem',
+                    padding: '1rem',
+                    border: '2px solid #e2e8f0',
+                    transition: 'all 0.2s'
+                  }}
                 />
+                <div style={{ marginTop: '0.5rem', color: '#64748b', fontSize: '0.9rem' }}>
+                  💡 We'll use this to look up your email signature later
+                </div>
               </div>
-            </div>
 
-            {!clientName.trim() && (
-              <p className="validation-hint">* Client name is required to proceed</p>
-            )}
+              {!clientName.trim() && (
+                <div style={{
+                  marginTop: '2rem',
+                  padding: '1rem',
+                  background: '#fef3c7',
+                  border: '2px solid #fbbf24',
+                  borderRadius: '8px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.75rem',
+                  color: '#92400e'
+                }}>
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '24px', height: '24px', flexShrink: 0 }}>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                  <span>Please enter a client name to continue</span>
+                </div>
+              )}
+            </div>
           </div>
         )}
 
@@ -563,8 +652,41 @@ export default function ProposalBuilder({
         </div>
         )}
 
-        {/* Step 4: Preview & Download */}
+        {/* Step 4: Email Signature */}
         {currentStep === 4 && (
+          <div className="section-card">
+            <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+              <div style={{
+                width: '80px',
+                height: '80px',
+                margin: '0 auto 1.5rem',
+                background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 8px 20px rgba(139, 92, 246, 0.3)'
+              }}>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="white" style={{ width: '40px', height: '40px' }}>
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                </svg>
+              </div>
+              <h2 style={{ fontSize: '2rem', marginBottom: '0.5rem', color: '#1e293b' }}>Add Your Signature</h2>
+              <p className="section-description" style={{ fontSize: '1.1rem' }}>Coming soon - Email signature lookup and creation</p>
+            </div>
+
+            <div style={{ maxWidth: '600px', margin: '0 auto', padding: '2rem', background: '#f8fafc', borderRadius: '12px', border: '2px dashed #cbd5e1', textAlign: 'center' }}>
+              <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>🚧</div>
+              <h3 style={{ color: '#475569', marginBottom: '0.5rem' }}>This feature is under construction</h3>
+              <p style={{ color: '#64748b' }}>
+                Soon you'll be able to lookup your signature by email or create a new one if it doesn't exist. Your signature will be stored in Redis for future use.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Step 5: Preview & Download */}
+        {currentStep === 5 && (
           <div className="section-card">
             <h2>Preview Your Proposal</h2>
             <p className="section-description">
