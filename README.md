@@ -76,9 +76,14 @@ An intelligent look back simulation tool that helps loan officers demonstrate th
    Create `server/.env`:
    ```env
    OPENAI_API_KEY=your_openai_api_key_here
+   FRED_API_KEY=your_fred_api_key_here
    PORT=3001
    NODE_ENV=development
    ```
+
+   **API Keys Required:**
+   - **OpenAI API Key**: Get from [OpenAI Platform](https://platform.openai.com/api-keys) - Required for bank statement analysis
+   - **FRED API Key**: Get from [FRED API](https://fred.stlouisfed.org/docs/api/api_key.html) - Optional, enables automatic mortgage rate fetching (falls back to default rate if not configured)
 
 ## 🚀 Running the Application
 

@@ -90,20 +90,28 @@ export default function MortgageDetailsForm({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [baseMarketRate, rateMargin, useMarketRateCalculation]);
 
-  // Fetch current market rate (placeholder - can be connected to real API)
+  // Fetch current market rate from FRED API via backend
   const fetchMarketRate = async () => {
     setIsFetchingRate(true);
     try {
-      // Simulate API call - in production, fetch from Fred API or mortgage data source
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const response = await fetch('/api/current-mortgage-rate');
+      const result = await response.json();
 
-      // For now, use a default rate (in production, fetch real data)
-      const currentRate = 6.5; // This would come from an API
-      setBaseMarketRate(currentRate);
-      setBaseMarketRateInput(String(currentRate));
+      if (!response.ok || !result.success) {
+        throw new Error(result.message || 'Failed to fetch mortgage rate');
+      }
+
+      const { rate, date, source } = result.data;
+      console.log(`Fetched mortgage rate: ${rate}% (as of ${date} from ${source})`);
+
+      setBaseMarketRate(rate);
+      setBaseMarketRateInput(String(rate));
+
+      // Show success notification
+      alert(`✓ Updated to current rate: ${rate}%\nAs of: ${date}\nSource: ${source}`);
     } catch (error) {
       console.error('Error fetching market rate:', error);
-      alert('Unable to fetch current market rate. Please enter manually.');
+      alert(`Unable to fetch current market rate from FRED API.\n\nError: ${error instanceof Error ? error.message : 'Unknown error'}\n\nPlease enter the rate manually or try again later.`);
     } finally {
       setIsFetchingRate(false);
     }
@@ -643,17 +651,39 @@ export default function MortgageDetailsForm({
                           color: 'white',
                           border: 'none',
                           borderRadius: '0.375rem',
-                          cursor: 'pointer',
+                          cursor: isFetchingRate ? 'not-allowed' : 'pointer',
                           fontWeight: '600',
                           fontSize: '0.875rem',
-                          whiteSpace: 'nowrap'
+                          whiteSpace: 'nowrap',
+                          opacity: isFetchingRate ? 0.6 : 1,
+                          transition: 'opacity 0.2s'
                         }}
                       >
                         {isFetchingRate ? 'Fetching...' : 'Fetch Current Rate'}
                       </button>
+                      <span
+                        title="Fetches the current 30-year fixed mortgage rate from the Federal Reserve Economic Data (FRED) API. This rate updates weekly and represents the national average. Click 'Fetch Current Rate' to get the latest data automatically."
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          width: '20px',
+                          height: '20px',
+                          marginLeft: '0.5rem',
+                          background: '#e5e7eb',
+                          color: '#6b7280',
+                          borderRadius: '50%',
+                          fontSize: '0.75rem',
+                          fontWeight: 'bold',
+                          cursor: 'help',
+                          userSelect: 'none'
+                        }}
+                      >
+                        i
+                      </span>
                     </div>
                     <span className="form-help-text">
-                      Current 30-year fixed mortgage rate
+                      Current 30-year fixed mortgage rate from FRED
                     </span>
                   </div>
 

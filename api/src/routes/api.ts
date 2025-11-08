@@ -516,4 +516,25 @@ Write a compelling pitch that would excite ${clientName} about this opportunity.
   }
 });
 
+// Get current mortgage rate from FRED API
+router.get('/current-mortgage-rate', async (req, res) => {
+  try {
+    const { getCurrentMortgageRate } = await import('../services/fred-api-service.js');
+    const rateData = await getCurrentMortgageRate();
+
+    res.json({
+      success: true,
+      data: rateData,
+      message: 'Current mortgage rate fetched successfully',
+    });
+  } catch (error: any) {
+    console.error('Error fetching current mortgage rate:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Rate fetch failed',
+      message: error.message || 'Failed to fetch current mortgage rate',
+    });
+  }
+});
+
 export default router;
