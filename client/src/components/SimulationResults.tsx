@@ -9,9 +9,10 @@ interface SimulationResultsProps {
   onReset: () => void;
   onGenerateReport?: () => void;
   onCreateProposal?: () => void;
+  onBackToCFA?: () => void;
 }
 
-type TabView = 'results' | 'paydown' | 'charts' | 'duplicates';
+type TabView = 'results' | 'paydown' | 'charts';
 type PaydownView = 'monthly' | 'yearly';
 
 export default function SimulationResults({
@@ -21,6 +22,7 @@ export default function SimulationResults({
   onReset,
   onGenerateReport,
   onCreateProposal,
+  onBackToCFA,
 }: SimulationResultsProps) {
   const [activeTab, setActiveTab] = useState<TabView>('results');
   const [paydownView, setPaydownView] = useState<PaydownView>('yearly');
@@ -84,6 +86,16 @@ export default function SimulationResults({
           <h1>Simulation Results</h1>
           <p>Compare traditional mortgage vs All-In-One loan with cash flow offset</p>
         </div>
+        <button
+          className="btn-secondary"
+          onClick={onBackToCFA}
+          style={{ marginRight: '1rem' }}
+        >
+          <svg className="btn-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 17l-5-5m0 0l5-5m-5 5h12" />
+          </svg>
+          Edit Cash Flow
+        </button>
         <button
           className="btn-primary"
           onClick={onCreateProposal}
@@ -214,17 +226,6 @@ export default function SimulationResults({
             </svg>
             Charts
           </button>
-          {cashFlow && cashFlow.duplicateTransactions && cashFlow.duplicateTransactions.length > 0 && (
-            <button
-              className={`results-tab ${activeTab === 'duplicates' ? 'active' : ''}`}
-              onClick={() => setActiveTab('duplicates')}
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-              </svg>
-              Duplicates ({cashFlow.duplicateTransactions.length})
-            </button>
-          )}
         </div>
       )}
 
@@ -881,13 +882,13 @@ export default function SimulationResults({
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                           <div style={{ width: '16px', height: '16px', background: colors.interest, borderRadius: '3px' }}></div>
                           <span style={{ fontSize: '0.9rem', color: '#2d3748' }}>
-                            Interest: {interestPercent.toFixed(1)}%
+                            Interest: {formatCurrency(interest)}
                           </span>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                           <div style={{ width: '16px', height: '16px', background: colors.principal, borderRadius: '3px' }}></div>
                           <span style={{ fontSize: '0.9rem', color: '#2d3748' }}>
-                            Principal: {principalPercent.toFixed(1)}%
+                            Principal: {formatCurrency(principal)}
                           </span>
                         </div>
                       </div>
@@ -1024,133 +1025,6 @@ export default function SimulationResults({
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* Duplicates Tab */}
-      {activeTab === 'duplicates' && cashFlow && cashFlow.duplicateTransactions && (
-        <div className="duplicates-tab-content" style={{ padding: '2rem', background: 'white', borderRadius: '12px', border: '2px solid #e2e8f0' }}>
-          <h2 style={{ textAlign: 'center', marginBottom: '1rem', color: '#1e293b' }}>🔍 Duplicate Transactions Excluded</h2>
-          <p style={{ textAlign: 'center', color: '#64748b', marginBottom: '2rem', fontSize: '0.95rem' }}>
-            These transactions were automatically detected and excluded from the analysis to prevent double-counting across multiple uploaded files.
-          </p>
-
-          {/* Summary Banner */}
-          <div style={{
-            padding: '1.5rem',
-            background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
-            border: '2px solid #fbbf24',
-            borderRadius: '12px',
-            marginBottom: '2rem',
-            textAlign: 'center'
-          }}>
-            <div style={{ fontSize: '1rem', color: '#92400e', fontWeight: '600', marginBottom: '0.5rem' }}>
-              ⚠️ {cashFlow.duplicateTransactions.length} Duplicate Transaction{cashFlow.duplicateTransactions.length !== 1 ? 's' : ''} Found
-            </div>
-            <div style={{ fontSize: '0.9rem', color: '#b45309' }}>
-              These transactions appeared in multiple files and were excluded to ensure accurate calculations
-            </div>
-          </div>
-
-          {/* Duplicates Table */}
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{
-              width: '100%',
-              borderCollapse: 'collapse',
-              fontSize: '0.9rem'
-            }}>
-              <thead>
-                <tr style={{ background: '#1e293b', color: 'white' }}>
-                  <th style={{ padding: '1rem', textAlign: 'left', borderBottom: '2px solid #cbd5e1' }}>Date</th>
-                  <th style={{ padding: '1rem', textAlign: 'left', borderBottom: '2px solid #cbd5e1' }}>Description</th>
-                  <th style={{ padding: '1rem', textAlign: 'right', borderBottom: '2px solid #cbd5e1' }}>Amount</th>
-                  <th style={{ padding: '1rem', textAlign: 'center', borderBottom: '2px solid #cbd5e1' }}>Category</th>
-                  <th style={{ padding: '1rem', textAlign: 'center', borderBottom: '2px solid #cbd5e1' }}>Source File</th>
-                </tr>
-              </thead>
-              <tbody>
-                {cashFlow.duplicateTransactions.map((transaction, index) => {
-                  const date = new Date(transaction.date);
-                  const formattedDate = isNaN(date.getTime()) ? transaction.date : date.toLocaleDateString('en-US', {
-                    month: 'short',
-                    day: 'numeric',
-                    year: 'numeric'
-                  });
-
-                  const getCategoryColor = (category: string) => {
-                    switch (category) {
-                      case 'income': return { bg: '#d1fae5', text: '#065f46', border: '#10b981' };
-                      case 'expense': return { bg: '#fee2e2', text: '#991b1b', border: '#ef4444' };
-                      case 'housing': return { bg: '#dbeafe', text: '#1e40af', border: '#3b82f6' };
-                      case 'one-time': return { bg: '#e0e7ff', text: '#3730a3', border: '#6366f1' };
-                      default: return { bg: '#f3f4f6', text: '#374151', border: '#9ca3af' };
-                    }
-                  };
-
-                  const categoryColors = getCategoryColor(transaction.category);
-
-                  return (
-                    <tr key={index} style={{
-                      background: index % 2 === 0 ? '#f8fafc' : 'white',
-                      borderBottom: '1px solid #e2e8f0'
-                    }}>
-                      <td style={{ padding: '0.75rem', fontWeight: '600', color: '#334155' }}>
-                        {formattedDate}
-                      </td>
-                      <td style={{ padding: '0.75rem', color: '#475569' }}>
-                        {transaction.description}
-                      </td>
-                      <td style={{
-                        padding: '0.75rem',
-                        textAlign: 'right',
-                        fontWeight: '600',
-                        color: transaction.category === 'income' ? '#059669' : '#dc2626'
-                      }}>
-                        {transaction.category === 'income' ? '+' : '-'}
-                        {formatCurrency(Math.abs(transaction.amount))}
-                      </td>
-                      <td style={{ padding: '0.75rem', textAlign: 'center' }}>
-                        <span style={{
-                          display: 'inline-block',
-                          padding: '0.25rem 0.75rem',
-                          background: categoryColors.bg,
-                          color: categoryColors.text,
-                          border: `1px solid ${categoryColors.border}`,
-                          borderRadius: '9999px',
-                          fontSize: '0.75rem',
-                          fontWeight: '600',
-                          textTransform: 'capitalize'
-                        }}>
-                          {transaction.category}
-                        </span>
-                      </td>
-                      <td style={{ padding: '0.75rem', textAlign: 'center', color: '#64748b', fontSize: '0.85rem' }}>
-                        {transaction.sourceFile || 'Unknown'}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Info Footer */}
-          <div style={{
-            marginTop: '2rem',
-            padding: '1rem',
-            background: '#eff6ff',
-            borderRadius: '8px',
-            border: '1px solid #3b82f6',
-            fontSize: '0.9rem',
-            color: '#1e40af'
-          }}>
-            <div style={{ fontWeight: '600', marginBottom: '0.5rem' }}>ℹ️ How Deduplication Works</div>
-            <ul style={{ margin: 0, paddingLeft: '1.5rem', lineHeight: 1.6 }}>
-              <li>Transactions are compared based on date, amount, and description</li>
-              <li>When identical transactions appear in multiple files, only the first occurrence is kept</li>
-              <li>This ensures accurate cash flow calculations when uploading overlapping statements</li>
-            </ul>
           </div>
         </div>
       )}

@@ -156,6 +156,10 @@
   color: #48bb78;
 }
 
+.card-value.negative {
+  color: #ef4444;
+}
+
 .card-description {
   color: #a0aec0;
   font-size: 0.85rem;

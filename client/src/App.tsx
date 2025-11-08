@@ -335,6 +335,7 @@ function App() {
                 cashFlow={cashFlowAnalysis || undefined}
                 onReset={handleReset}
                 onCreateProposal={() => setStep('proposal-builder')}
+                onBackToCFA={() => setStep('cash-flow-review')}
               />
             </div>
           )}

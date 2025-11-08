@@ -1128,6 +1128,39 @@ Return COMPACT JSON (minimize whitespace, omit empty flagReason for unflagged it
     // Deduplicate transactions across files
     const { uniqueTransactions, duplicateTransactions } = deduplicateTransactions(result.transactions || []);
 
+    // Calculate dynamic confidence score based on data quality
+    const calculateDynamicConfidence = (): number => {
+      let confidenceScore = result.confidence || 0.7; // Start with AI's confidence
+
+      // Factor 1: Transaction count (more transactions = higher confidence)
+      const transactionCountScore = Math.min(uniqueTransactions.length / 100, 1.0); // Cap at 100 transactions
+
+      // Factor 2: Flagged transaction ratio (fewer flagged = higher confidence)
+      const flaggedRatio = flaggedTransactions.length / Math.max(uniqueTransactions.length, 1);
+      const flaggedScore = 1.0 - Math.min(flaggedRatio * 0.5, 0.3); // Reduce confidence if >60% flagged
+
+      // Factor 3: Data completeness (multiple months = higher confidence)
+      const monthCount = result.monthlyBreakdown?.length || 1;
+      const monthScore = Math.min(monthCount / 3, 1.0); // Cap at 3 months
+
+      // Factor 4: Income consistency (regular income transactions = higher confidence)
+      const incomeTransactions = uniqueTransactions.filter(t => t.category === 'income');
+      const incomeConsistencyScore = incomeTransactions.length >= monthCount ? 1.0 : 0.7;
+
+      // Weighted average (AI confidence weighted most heavily)
+      const finalConfidence = (
+        confidenceScore * 0.4 +           // 40% AI confidence
+        transactionCountScore * 0.2 +     // 20% transaction count
+        flaggedScore * 0.2 +               // 20% flagged ratio
+        monthScore * 0.1 +                 // 10% month count
+        incomeConsistencyScore * 0.1       // 10% income consistency
+      );
+
+      return Math.min(Math.max(finalConfidence, 0.3), 0.99); // Clamp between 30% and 99%
+    };
+
+    const dynamicConfidence = calculateDynamicConfidence();
+
     console.log('📈 Analysis Results:');
     console.log(`  ✓ Total transactions: ${result.transactions?.length || 0}`);
     console.log(`  ✓ Unique transactions: ${uniqueTransactions.length}`);
@@ -1136,7 +1169,7 @@ Return COMPACT JSON (minimize whitespace, omit empty flagReason for unflagged it
     console.log(`  ✓ Monthly deposits: $${result.totalIncome || 0}`);
     console.log(`  ✓ Monthly expenses: $${result.totalExpenses || 0}`);
     console.log(`  ✓ Net cash flow: $${result.netCashFlow || 0}`);
-    console.log(`  ✓ Confidence: ${((result.confidence || 0) * 100).toFixed(0)}%`);
+    console.log(`  ✓ Confidence: ${(dynamicConfidence * 100).toFixed(0)}% (AI: ${((result.confidence || 0) * 100).toFixed(0)}%)`);
 
     return {
       totalIncome: result.totalIncome || 0,           // Sum of all income (frontend divides by months)
@@ -1147,7 +1180,7 @@ Return COMPACT JSON (minimize whitespace, omit empty flagReason for unflagged it
       monthlyBreakdown: result.monthlyBreakdown || [],
       flaggedTransactions,
       duplicateTransactions,
-      confidence: result.confidence || 0.7,
+      confidence: dynamicConfidence,
     };
   } catch (error) {
     console.error('Error in analyzeStatements:', error);

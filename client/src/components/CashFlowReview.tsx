@@ -31,6 +31,7 @@ export default function CashFlowReview({
   const [depositFrequency, setDepositFrequency] = useState<'weekly' | 'biweekly' | 'semi-monthly' | 'monthly'>(
     (cashFlow.depositFrequency as 'weekly' | 'biweekly' | 'semi-monthly' | 'monthly') || 'monthly'
   );
+  const aiRecommendedFrequency = (cashFlow.depositFrequency as 'weekly' | 'biweekly' | 'semi-monthly' | 'monthly') || 'monthly';
 
   // Calculate actual months from transaction data
   const calculateActualMonths = (transactions: Transaction[]): number => {
@@ -137,25 +138,34 @@ export default function CashFlowReview({
   }, [includedTransactions]);
 
   // Prepare scatter data for one-time items (showing ALL, not just included)
-  const oneTimeScatterData = useMemo(() => {
-    return transactions
+  const { oneTimeIncomeData, oneTimeExpenseData } = useMemo(() => {
+    const incomeData: any[] = [];
+    const expenseData: any[] = [];
+
+    transactions
       .filter(t => t.category === 'one-time')
-      .map(transaction => {
+      .forEach(transaction => {
         const date = new Date(transaction.date);
         const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
         const monthLabel = new Date(monthKey + '-01').toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
         const amount = Math.abs(transaction.amount);
         const isIncome = transaction.amount > 0;
 
-        return {
-          month: monthKey,
-          monthLabel,
+        const dataPoint = {
+          monthLabel, // Must match X-axis key
           amount,
-          isIncome,
           description: transaction.description,
           excluded: transaction.excluded
         };
+
+        if (isIncome) {
+          incomeData.push(dataPoint);
+        } else {
+          expenseData.push(dataPoint);
+        }
       });
+
+    return { oneTimeIncomeData: incomeData, oneTimeExpenseData: expenseData };
   }, [transactions]);
 
   const formatCurrency = (amount: number): string => {
@@ -317,13 +327,51 @@ export default function CashFlowReview({
               </div>
             </div>
 
-            <div className="confidence-banner" style={{ borderColor: temperatureRating.color, marginBottom: 0 }}>
-              <div className="confidence-icon" style={{ background: temperatureRating.color }}>
-                <span style={{ fontSize: '1.5rem' }}>{temperatureRating.icon}</span>
+            <div className="confidence-banner" style={{ borderColor: temperatureRating.color, marginBottom: 0, flexDirection: 'column' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.75rem' }}>
+                <div className="confidence-icon" style={{ background: temperatureRating.color }}>
+                  <span style={{ fontSize: '1.5rem' }}>{temperatureRating.icon}</span>
+                </div>
+                <div>
+                  <strong>{temperatureRating.rating}</strong>
+                  <p style={{ margin: 0 }}>AIO Loan Suitability</p>
+                </div>
               </div>
-              <div>
-                <strong>{temperatureRating.rating}</strong>
-                <p>AIO Loan Suitability</p>
+              {/* Sustainability Gauge */}
+              <div style={{ width: '100%' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', marginBottom: '0.5rem', color: '#64748b' }}>
+                  <span>Not Suitable</span>
+                  <span>Excellent</span>
+                </div>
+                <div style={{
+                  position: 'relative',
+                  width: '100%',
+                  height: '12px',
+                  background: 'linear-gradient(to right, #ef4444 0%, #eab308 33%, #48bb78 66%, #10b981 100%)',
+                  borderRadius: '9999px',
+                  overflow: 'hidden'
+                }}>
+                  {/* Marker */}
+                  <div style={{
+                    position: 'absolute',
+                    left: `${Math.min(Math.max((displayNetCashFlow / 3000) * 100, 0), 100)}%`,
+                    top: '-4px',
+                    width: '20px',
+                    height: '20px',
+                    background: 'white',
+                    border: `3px solid ${temperatureRating.color}`,
+                    borderRadius: '50%',
+                    transform: 'translateX(-50%)',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                    zIndex: 10
+                  }} />
+                </div>
+                <div style={{ fontSize: '0.75rem', marginTop: '0.5rem', textAlign: 'center', color: '#475569' }}>
+                  ${formatCurrency(displayNetCashFlow)}/month cash flow
+                  <span style={{ color: '#94a3b8', marginLeft: '0.5rem' }}>
+                    ({Math.round((displayNetCashFlow / 3000) * 100)}% of optimal)
+                  </span>
+                </div>
               </div>
             </div>
           </div>
@@ -393,30 +441,98 @@ export default function CashFlowReview({
               <div
                 className={`frequency-option ${depositFrequency === 'weekly' ? 'active' : ''}`}
                 onClick={() => setDepositFrequency('weekly')}
+                style={{ position: 'relative' }}
               >
                 <div className="frequency-label">Weekly</div>
                 <div className="frequency-description">Every 7 days</div>
+                {aiRecommendedFrequency === 'weekly' && (
+                  <span style={{
+                    position: 'absolute',
+                    top: '8px',
+                    right: '8px',
+                    background: '#10b981',
+                    color: 'white',
+                    fontSize: '0.65rem',
+                    fontWeight: '600',
+                    padding: '2px 8px',
+                    borderRadius: '9999px',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                  }}>
+                    ✨ AI
+                  </span>
+                )}
               </div>
               <div
                 className={`frequency-option ${depositFrequency === 'biweekly' ? 'active' : ''}`}
                 onClick={() => setDepositFrequency('biweekly')}
+                style={{ position: 'relative' }}
               >
                 <div className="frequency-label">Biweekly</div>
                 <div className="frequency-description">Every 14 days</div>
+                {aiRecommendedFrequency === 'biweekly' && (
+                  <span style={{
+                    position: 'absolute',
+                    top: '8px',
+                    right: '8px',
+                    background: '#10b981',
+                    color: 'white',
+                    fontSize: '0.65rem',
+                    fontWeight: '600',
+                    padding: '2px 8px',
+                    borderRadius: '9999px',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                  }}>
+                    ✨ AI
+                  </span>
+                )}
               </div>
               <div
                 className={`frequency-option ${depositFrequency === 'semi-monthly' ? 'active' : ''}`}
                 onClick={() => setDepositFrequency('semi-monthly')}
+                style={{ position: 'relative' }}
               >
                 <div className="frequency-label">Semi-Monthly</div>
                 <div className="frequency-description">Twice per month</div>
+                {aiRecommendedFrequency === 'semi-monthly' && (
+                  <span style={{
+                    position: 'absolute',
+                    top: '8px',
+                    right: '8px',
+                    background: '#10b981',
+                    color: 'white',
+                    fontSize: '0.65rem',
+                    fontWeight: '600',
+                    padding: '2px 8px',
+                    borderRadius: '9999px',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                  }}>
+                    ✨ AI
+                  </span>
+                )}
               </div>
               <div
                 className={`frequency-option ${depositFrequency === 'monthly' ? 'active' : ''}`}
                 onClick={() => setDepositFrequency('monthly')}
+                style={{ position: 'relative' }}
               >
                 <div className="frequency-label">Monthly</div>
                 <div className="frequency-description">Once per month</div>
+                {aiRecommendedFrequency === 'monthly' && (
+                  <span style={{
+                    position: 'absolute',
+                    top: '8px',
+                    right: '8px',
+                    background: '#10b981',
+                    color: 'white',
+                    fontSize: '0.65rem',
+                    fontWeight: '600',
+                    padding: '2px 8px',
+                    borderRadius: '9999px',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                  }}>
+                    ✨ AI
+                  </span>
+                )}
               </div>
             </div>
           </div>
@@ -454,12 +570,12 @@ export default function CashFlowReview({
                 >
                   <defs>
                     <linearGradient id="colorIncoming" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#48bb78" stopOpacity={0.8}/>
-                      <stop offset="95%" stopColor="#48bb78" stopOpacity={0.1}/>
+                      <stop offset="5%" stopColor="#93c5fd" stopOpacity={0.6}/>
+                      <stop offset="95%" stopColor="#93c5fd" stopOpacity={0.05}/>
                     </linearGradient>
                     <linearGradient id="colorOutgoing" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#ed8936" stopOpacity={0.8}/>
-                      <stop offset="95%" stopColor="#ed8936" stopOpacity={0.1}/>
+                      <stop offset="5%" stopColor="#fbbf24" stopOpacity={0.6}/>
+                      <stop offset="95%" stopColor="#fbbf24" stopOpacity={0.05}/>
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
@@ -494,32 +610,34 @@ export default function CashFlowReview({
                   <Area
                     type="monotone"
                     dataKey="incoming"
-                    stroke="#48bb78"
+                    stroke="#60a5fa"
                     strokeWidth={2}
                     fillOpacity={1}
                     fill="url(#colorIncoming)"
-                    name="Incoming Cash"
+                    name="Regular Income"
                   />
                   <Area
                     type="monotone"
                     dataKey="outgoing"
-                    stroke="#ed8936"
+                    stroke="#fbbf24"
                     strokeWidth={2}
                     fillOpacity={1}
                     fill="url(#colorOutgoing)"
-                    name="Outgoing Cash"
+                    name="Regular Expenses"
                   />
                   <Scatter
-                    data={oneTimeScatterData.filter(d => d.isIncome)}
-                    fill="#22c55e"
+                    data={oneTimeIncomeData}
+                    fill="#10b981"
                     name="One-Time Income"
                     shape="circle"
+                    r={6}
                   />
                   <Scatter
-                    data={oneTimeScatterData.filter(d => !d.isIncome)}
+                    data={oneTimeExpenseData}
                     fill="#ef4444"
                     name="One-Time Expense"
                     shape="circle"
+                    r={6}
                   />
                 </ComposedChart>
               </ResponsiveContainer>

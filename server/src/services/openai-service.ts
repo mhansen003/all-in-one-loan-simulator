@@ -421,6 +421,22 @@ FLAG ANOMALIES:
 MONTHLY BREAKDOWN:
 - Group by month (YYYY-MM) and calculate income, expenses, net cash flow, transaction count
 
+DEPOSIT FREQUENCY DETECTION (CRITICAL FOR AIO LOAN CALCULATION):
+Analyze the INCOME transactions to determine the deposit pattern:
+- "weekly": Deposits every 7 days (e.g., every Monday)
+- "biweekly": Deposits every 14 days (e.g., every other Friday)
+- "semi-monthly": Deposits twice per month (e.g., 1st and 15th, or 10th and 25th)
+- "monthly": Deposits once per month (e.g., 1st of month or last day)
+
+Look for:
+1. Regular income deposits (payroll, salary, etc.)
+2. Count days between consecutive deposits
+3. If deposits are 6-8 days apart consistently → "weekly"
+4. If deposits are 13-15 days apart consistently → "biweekly"
+5. If deposits are 14-16 days apart AND occur ~2x per month → "semi-monthly"
+6. If deposits are 28-32 days apart consistently → "monthly"
+7. If pattern is unclear or mixed → "monthly" (default)
+
 CRITICAL RULES:
 ✓ PRESERVE EVERY TRANSACTION - Output count must match input count (${chunkData.length} transactions)
 ✓ USE EXACT DATES/AMOUNTS/DESCRIPTIONS from input
@@ -438,7 +454,8 @@ Return COMPACT JSON (omit flagReason when flagged=false):
   "totalIncome": 5000.00,
   "totalExpenses": 2500.00,
   "netCashFlow": 2500.00,
-  "confidence": 0.85
+  "confidence": 0.85,
+  "depositFrequency": "biweekly"
 }`;
 
   const CHUNK_TIMEOUT_MS = 90000; // 90 seconds per chunk
