@@ -74,7 +74,7 @@ router.get('/test-ai', async (req, res) => {
           apiKey: process.env.OPENAI_API_KEY,
         });
 
-    const MODEL = USE_OPENROUTER ? 'anthropic/claude-sonnet-4.5' : 'gpt-4o';
+    const MODEL = USE_OPENROUTER ? 'google/gemini-2.0-flash-exp' : 'gpt-4o';
 
     console.log('   📡 Endpoint:', openai.baseURL || 'https://api.openai.com/v1');
     console.log('   🔑 API Key configured:', USE_OPENROUTER ? !!process.env.OPENROUTER_API_KEY : !!process.env.OPENAI_API_KEY);
@@ -443,7 +443,7 @@ router.post('/generate-pitch', async (req, res) => {
           apiKey: process.env.OPENAI_API_KEY,
         });
 
-    const MODEL = USE_OPENROUTER ? 'anthropic/claude-sonnet-4.5' : 'gpt-4o';
+    const MODEL = USE_OPENROUTER ? 'google/gemini-2.0-flash-exp' : 'gpt-4o';
 
     // Build context for the AI
     const formatCurrency = (amount: number) =>
