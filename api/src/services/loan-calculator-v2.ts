@@ -87,7 +87,7 @@ function generateCalendar(startDate: Date, totalMonths: number): DayEntry[] {
 function calculateDailyDeposits(
   day: DayEntry,
   monthlyIncome: number,
-  depositFrequency: 'monthly' | 'biweekly' | 'weekly'
+  depositFrequency: 'weekly' | 'biweekly' | 'semi-monthly' | 'monthly' | 'quarterly' | 'semi-annual' | 'annual'
 ): number {
   switch (depositFrequency) {
     case 'weekly':
@@ -98,6 +98,22 @@ function calculateDailyDeposits(
       // Deposit every other Friday
       // For simulation, deposit on 1st and 15th of month
       return (day.dayOfMonth === 1 || day.dayOfMonth === 15) ? monthlyIncome / 2 : 0;
+
+    case 'semi-monthly':
+      // Deposit on 1st and 15th of month
+      return (day.dayOfMonth === 1 || day.dayOfMonth === 15) ? monthlyIncome / 2 : 0;
+
+    case 'quarterly':
+      // Deposit quarterly (1st of Jan, Apr, Jul, Oct)
+      return (day.dayOfMonth === 1 && [0, 3, 6, 9].includes(day.date.getMonth())) ? monthlyIncome * 3 : 0;
+
+    case 'semi-annual':
+      // Deposit semi-annually (1st of Jan, Jul)
+      return (day.dayOfMonth === 1 && [0, 6].includes(day.date.getMonth())) ? monthlyIncome * 6 : 0;
+
+    case 'annual':
+      // Deposit annually (1st of Jan)
+      return (day.dayOfMonth === 1 && day.date.getMonth() === 0) ? monthlyIncome * 12 : 0;
 
     case 'monthly':
     default:
