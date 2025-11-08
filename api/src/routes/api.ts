@@ -212,8 +212,52 @@ router.post('/simulate-loan', async (req, res) => {
   }
 });
 
-// Note: PDF generation is handled client-side in ProposalBuilder.tsx using html2pdf.js
-// This endpoint is not used and can be removed or implemented for server-side PDF generation if needed
+// Generate PDF Proposal (server-side using Puppeteer)
+router.post('/generate-pdf', async (req, res) => {
+  try {
+    const { simulation, mortgageDetails, clientName, loanOfficerName, loanOfficerEmail, aiPitch, components } = req.body;
+
+    if (!simulation || !mortgageDetails || !components) {
+      return res.status(400).json({
+        error: 'Missing required data',
+        message: 'Please provide simulation, mortgageDetails, and components',
+      });
+    }
+
+    console.log('📄 Generating PDF proposal...');
+
+    const { generateProposalPDF } = await import('../services/pdf-generator.js');
+
+    const pdfBuffer = await generateProposalPDF({
+      simulation,
+      mortgageDetails,
+      clientName,
+      loanOfficerName,
+      loanOfficerEmail,
+      aiPitch,
+      components,
+    });
+
+    // Generate filename
+    const dateStr = new Date().toISOString().split('T')[0];
+    const safeClientName = (clientName || 'Client').replace(/[^a-zA-Z0-9]/g, '-');
+    const filename = `${safeClientName}-AIO-Proposal-${dateStr}.pdf`;
+
+    // Set headers for file download
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.setHeader('Content-Length', pdfBuffer.length);
+
+    // Send the PDF
+    res.send(pdfBuffer);
+  } catch (error: any) {
+    console.error('Error generating PDF:', error);
+    res.status(500).json({
+      error: 'PDF generation failed',
+      message: error.message || 'Failed to generate PDF proposal',
+    });
+  }
+});
 
 // Get detailed amortization schedule
 router.post('/amortization-schedule', async (req, res) => {

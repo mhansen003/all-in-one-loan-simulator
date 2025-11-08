@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import {
   DndContext,
   closestCenter,
@@ -16,7 +16,6 @@ import {
   useSortable,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import html2pdf from 'html2pdf.js';
 import type { SimulationResult, MortgageDetails, CashFlowAnalysis } from '../types';
 import PitchOptionsModal, { PitchOptions } from './PitchOptionsModal';
 import { CMG_BRANDING } from '../constants/cmgBranding';
@@ -175,9 +174,6 @@ export default function ProposalBuilder({
   const [signatureFacebook, setSignatureFacebook] = useState('');
   const [signatureTwitter, setSignatureTwitter] = useState('');
   const [signatureInstagram, setSignatureInstagram] = useState('');
-
-  // PDF content ref
-  const pdfContentRef = useRef<HTMLDivElement>(null);
 
   // Available components (pitch is mandatory and always at top)
   const [components, setComponents] = useState<ProposalComponent[]>([
@@ -417,58 +413,60 @@ export default function ProposalBuilder({
   };
 
   const handleGeneratePDF = async () => {
-    if (!pdfContentRef.current) return;
-
     setIsGeneratingPDF(true);
 
     try {
-      // Generate filename with date for better organization
-      const dateStr = new Date().toISOString().split('T')[0];
-      const safeClientName = (clientName || 'Client').replace(/[^a-zA-Z0-9]/g, '-');
+      console.log('📄 Requesting PDF from server...');
 
-      // Temporarily move content into view for rendering
-      const element = pdfContentRef.current;
-      element.style.left = '0';
-      element.style.top = '0';
-
-      // Wait a brief moment for layout/rendering
-      await new Promise(resolve => setTimeout(resolve, 100));
-
-      const opt = {
-        margin: [0.5, 0.5, 0.5, 0.5] as [number, number, number, number], // top, right, bottom, left
-        filename: `${safeClientName}-AIO-Proposal-${dateStr}.pdf`,
-        image: { type: 'jpeg' as const, quality: 0.98 },
-        html2canvas: {
-          scale: 2,              // Good balance of quality and speed
-          useCORS: true,
-          letterRendering: true,
-          logging: false,        // Reduce console noise
-          backgroundColor: '#ffffff'
-        },
-        jsPDF: {
-          unit: 'in',
-          format: 'letter',
-          orientation: 'portrait' as const,
-          compress: true         // Smaller file size
-        },
-        pagebreak: {
-          mode: ['avoid-all', 'css', 'legacy'] // Better page breaks
-        }
+      // Prepare data for server-side PDF generation
+      const pdfData = {
+        simulation,
+        mortgageDetails,
+        clientName,
+        loanOfficerName: signatureName,
+        loanOfficerEmail: signatureEmail,
+        aiPitch,
+        components: components.map(c => ({ id: c.id, enabled: c.enabled })),
       };
 
-      console.log('📄 Generating PDF proposal...');
-      await html2pdf().set(opt).from(element).save();
-      console.log('✅ PDF generated successfully!');
+      // Call the server endpoint
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/generate-pdf`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(pdfData),
+      });
 
-      // Move content back off-screen
-      element.style.left = '-9999px';
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
+        throw new Error(errorData.message || `Server error: ${response.status}`);
+      }
+
+      // Get the PDF blob
+      const blob = await response.blob();
+
+      // Generate filename
+      const dateStr = new Date().toISOString().split('T')[0];
+      const safeClientName = (clientName || 'Client').replace(/[^a-zA-Z0-9]/g, '-');
+      const filename = `${safeClientName}-AIO-Proposal-${dateStr}.pdf`;
+
+      // Create download link and trigger download
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+
+      // Cleanup
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      console.log('✅ PDF generated and downloaded successfully!');
     } catch (error) {
       console.error('❌ Error generating PDF:', error);
       alert('Failed to generate PDF. Please try again.\n\nError: ' + (error instanceof Error ? error.message : 'Unknown error'));
-      // Make sure to move content back even on error
-      if (pdfContentRef.current) {
-        pdfContentRef.current.style.left = '-9999px';
-      }
     } finally {
       setIsGeneratingPDF(false);
     }
@@ -1772,284 +1770,6 @@ export default function ProposalBuilder({
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
             </button>
-          )}
-        </div>
-      </div>
-
-      {/* Hidden PDF Content */}
-      <div ref={pdfContentRef} className="pdf-content" style={{ position: 'absolute', left: '-9999px', width: '8.5in' }}>
-        <div style={{ padding: '0.75in', fontFamily: 'Arial, sans-serif', color: '#333' }}>
-          {/* CMG Header */}
-          <div style={{ textAlign: 'center', marginBottom: '2rem', borderBottom: '3px solid #9bc53d', paddingBottom: '1rem' }}>
-            <img src={CMG_BRANDING.logo.url} alt={CMG_BRANDING.logo.alt} style={{ maxWidth: '180px', marginBottom: '1rem' }} />
-            <h1 style={{ margin: 0, fontSize: '2rem', color: '#2d3748' }}>All-In-One Loan Proposal</h1>
-            {clientName && <h2 style={{ margin: '0.5rem 0 0 0', fontSize: '1.5rem', color: '#718096', fontWeight: 'normal' }}>Prepared for {clientName}</h2>}
-            <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.9rem', color: '#a0aec0' }}>{new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
-          </div>
-
-          {/* AI Pitch */}
-          {aiPitch && (
-            <div style={{ marginBottom: '2rem', padding: '1.5rem', background: '#f0f9ff', border: '2px solid #9bc53d', borderRadius: '8px' }}>
-              <h3 style={{ margin: '0 0 1rem 0', color: '#2d3748', fontSize: '1.25rem' }}>Why the All-In-One Loan is Right for You</h3>
-              <div style={{ whiteSpace: 'pre-wrap', lineHeight: '1.6', fontSize: '0.95rem' }}>{aiPitch}</div>
-            </div>
-          )}
-
-          {/* Savings Highlight */}
-          {components.find((c) => c.id === 'savings-highlight')?.enabled && (
-            <div style={{ marginBottom: '2rem', padding: '2rem', background: 'linear-gradient(135deg, #9bc53d 0%, #8ab62f 100%)', borderRadius: '12px', color: 'white', textAlign: 'center' }}>
-              <div style={{ fontSize: '1rem', fontWeight: 600, opacity: 0.9, marginBottom: '0.5rem', textTransform: 'uppercase' }}>Total Interest Savings</div>
-              <div style={{ fontSize: '3rem', fontWeight: 700 }}>{formatCurrency(simulation.comparison.interestSavings)}</div>
-              <div style={{ display: 'flex', justifyContent: 'center', gap: '3rem', marginTop: '1.5rem' }}>
-                <div>
-                  <div style={{ fontSize: '0.85rem', opacity: 0.9 }}>Time Saved</div>
-                  <div style={{ fontSize: '1.4rem', fontWeight: 700 }}>{yearsMonthsFromMonths(simulation.comparison.timeSavedMonths)}</div>
-                </div>
-                <div style={{ borderLeft: '2px solid rgba(255,255,255,0.3)', paddingLeft: '3rem' }}>
-                  <div style={{ fontSize: '0.85rem', opacity: 0.9 }}>Interest Reduction</div>
-                  <div style={{ fontSize: '1.4rem', fontWeight: 700 }}>{simulation.comparison.percentageSavings.toFixed(1)}%</div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Comparison Cards */}
-          {components.find((c) => c.id === 'comparison-cards')?.enabled && (
-            <div style={{ marginBottom: '2rem' }}>
-              <h3 style={{ fontSize: '1.5rem', marginBottom: '1.5rem', textAlign: 'center', color: '#2d3748' }}>Side-by-Side Comparison</h3>
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead>
-                  <tr style={{ background: '#f7fafc' }}>
-                    <th style={{ padding: '1rem', border: '2px solid #e2e8f0', textAlign: 'left' }}>Metric</th>
-                    <th style={{ padding: '1rem', border: '2px solid #e2e8f0', textAlign: 'left' }}>Traditional Mortgage</th>
-                    <th style={{ padding: '1rem', border: '2px solid #e2e8f0', textAlign: 'left', background: '#f0f9ff' }}>All-In-One Loan</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0', fontWeight: 600 }}>Monthly Payment</td>
-                    <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0' }}>{formatCurrency(simulation.traditionalLoan.monthlyPayment)}</td>
-                    <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0' }}>{formatCurrency(simulation.allInOneLoan.monthlyPayment)}</td>
-                  </tr>
-                  <tr>
-                    <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0', fontWeight: 600 }}>Total Interest Paid</td>
-                    <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0' }}>{formatCurrency(simulation.traditionalLoan.totalInterestPaid)}</td>
-                    <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0', background: '#f0f8e9', color: '#48bb78', fontWeight: 700 }}>{formatCurrency(simulation.allInOneLoan.totalInterestPaid)}</td>
-                  </tr>
-                  <tr>
-                    <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0', fontWeight: 600 }}>Payoff Timeline</td>
-                    <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0' }}>{yearsMonthsFromMonths(simulation.traditionalLoan.payoffMonths)}</td>
-                    <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0', background: '#f0f8e9', color: '#48bb78', fontWeight: 700 }}>{yearsMonthsFromMonths(simulation.allInOneLoan.payoffMonths)}</td>
-                  </tr>
-                  <tr>
-                    <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0', fontWeight: 600 }}>Payoff Date</td>
-                    <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0' }}>{new Date(simulation.traditionalLoan.payoffDate).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</td>
-                    <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0', background: '#f0f8e9', color: '#48bb78', fontWeight: 700 }}>{new Date(simulation.allInOneLoan.payoffDate).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          )}
-
-          {/* How It Works */}
-          {components.find((c) => c.id === 'how-it-works')?.enabled && (
-            <div style={{ marginBottom: '2rem' }}>
-              <h3 style={{ fontSize: '1.5rem', marginBottom: '1.5rem', textAlign: 'center', color: '#2d3748' }}>How the All-In-One Loan Works</h3>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
-                <div style={{ padding: '1.5rem', border: '2px solid #e2e8f0', borderRadius: '8px' }}>
-                  <h4 style={{ margin: '0 0 0.75rem 0', color: '#2d3748' }}>💰 Cash Flow Offset</h4>
-                  <p style={{ margin: 0, fontSize: '0.9rem', lineHeight: '1.6' }}>Your positive cash flow sits in the loan account, reducing the balance used for interest calculations. This creates massive savings over time.</p>
-                </div>
-                <div style={{ padding: '1.5rem', border: '2px solid #e2e8f0', borderRadius: '8px' }}>
-                  <h4 style={{ margin: '0 0 0.75rem 0', color: '#2d3748' }}>📈 Accelerated Payoff</h4>
-                  <p style={{ margin: 0, fontSize: '0.9rem', lineHeight: '1.6' }}>Every dollar that stays in your account works to reduce interest. You'll pay off your mortgage {yearsMonthsFromMonths(simulation.comparison.timeSavedMonths)} faster.</p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Cash Flow Analysis */}
-          {components.find((c) => c.id === 'cash-flow-details')?.enabled && (
-            <div style={{ marginBottom: '2rem' }}>
-              <h3 style={{ fontSize: '1.5rem', marginBottom: '1.5rem', textAlign: 'center', color: '#2d3748' }}>Cash Flow Analysis</h3>
-              <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '1rem' }}>
-                <thead>
-                  <tr>
-                    <th style={{ background: '#f8fafc', padding: '0.75rem 1rem', textAlign: 'left', fontWeight: 600, color: '#334155', border: '2px solid #e2e8f0' }}>Item</th>
-                    <th style={{ background: '#f8fafc', padding: '0.75rem 1rem', textAlign: 'right', fontWeight: 600, color: '#334155', border: '2px solid #e2e8f0' }}>Amount</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td style={{ padding: '0.75rem 1rem', border: '1px solid #e2e8f0', color: '#475569' }}>Monthly Income</td>
-                    <td style={{ padding: '0.75rem 1rem', border: '1px solid #e2e8f0', color: '#475569', textAlign: 'right' }}>{formatCurrency(cashFlow?.totalIncome || 0)}</td>
-                  </tr>
-                  <tr>
-                    <td style={{ padding: '0.75rem 1rem', border: '1px solid #e2e8f0', color: '#475569' }}>Monthly Expenses</td>
-                    <td style={{ padding: '0.75rem 1rem', border: '1px solid #e2e8f0', color: '#475569', textAlign: 'right' }}>{formatCurrency(cashFlow?.totalExpenses || 0)}</td>
-                  </tr>
-                  <tr style={{ background: '#f0f8e9' }}>
-                    <td style={{ padding: '0.75rem 1rem', border: '1px solid #e2e8f0', color: '#16a34a', fontWeight: 600 }}><strong>Net Monthly Cash Flow</strong></td>
-                    <td style={{ padding: '0.75rem 1rem', border: '1px solid #e2e8f0', color: '#16a34a', fontWeight: 600, textAlign: 'right' }}><strong>{formatCurrency(cashFlow?.netCashFlow || 0)}</strong></td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          )}
-
-          {/* Payoff Timeline Chart */}
-          {components.find((c) => c.id === 'amortization-chart')?.enabled && (
-            <div style={{ marginBottom: '2rem' }}>
-              <h3 style={{ fontSize: '1.5rem', marginBottom: '1.5rem', textAlign: 'center', color: '#2d3748' }}>Payoff Timeline Comparison</h3>
-              <div style={{ background: '#f7fafc', padding: '2rem', borderRadius: '12px', textAlign: 'center' }}>
-                <p style={{ marginBottom: '1rem', color: '#64748b', fontSize: '0.95rem' }}>Visual timeline showing accelerated payoff with All-In-One loan</p>
-                <div style={{ display: 'flex', gap: '2rem', justifyContent: 'center', alignItems: 'flex-end', marginTop: '1.5rem' }}>
-                  <div style={{ flex: '0 0 180px' }}>
-                    <div style={{
-                      height: '200px',
-                      background: '#3b82f6',
-                      borderRadius: '8px 8px 0 0',
-                      marginBottom: '0.75rem',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: 'white',
-                      fontWeight: 700,
-                      fontSize: '1.1rem'
-                    }}>
-                      {yearsMonthsFromMonths(simulation.traditionalLoan.payoffMonths)}
-                    </div>
-                    <div style={{ fontWeight: 600, color: '#475569', fontSize: '1rem' }}>Traditional Mortgage</div>
-                  </div>
-                  <div style={{ flex: '0 0 180px' }}>
-                    <div style={{
-                      height: `${(simulation.allInOneLoan.payoffMonths / simulation.traditionalLoan.payoffMonths) * 200}px`,
-                      background: '#9bc53d',
-                      borderRadius: '8px 8px 0 0',
-                      marginBottom: '0.75rem',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: 'white',
-                      fontWeight: 700,
-                      fontSize: '1.1rem'
-                    }}>
-                      {yearsMonthsFromMonths(simulation.allInOneLoan.payoffMonths)}
-                    </div>
-                    <div style={{ fontWeight: 600, color: '#475569', fontSize: '1rem' }}>All-In-One Loan</div>
-                  </div>
-                </div>
-                <p style={{ marginTop: '1.5rem', color: '#16a34a', fontWeight: 600, fontSize: '1.2rem' }}>
-                  🎉 Pay off your mortgage {yearsMonthsFromMonths(simulation.comparison.timeSavedMonths)} faster!
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* Email Signature */}
-          {components.find((c) => c.id === 'signature')?.enabled && (signatureName || signatureEmail) && (
-            <div style={{ marginTop: '3rem', marginBottom: '2rem' }}>
-              <div style={{
-                fontFamily: 'Arial, sans-serif',
-                borderLeft: '4px solid #8b5cf6',
-                paddingLeft: '1.5rem'
-              }}>
-                <div style={{ marginBottom: '0.5rem', color: '#94a3b8', fontSize: '0.9rem', fontStyle: 'italic' }}>
-                  Best regards,
-                </div>
-                {signatureName && (
-                  <div style={{ fontSize: '1.15rem', fontWeight: '700', color: '#1e293b', marginBottom: '0.25rem' }}>
-                    {signatureName}
-                  </div>
-                )}
-                {signatureTitle && (
-                  <div style={{ fontSize: '0.95rem', color: '#475569', marginBottom: '0.5rem', fontStyle: 'italic' }}>
-                    {signatureTitle}
-                  </div>
-                )}
-                {signatureCompany && (
-                  <div style={{ fontSize: '1rem', fontWeight: '600', color: '#8b5cf6', marginBottom: '0.5rem' }}>
-                    {signatureCompany}
-                  </div>
-                )}
-                <div style={{ fontSize: '0.9rem', color: '#64748b', lineHeight: '1.5' }}>
-                  {signatureEmail && (
-                    <div style={{ marginBottom: '0.15rem' }}>
-                      📧 {signatureEmail}
-                    </div>
-                  )}
-                  {signaturePhone && (
-                    <div style={{ marginBottom: '0.15rem' }}>
-                      📱 {signaturePhone}
-                    </div>
-                  )}
-                  {signatureWebsite && (
-                    <div style={{ marginBottom: '0.15rem' }}>
-                      🌐 {signatureWebsite.replace(/^https?:\/\//, '')}
-                    </div>
-                  )}
-                  {signatureAddress && (
-                    <div style={{ marginBottom: '0.15rem' }}>
-                      📍 {signatureAddress}
-                    </div>
-                  )}
-                  {signatureNMLS && (
-                    <div style={{ marginTop: '0.25rem', fontSize: '0.8rem', color: '#94a3b8' }}>
-                      NMLS# {signatureNMLS}
-                    </div>
-                  )}
-                  {signatureTagline && (
-                    <div style={{ marginTop: '0.5rem', fontSize: '0.8rem', fontWeight: '600', color: '#8b5cf6', letterSpacing: '0.05em' }}>
-                      {signatureTagline}
-                    </div>
-                  )}
-                  {(signatureLinkedIn || signatureFacebook || signatureTwitter || signatureInstagram) && (
-                    <div style={{ marginTop: '0.75rem', fontSize: '0.8rem' }}>
-                      {signatureLinkedIn && <span style={{ marginRight: '0.5rem' }}>💼 LinkedIn</span>}
-                      {signatureFacebook && <span style={{ marginRight: '0.5rem' }}>📘 Facebook</span>}
-                      {signatureTwitter && <span style={{ marginRight: '0.5rem' }}>🐦 Twitter</span>}
-                      {signatureInstagram && <span style={{ marginRight: '0.5rem' }}>📷 Instagram</span>}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* CMG Financial Footer */}
-          {includeFooter && (
-            <div style={{ marginTop: '3rem', paddingTop: '1.5rem', borderTop: '2px solid #e2e8f0', textAlign: 'center' }}>
-              {/* CMG Logo */}
-              <div style={{ marginBottom: '1rem' }}>
-                <img src={CMG_BRANDING.logo.url} alt={CMG_BRANDING.logo.alt} style={{ maxWidth: '140px', marginBottom: '0.75rem' }} />
-                <p style={{ fontWeight: 600, fontSize: '1rem', marginBottom: '0.25rem', color: '#333', margin: '0.25rem 0' }}>
-                  {CMG_BRANDING.company.name}
-                </p>
-                <p style={{ fontSize: '0.85rem', color: '#666', margin: '0.25rem 0' }}>
-                  {CMG_BRANDING.company.tagline}
-                </p>
-              </div>
-
-              {/* Company Info */}
-              <div style={{ marginBottom: '1rem' }}>
-                <p style={{ margin: '0.25rem 0', fontSize: '0.85rem', color: '#666' }}>
-                  {CMG_BRANDING.company.address}
-                </p>
-                <p style={{ margin: '0.25rem 0', fontSize: '0.85rem', color: '#666' }}>
-                  Phone: {CMG_BRANDING.company.phone}
-                </p>
-                <p style={{ margin: '0.25rem 0', fontSize: '0.85rem', color: '#666' }}>
-                  Website: {CMG_BRANDING.company.website}
-                </p>
-              </div>
-
-              {/* Legal Disclaimers */}
-              <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '1rem', fontSize: '0.75rem', color: '#999' }}>
-                <p style={{ margin: '0.25rem 0' }}>{CMG_BRANDING.legal.nmls} | {CMG_BRANDING.legal.equalHousing}</p>
-                <p style={{ margin: '0.25rem 0' }}>{CMG_BRANDING.legal.licensing}</p>
-                <p style={{ margin: '0.25rem 0' }}>This proposal was generated using professional loan analysis software.</p>
-              </div>
-            </div>
           )}
         </div>
       </div>
