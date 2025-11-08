@@ -869,14 +869,52 @@ Your task is to CATEGORIZE and ANALYZE the above transactions:
 
    ⚠️ CRITICAL: You MUST be 100% consistent. Same transaction = same category every time.
 
-   STEP 1 - Check if INCOME:
-   - Positive amounts (credits/deposits)
-   - Paychecks, salary deposits, direct deposits (look for: "PAYROLL", "SALARY", "DIRECT DEP", "ACH CREDIT")
-   - Transfers IN from external accounts (Zelle, Venmo, Cash App, wire transfers IN)
-   - Refunds, reimbursements, tax refunds
-   → Category: "income"
+   SUMMARY OF CATEGORIES:
+   - "income" = Regular recurring paychecks ONLY
+   - "one-time" = Irregular deposits (Zelle, tax refunds, etc.) AND one-time expenses (>$500 purchases, travel, etc.)
+   - "housing" = Mortgage/rent payments matching the expected amount
+   - "expense" = All other regular recurring expenses
 
-   STEP 2 - Check if HOUSING (if not income):
+   NOTE: Both one-time income AND one-time expenses use category "one-time" and are EXCLUDED from totals.
+
+   STEP 1 - Check if REGULAR INCOME (recurring paychecks only):
+   For a deposit to be considered REGULAR income, it must match these patterns:
+   - Contains keywords: "PAYROLL", "SALARY", "DIRECT DEP", "ACH CREDIT", "PAYCHECK", "PAY CHECK"
+   - OR: Regular bi-weekly/monthly deposits of similar amounts (e.g., $2,500 every 2 weeks)
+   - OR: Employer name in description (if you can identify the employer pattern)
+
+   Do NOT categorize as regular income:
+   - Zelle, Venmo, Cash App, PayPal transfers (these are usually reimbursements or paybacks)
+   - Wire transfers IN (usually one-time)
+   - Tax refunds
+   - Large irregular deposits
+   - Refunds or reimbursements
+
+   → Category: "income" (only for regular, recurring employment income)
+
+   STEP 1B - Check if ONE-TIME INCOME (irregular deposits):
+   If it's a positive amount (deposit/credit) but NOT regular income, check if it's irregular:
+
+   One-Time Income Rules:
+   - Zelle, Venmo, Cash App, PayPal deposits (look for: "ZELLE", "VENMO", "CASH APP", "PAYPAL")
+   - Wire transfers IN (look for: "WIRE", "WIRE TRANSFER IN", "INCOMING WIRE")
+   - Tax refunds (look for: "IRS", "TAX REFUND", "FEDERAL TAX", "STATE TAX")
+   - Large irregular deposits (>$1000 that don't match paycheck pattern)
+   - Refunds and reimbursements (look for: "REFUND", "REIMBURSEMENT", "REBATE")
+   - Bonuses (look for: "BONUS", "COMMISSION")
+   - Large check deposits (>$2000 if not identified as payroll)
+   - Gifts, inheritance, settlements
+   - Side income that's irregular (freelance, gig work if not consistent)
+
+   → Category: "one-time" + SET flagged=true + flagReason: "One-Time Income: [reason]"
+
+   Examples of flag reasons:
+   - "One-Time Income: Zelle transfer - likely reimbursement"
+   - "One-Time Income: Tax refund"
+   - "One-Time Income: Large irregular deposit"
+   - "One-Time Income: Wire transfer in"
+
+   STEP 2 - Check if HOUSING (if not income or one-time income):
    - Housing payment MUST be within $50 OR 2% of $${currentHousingPayment} (whichever is larger)
    - Example: If housing = $2000, accept $1960-$2040 OR $1900-$2100 (use wider range)
    - Look for descriptions containing: "MORTGAGE", "RENT", "PROPERTY MGMT", "LANDLORD", "HOUSING"
@@ -884,7 +922,7 @@ Your task is to CATEGORIZE and ANALYZE the above transactions:
    - If only description matches but amount is far off → NOT housing, continue to next step
    → Category: "housing"
 
-   STEP 3 - Check if ONE-TIME (if not income or housing):
+   STEP 3 - Check if ONE-TIME EXPENSE (if not income or housing):
    Apply ALL of these rules - if ANY rule matches, categorize as "one-time":
 
    Rule A - Large irregular purchases (>$500 for single transaction):
@@ -894,6 +932,7 @@ Your task is to CATEGORIZE and ANALYZE the above transactions:
    - Medical bills, dental bills, veterinary bills
    - Car repairs, maintenance >$500
    - Moving expenses, storage fees
+   → flagReason: "One-Time Expense: Large purchase >$500"
 
    Rule B - Financial movements:
    - Wire transfers OUT (look for: "WIRE", "WIRE TRF", "OUTGOING WIRE")
@@ -903,6 +942,7 @@ Your task is to CATEGORIZE and ANALYZE the above transactions:
    - Loan payments (student loans, car loans, personal loans)
    - Credit card payments (payments TO credit cards, not purchases with cards)
    - Investment/brokerage transfers (Vanguard, Fidelity, Schwab, etc.)
+   → flagReason: "One-Time Expense: Wire transfer/financial movement"
 
    Rule C - Irregular/Annual expenses:
    - Insurance payments (auto, life, umbrella - but NOT monthly health insurance)
@@ -914,14 +954,16 @@ Your task is to CATEGORIZE and ANALYZE the above transactions:
    - Holiday spending (if unusually large)
    - Gifts, donations >$200
    - Legal fees, tax preparation
+   → flagReason: "One-Time Expense: Annual/irregular payment"
 
    Rule D - Luxury & discretionary:
    - High-end dining (>$150 per meal)
    - Designer purchases (luxury brands, jewelry stores)
    - Entertainment >$200 (concerts, sports events, shows)
    - Spa, salon services >$150
+   → flagReason: "One-Time Expense: Luxury/discretionary purchase"
 
-   → Category: "one-time" + SET flagged=true + flagReason describing which rule matched
+   → Category: "one-time" + SET flagged=true with appropriate flagReason from above
 
    STEP 4 - Otherwise, RECURRING EXPENSE (everything else):
    - Utilities (electric, gas, water, trash, sewer)
@@ -939,28 +981,38 @@ Your task is to CATEGORIZE and ANALYZE the above transactions:
    → Category: "expense"
 
 2. **FLAGGING - Apply to transactions that need review**:
-   - ALL "one-time" transactions must have flagged=true with specific flagReason
+   - ALL "one-time" transactions (both income AND expenses) must have flagged=true with specific flagReason
    - Also flag any income transactions >$10,000 with flagReason: "Large deposit - verify source"
    - Use clear flag reasons that cite the specific rule:
-     * "One-Time: Large retail purchase >$500"
-     * "One-Time: Wire transfer out"
-     * "One-Time: Annual insurance payment"
-     * "One-Time: Vacation/travel expense"
-     * "One-Time: Luxury dining >$150"
+
+     Examples for ONE-TIME INCOME:
+     * "One-Time Income: Zelle transfer - likely reimbursement"
+     * "One-Time Income: Tax refund"
+     * "One-Time Income: Wire transfer in"
+     * "One-Time Income: Large irregular deposit"
+     * "One-Time Income: Refund/reimbursement"
+
+     Examples for ONE-TIME EXPENSES:
+     * "One-Time Expense: Large retail purchase >$500"
+     * "One-Time Expense: Wire transfer out"
+     * "One-Time Expense: Annual insurance payment"
+     * "One-Time Expense: Vacation/travel expense"
+     * "One-Time Expense: Luxury dining >$150"
 
 3. **MONTHLY BREAKDOWN**:
    Group by month (YYYY-MM format) and calculate:
-   - Total income per month (sum of all "income" category transactions)
-   - Total expenses per month (sum of ONLY "expense" category - DO NOT include "housing" or "one-time")
+   - Total income per month (sum of all "income" category only - EXCLUDE "one-time" deposits)
+   - Total expenses per month (sum of ONLY "expense" category - EXCLUDE "housing" and "one-time")
    - Net cash flow per month (income - expenses)
    - Transaction count per month (all transactions)
 
 4. **CALCULATE TOTALS**:
-   - totalIncome: SUM of ALL "income" category transactions
+   - totalIncome: SUM of ONLY "income" category transactions (EXCLUDE "one-time" deposits)
    - totalExpenses: SUM of ONLY "expense" category transactions (EXCLUDE "housing" and "one-time")
    - netCashFlow: totalIncome - totalExpenses
 
-   ⚠️ CRITICAL: "housing" and "one-time" are NEVER included in expense totals!
+   ⚠️ CRITICAL: Only "income" and "expense" categories are included in totals!
+   ⚠️ EXCLUDED from totals: "housing", "one-time" (whether income or expense)
 
 5. **CONFIDENCE SCORE**: Your confidence in categorization accuracy (0-1 scale)
 
