@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import type { CashFlowAnalysis, Transaction } from '../types';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { ComposedChart, Area, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import './CashFlowReview.css';
 
 interface CashFlowReviewProps {
@@ -19,7 +19,7 @@ export default function CashFlowReview({
   hideSummary = false
 }: CashFlowReviewProps) {
   // No more tabs - single view
-  const [transactionSubTab, setTransactionSubTab] = useState<'all' | 'income' | 'expense' | 'housing' | 'one-time' | 'duplicates'>('all');
+  const [transactionSubTab, setTransactionSubTab] = useState<'all' | 'income' | 'expense' | 'housing' | 'one-time'>('all');
   const [transactions, setTransactions] = useState<Transaction[]>(() => {
     // Auto-exclude housing and one-time transactions on initial load
     return cashFlow.transactions.map(t => ({
@@ -28,6 +28,9 @@ export default function CashFlowReview({
     }));
   });
   const [editingTransaction, setEditingTransaction] = useState<number | null>(null);
+  const [depositFrequency, setDepositFrequency] = useState<'weekly' | 'biweekly' | 'semi-monthly' | 'monthly'>(
+    (cashFlow.depositFrequency as 'weekly' | 'biweekly' | 'semi-monthly' | 'monthly') || 'monthly'
+  );
 
   // Calculate actual months from transaction data
   const calculateActualMonths = (transactions: Transaction[]): number => {
@@ -63,11 +66,12 @@ export default function CashFlowReview({
       transactions,
       totalIncome,
       totalExpenses,
-      netCashFlow
+      netCashFlow,
+      depositFrequency
     };
 
     onCashFlowUpdate?.(updatedCashFlow);
-  }, [transactions]);
+  }, [transactions, depositFrequency]);
 
   const toggleTransactionExclusion = (index: number) => {
     const updatedTransactions = [...transactions];
@@ -131,6 +135,28 @@ export default function CashFlowReview({
       }))
       .sort((a, b) => a.month.localeCompare(b.month));
   }, [includedTransactions]);
+
+  // Prepare scatter data for one-time items (showing ALL, not just included)
+  const oneTimeScatterData = useMemo(() => {
+    return transactions
+      .filter(t => t.category === 'one-time')
+      .map(transaction => {
+        const date = new Date(transaction.date);
+        const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+        const monthLabel = new Date(monthKey + '-01').toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+        const amount = Math.abs(transaction.amount);
+        const isIncome = transaction.amount > 0;
+
+        return {
+          month: monthKey,
+          monthLabel,
+          amount,
+          isIncome,
+          description: transaction.description,
+          excluded: transaction.excluded
+        };
+      });
+  }, [transactions]);
 
   const formatCurrency = (amount: number): string => {
     return new Intl.NumberFormat('en-US', {
@@ -352,6 +378,49 @@ export default function CashFlowReview({
             </div>
           </div>
 
+          {/* Deposit Frequency Selector */}
+          <div className="deposit-frequency-section">
+            <div className="frequency-header">
+              <svg className="frequency-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              <div>
+                <h3>Deposit Frequency</h3>
+                <p>AI detected: <strong>{depositFrequency}</strong>. You can change this if needed.</p>
+              </div>
+            </div>
+            <div className="frequency-options">
+              <div
+                className={`frequency-option ${depositFrequency === 'weekly' ? 'active' : ''}`}
+                onClick={() => setDepositFrequency('weekly')}
+              >
+                <div className="frequency-label">Weekly</div>
+                <div className="frequency-description">Every 7 days</div>
+              </div>
+              <div
+                className={`frequency-option ${depositFrequency === 'biweekly' ? 'active' : ''}`}
+                onClick={() => setDepositFrequency('biweekly')}
+              >
+                <div className="frequency-label">Biweekly</div>
+                <div className="frequency-description">Every 14 days</div>
+              </div>
+              <div
+                className={`frequency-option ${depositFrequency === 'semi-monthly' ? 'active' : ''}`}
+                onClick={() => setDepositFrequency('semi-monthly')}
+              >
+                <div className="frequency-label">Semi-Monthly</div>
+                <div className="frequency-description">Twice per month</div>
+              </div>
+              <div
+                className={`frequency-option ${depositFrequency === 'monthly' ? 'active' : ''}`}
+                onClick={() => setDepositFrequency('monthly')}
+              >
+                <div className="frequency-label">Monthly</div>
+                <div className="frequency-description">Once per month</div>
+              </div>
+            </div>
+          </div>
+
           {/* Cash Flow Chart */}
           {chartData.length > 0 && (
             <div className="cash-flow-chart" style={{
@@ -379,7 +448,7 @@ export default function CashFlowReview({
                 Showing {chartData.length} month{chartData.length !== 1 ? 's' : ''} of transaction data
               </p>
               <ResponsiveContainer width="100%" height={300}>
-                <AreaChart
+                <ComposedChart
                   data={chartData}
                   margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
                 >
@@ -405,7 +474,12 @@ export default function CashFlowReview({
                     tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
                   />
                   <Tooltip
-                    formatter={(value: number) => [`$${value.toLocaleString()}`, '']}
+                    formatter={(value: any, name: any) => {
+                      if (typeof value === 'number') {
+                        return [`$${value.toLocaleString()}`, name];
+                      }
+                      return [value, name];
+                    }}
                     contentStyle={{
                       backgroundColor: 'white',
                       border: '1px solid #e2e8f0',
@@ -435,7 +509,19 @@ export default function CashFlowReview({
                     fill="url(#colorOutgoing)"
                     name="Outgoing Cash"
                   />
-                </AreaChart>
+                  <Scatter
+                    data={oneTimeScatterData.filter(d => d.isIncome)}
+                    fill="#22c55e"
+                    name="One-Time Income"
+                    shape="circle"
+                  />
+                  <Scatter
+                    data={oneTimeScatterData.filter(d => !d.isIncome)}
+                    fill="#ef4444"
+                    name="One-Time Expense"
+                    shape="circle"
+                  />
+                </ComposedChart>
               </ResponsiveContainer>
             </div>
           )}
@@ -494,22 +580,10 @@ export default function CashFlowReview({
             >
               All Categories
             </button>
-            {cashFlow.duplicateTransactions && cashFlow.duplicateTransactions.length > 0 && (
-              <button
-                className={`sub-tab ${transactionSubTab === 'duplicates' ? 'active' : ''}`}
-                onClick={() => setTransactionSubTab('duplicates')}
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '16px', height: '16px' }}>
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                </svg>
-                Duplicates
-                <span className="sub-tab-badge">{cashFlow.duplicateTransactions.length}</span>
-              </button>
-            )}
           </div>
 
           {/* Scrollable Transaction Container */}
-          {transactionSubTab !== 'duplicates' ? (
+          {true && (
           <div style={{ maxHeight: '600px', overflowY: 'auto', border: '1px solid #e2e8f0', borderRadius: '8px', marginTop: '1rem' }}>
           {Object.entries(getFilteredTransactions()).map(([category, categoryTransactions]) => {
             const actualIndices = categoryTransactions.map(t =>
@@ -581,11 +655,20 @@ export default function CashFlowReview({
                           />
                         ) : (
                           <div
-                            className={`transaction-amount editable ${transaction.category === 'income' ? 'positive' : 'negative'}`}
+                            className={`transaction-amount editable ${
+                              transaction.category === 'one-time'
+                                ? (transaction.amount > 0 ? 'positive' : 'negative')
+                                : (transaction.category === 'income' ? 'positive' : 'negative')
+                            }`}
                             onClick={() => setEditingTransaction(actualIndex)}
                             title="Click to edit amount"
+                            style={
+                              transaction.category === 'one-time'
+                                ? { color: transaction.amount > 0 ? '#22c55e' : '#ef4444', fontWeight: '600' }
+                                : undefined
+                            }
                           >
-                            {transaction.category === 'income' ? '+' : '-'}
+                            {(transaction.category === 'income' || transaction.amount > 0) ? '+' : '-'}
                             {formatCurrency(Math.abs(transaction.amount))}
                           </div>
                         )}
@@ -597,132 +680,7 @@ export default function CashFlowReview({
             );
           })}
           </div>
-          ) : (
-            /* Duplicates Tab Content */
-            <div style={{ padding: '2rem', background: 'white', borderRadius: '12px', border: '2px solid #e2e8f0', marginTop: '1rem' }}>
-              <h2 style={{ textAlign: 'center', marginBottom: '1rem', color: '#1e293b' }}>🔍 Duplicate Transactions Excluded</h2>
-              <p style={{ textAlign: 'center', color: '#64748b', marginBottom: '2rem', fontSize: '0.95rem' }}>
-                These transactions were automatically detected and excluded from the analysis to prevent double-counting across multiple uploaded files.
-              </p>
-
-              {/* Summary Banner */}
-              <div style={{
-                padding: '1.5rem',
-                background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
-                border: '2px solid #fbbf24',
-                borderRadius: '12px',
-                marginBottom: '2rem',
-                textAlign: 'center'
-              }}>
-                <div style={{ fontSize: '1rem', color: '#92400e', fontWeight: '600', marginBottom: '0.5rem' }}>
-                  ⚠️ {cashFlow.duplicateTransactions?.length || 0} Duplicate Transaction{(cashFlow.duplicateTransactions?.length || 0) !== 1 ? 's' : ''} Found
-                </div>
-                <div style={{ fontSize: '0.9rem', color: '#b45309' }}>
-                  These transactions appeared in multiple files and were excluded to ensure accurate calculations
-                </div>
-              </div>
-
-              {/* Duplicates Table */}
-              <div style={{ overflowX: 'auto', maxHeight: '600px', overflowY: 'auto' }}>
-                <table style={{
-                  width: '100%',
-                  borderCollapse: 'collapse',
-                  fontSize: '0.9rem'
-                }}>
-                  <thead>
-                    <tr style={{ background: '#1e293b', color: 'white' }}>
-                      <th style={{ padding: '1rem', textAlign: 'left', borderBottom: '2px solid #cbd5e1', position: 'sticky', top: 0, background: '#1e293b' }}>Date</th>
-                      <th style={{ padding: '1rem', textAlign: 'left', borderBottom: '2px solid #cbd5e1', position: 'sticky', top: 0, background: '#1e293b' }}>Description</th>
-                      <th style={{ padding: '1rem', textAlign: 'right', borderBottom: '2px solid #cbd5e1', position: 'sticky', top: 0, background: '#1e293b' }}>Amount</th>
-                      <th style={{ padding: '1rem', textAlign: 'center', borderBottom: '2px solid #cbd5e1', position: 'sticky', top: 0, background: '#1e293b' }}>Category</th>
-                      <th style={{ padding: '1rem', textAlign: 'center', borderBottom: '2px solid #cbd5e1', position: 'sticky', top: 0, background: '#1e293b' }}>Source File</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {(cashFlow.duplicateTransactions || []).map((transaction, index) => {
-                      const date = new Date(transaction.date);
-                      const formattedDate = isNaN(date.getTime()) ? transaction.date : date.toLocaleDateString('en-US', {
-                        month: 'short',
-                        day: 'numeric',
-                        year: 'numeric'
-                      });
-
-                      const getCategoryColor = (category: string) => {
-                        switch (category) {
-                          case 'income': return { bg: '#d1fae5', text: '#065f46', border: '#10b981' };
-                          case 'expense': return { bg: '#fee2e2', text: '#991b1b', border: '#ef4444' };
-                          case 'housing': return { bg: '#dbeafe', text: '#1e40af', border: '#3b82f6' };
-                          case 'one-time': return { bg: '#e0e7ff', text: '#3730a3', border: '#6366f1' };
-                          default: return { bg: '#f3f4f6', text: '#374151', border: '#9ca3af' };
-                        }
-                      };
-
-                      const categoryColors = getCategoryColor(transaction.category);
-
-                      return (
-                        <tr key={index} style={{
-                          background: index % 2 === 0 ? '#f8fafc' : 'white',
-                          borderBottom: '1px solid #e2e8f0'
-                        }}>
-                          <td style={{ padding: '0.75rem', fontWeight: '600', color: '#334155' }}>
-                            {formattedDate}
-                          </td>
-                          <td style={{ padding: '0.75rem', color: '#475569' }}>
-                            {transaction.description}
-                          </td>
-                          <td style={{
-                            padding: '0.75rem',
-                            textAlign: 'right',
-                            fontWeight: '600',
-                            color: transaction.category === 'income' ? '#059669' : '#dc2626'
-                          }}>
-                            {transaction.category === 'income' ? '+' : '-'}
-                            {formatCurrency(Math.abs(transaction.amount))}
-                          </td>
-                          <td style={{ padding: '0.75rem', textAlign: 'center' }}>
-                            <span style={{
-                              display: 'inline-block',
-                              padding: '0.25rem 0.75rem',
-                              background: categoryColors.bg,
-                              color: categoryColors.text,
-                              border: `1px solid ${categoryColors.border}`,
-                              borderRadius: '9999px',
-                              fontSize: '0.75rem',
-                              fontWeight: '600',
-                              textTransform: 'capitalize'
-                            }}>
-                              {transaction.category}
-                            </span>
-                          </td>
-                          <td style={{ padding: '0.75rem', textAlign: 'center', color: '#64748b', fontSize: '0.85rem' }}>
-                            {transaction.sourceFile || 'Unknown'}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Info Footer */}
-              <div style={{
-                marginTop: '2rem',
-                padding: '1rem',
-                background: '#eff6ff',
-                borderRadius: '8px',
-                border: '1px solid #3b82f6',
-                fontSize: '0.9rem',
-                color: '#1e40af'
-              }}>
-                <div style={{ fontWeight: '600', marginBottom: '0.5rem' }}>ℹ️ How Deduplication Works</div>
-                <ul style={{ margin: 0, paddingLeft: '1.5rem', lineHeight: 1.6 }}>
-                  <li>Transactions are compared based on date, amount, and description</li>
-                  <li>When identical transactions appear in multiple files, only the first occurrence is kept</li>
-                  <li>This ensures accurate cash flow calculations when uploading overlapping statements</li>
-                </ul>
-              </div>
-            </div>
-          )}{/* End scrollable container / duplicates */}
+          )}{/* End scrollable container */}
         </div>{/* End transactions-view */}
 
       {/* Cash Flow Threshold Warning */}
