@@ -667,28 +667,31 @@ export default function MortgageDetailsForm({
                           display: 'inline-flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          width: '22px',
-                          height: '22px',
+                          width: '20px',
+                          height: '20px',
                           marginLeft: '0.5rem',
-                          background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                          background: 'linear-gradient(135deg, #64748b 0%, #475569 100%)',
                           color: 'white',
                           borderRadius: '50%',
-                          fontSize: '0.75rem',
+                          fontSize: '0.7rem',
                           fontWeight: '700',
                           fontStyle: 'italic',
                           cursor: 'help',
                           userSelect: 'none',
-                          boxShadow: '0 2px 4px rgba(59, 130, 246, 0.3)',
+                          boxShadow: '0 2px 4px rgba(100, 116, 139, 0.3)',
                           transition: 'all 0.2s ease',
-                          border: '2px solid rgba(255, 255, 255, 0.2)'
+                          border: '1.5px solid rgba(255, 255, 255, 0.2)',
+                          flexShrink: 0
                         }}
                         onMouseEnter={(e) => {
-                          e.currentTarget.style.transform = 'scale(1.15)';
-                          e.currentTarget.style.boxShadow = '0 4px 8px rgba(59, 130, 246, 0.4)';
+                          e.currentTarget.style.transform = 'scale(1.1)';
+                          e.currentTarget.style.boxShadow = '0 4px 8px rgba(100, 116, 139, 0.4)';
+                          e.currentTarget.style.background = 'linear-gradient(135deg, #475569 0%, #334155 100%)';
                         }}
                         onMouseLeave={(e) => {
                           e.currentTarget.style.transform = 'scale(1)';
-                          e.currentTarget.style.boxShadow = '0 2px 4px rgba(59, 130, 246, 0.3)';
+                          e.currentTarget.style.boxShadow = '0 2px 4px rgba(100, 116, 139, 0.3)';
+                          e.currentTarget.style.background = 'linear-gradient(135deg, #64748b 0%, #475569 100%)';
                         }}
                       >
                         i
@@ -748,9 +751,45 @@ export default function MortgageDetailsForm({
               ) : (
                 <>
                   {/* Manual AIO Rate Input */}
-                  <label htmlFor="aioInterestRate" className="form-label required">
-                    All-In-One Loan Interest Rate
-                  </label>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                    <label htmlFor="aioInterestRate" className="form-label required" style={{ marginBottom: 0 }}>
+                      All-In-One Loan Interest Rate
+                    </label>
+                    <span
+                      title="The All-In-One loan typically has a HIGHER interest rate than traditional mortgages because it offers flexibility and banking features. However, you save money through daily interest calculation on reduced principal (offset by your cash flow). Common range: 0.5% to 2.5% above traditional rate."
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        width: '20px',
+                        height: '20px',
+                        background: 'linear-gradient(135deg, #64748b 0%, #475569 100%)',
+                        color: 'white',
+                        borderRadius: '50%',
+                        fontSize: '0.7rem',
+                        fontWeight: '700',
+                        fontStyle: 'italic',
+                        cursor: 'help',
+                        userSelect: 'none',
+                        boxShadow: '0 2px 4px rgba(100, 116, 139, 0.3)',
+                        transition: 'all 0.2s ease',
+                        border: '1.5px solid rgba(255, 255, 255, 0.2)',
+                        flexShrink: 0
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = 'scale(1.1)';
+                        e.currentTarget.style.boxShadow = '0 4px 8px rgba(100, 116, 139, 0.4)';
+                        e.currentTarget.style.background = 'linear-gradient(135deg, #475569 0%, #334155 100%)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = 'scale(1)';
+                        e.currentTarget.style.boxShadow = '0 2px 4px rgba(100, 116, 139, 0.3)';
+                        e.currentTarget.style.background = 'linear-gradient(135deg, #64748b 0%, #475569 100%)';
+                      }}
+                    >
+                      i
+                    </span>
+                  </div>
                   <div className="input-wrapper">
                     <input
                       type="text"
@@ -786,7 +825,7 @@ export default function MortgageDetailsForm({
                     <span className="input-suffix">%</span>
                   </div>
                   {errors.aioInterestRate && <span className="error-text">{errors.aioInterestRate}</span>}
-                  <span className="form-help-text">Proposed rate for the All-In-One loan (typically HIGHER than traditional mortgage rate)</span>
+                  <span className="form-help-text">Typically 0.5% - 2.5% higher than traditional rate</span>
                 </>
               )}
             </div>
