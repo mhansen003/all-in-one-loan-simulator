@@ -44,7 +44,7 @@ export interface CashFlowAnalysis {
   monthlyDeposits?: number;        // Total monthly income/deposits
   monthlyExpenses?: number;        // Total monthly expenses (including housing)
   monthlyLeftover?: number;        // Net leftover (deposits - expenses)
-  depositFrequency?: 'monthly' | 'biweekly' | 'weekly';
+  depositFrequency?: 'weekly' | 'biweekly' | 'semi-monthly' | 'monthly' | 'quarterly' | 'semi-annual' | 'annual';
 }
 
 export interface EligibilityResult {
