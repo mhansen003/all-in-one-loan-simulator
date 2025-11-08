@@ -53,6 +53,12 @@ async function extractDataFromSpreadsheet(filePath: string): Promise<string> {
 
     console.log(`Original spreadsheet has ${jsonData.length} rows`);
 
+    // Debug: Log first row to see column names
+    if (jsonData.length > 0) {
+      console.log(`📋 CSV Column names:`, Object.keys(jsonData[0]));
+      console.log(`📋 First row sample:`, jsonData[0]);
+    }
+
     // Compress data: Extract only essential fields
     const compressedData = jsonData.map((row: any) => {
       // Try common field names for date, description, amount
@@ -64,15 +70,31 @@ async function extractDataFromSpreadsheet(filePath: string): Promise<string> {
       return { date, description, amount, type };
     }).filter(row => row.date && row.amount); // Filter out invalid rows
 
+    console.log(`📊 After field extraction: ${compressedData.length} rows with valid date+amount`);
+
     // Sort by date (newest first) and limit to recent 18 months
     // Extended from 6 to 18 months to accommodate full year lookbacks
     const eighteenMonthsAgo = new Date();
     eighteenMonthsAgo.setMonth(eighteenMonthsAgo.getMonth() - 18);
 
+    console.log(`📅 Date filter cutoff: ${eighteenMonthsAgo.toISOString()}`);
+
+    // Sample first few dates to debug parsing
+    if (compressedData.length > 0) {
+      const sample = compressedData.slice(0, 3);
+      console.log(`📅 Sample dates from CSV:`, sample.map(r => ({
+        raw: r.date,
+        parsed: new Date(r.date).toISOString(),
+        valid: !isNaN(new Date(r.date).getTime())
+      })));
+    }
+
     const recentData = compressedData.filter((row: any) => {
       try {
         const transactionDate = new Date(row.date);
-        return transactionDate >= eighteenMonthsAgo;
+        const isValid = !isNaN(transactionDate.getTime());
+        const isRecent = transactionDate >= eighteenMonthsAgo;
+        return isValid && isRecent;
       } catch {
         return true; // Keep if date parsing fails (let AI handle it)
       }
