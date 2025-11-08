@@ -2,7 +2,6 @@ import { useState } from 'react';
 import type { SimulationResult, MortgageDetails, CashFlowAnalysis } from '../types';
 import CashFlowReview from './CashFlowReview';
 import ProposalBuilder from './ProposalBuilder';
-import { SignatureGenerator } from './SignatureGenerator';
 import './SimulationResults.css';
 
 interface SimulationResultsProps {
@@ -81,8 +80,20 @@ export default function SimulationResults({
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
         </div>
-        <h1>Simulation Results</h1>
-        <p>Compare traditional mortgage vs All-In-One loan with cash flow offset</p>
+        <div style={{ flex: 1 }}>
+          <h1>Simulation Results</h1>
+          <p>Compare traditional mortgage vs All-In-One loan with cash flow offset</p>
+        </div>
+        <button
+          className="btn-primary"
+          onClick={() => setActiveTab('proposal')}
+          style={{ alignSelf: 'flex-start' }}
+        >
+          <svg className="btn-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+          Create Proposal
+        </button>
       </div>
 
       {/* Confidence and Suitability Banners */}
@@ -185,24 +196,6 @@ export default function SimulationResults({
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
             </svg>
             Charts
-          </button>
-          <button
-            className={`results-tab ${activeTab === 'proposal' ? 'active' : ''}`}
-            onClick={() => setActiveTab('proposal')}
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-            Create Proposal
-          </button>
-          <button
-            className={`results-tab ${activeTab === 'signature' ? 'active' : ''}`}
-            onClick={() => setActiveTab('signature')}
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-            </svg>
-            Email Signature
           </button>
         </div>
       )}
@@ -378,6 +371,7 @@ export default function SimulationResults({
             onContinue={() => setActiveTab('results')}
             onBack={() => setActiveTab('results')}
             onCashFlowUpdate={onCashFlowUpdate}
+            hideSummary={true}
           />
         </div>
       )}
@@ -594,12 +588,6 @@ export default function SimulationResults({
         </div>
       )}
 
-      {/* Email Signature Generator Tab */}
-      {activeTab === 'signature' && (
-        <div className="signature-tab-content">
-          <SignatureGenerator />
-        </div>
-      )}
     </div>
   );
 }

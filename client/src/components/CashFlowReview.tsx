@@ -7,13 +7,15 @@ interface CashFlowReviewProps {
   onContinue: () => void;
   onBack?: () => void;
   onCashFlowUpdate?: (updatedCashFlow: CashFlowAnalysis) => void;
+  hideSummary?: boolean; // Hide duplicate banners and cards when embedded in tabs
 }
 
 export default function CashFlowReview({
   cashFlow,
   onContinue,
   onBack,
-  onCashFlowUpdate
+  onCashFlowUpdate,
+  hideSummary = false
 }: CashFlowReviewProps) {
   // No more tabs - single view
   const [transactionSubTab, setTransactionSubTab] = useState<'all' | 'income' | 'expense' | 'housing' | 'one-time'>('all');
@@ -226,77 +228,81 @@ export default function CashFlowReview({
 
   return (
     <div className="cash-flow-review">
-      <div className="form-header">
-        <h2>Cash Flow Analysis Complete</h2>
-        <p>Review the AI-generated analysis of your bank statements</p>
-      </div>
+      {!hideSummary && (
+        <>
+          <div className="form-header">
+            <h2>Cash Flow Analysis Complete</h2>
+            <p>Review the AI-generated analysis of your bank statements</p>
+          </div>
 
-      {/* Confidence and Suitability Side-by-Side */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '2rem' }}>
-        <div className="confidence-banner" style={{ borderColor: confidenceColor, marginBottom: 0 }}>
-          <div className="confidence-icon" style={{ background: confidenceColor }}>
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </div>
-          <div>
-            <strong>Analysis Confidence: {confidenceLabel}</strong>
-            <p>AI confidence score: {(cashFlow.confidence * 100).toFixed(0)}%</p>
-          </div>
-        </div>
+          {/* Confidence and Suitability Side-by-Side */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '2rem' }}>
+            <div className="confidence-banner" style={{ borderColor: confidenceColor, marginBottom: 0 }}>
+              <div className="confidence-icon" style={{ background: confidenceColor }}>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div>
+                <strong>Analysis Confidence: {confidenceLabel}</strong>
+                <p>AI confidence score: {(cashFlow.confidence * 100).toFixed(0)}%</p>
+              </div>
+            </div>
 
-        <div className="confidence-banner" style={{ borderColor: temperatureRating.color, marginBottom: 0 }}>
-          <div className="confidence-icon" style={{ background: temperatureRating.color }}>
-            <span style={{ fontSize: '1.5rem' }}>{temperatureRating.icon}</span>
+            <div className="confidence-banner" style={{ borderColor: temperatureRating.color, marginBottom: 0 }}>
+              <div className="confidence-icon" style={{ background: temperatureRating.color }}>
+                <span style={{ fontSize: '1.5rem' }}>{temperatureRating.icon}</span>
+              </div>
+              <div>
+                <strong>{temperatureRating.rating}</strong>
+                <p>AIO Loan Suitability</p>
+              </div>
+            </div>
           </div>
-          <div>
-            <strong>{temperatureRating.rating}</strong>
-            <p>AIO Loan Suitability</p>
-          </div>
-        </div>
-      </div>
 
-      {/* Always Visible Summary Cards */}
-      <div className="summary-cards">
-        <div className="summary-card income-card">
-          <div className="card-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </div>
-          <div className="card-content">
-            <div className="card-label">Total Monthly Income</div>
-            <div className="card-value">{formatCurrency(displayTotalIncome)}</div>
-            <div className="card-description">Average across 12 months</div>
-          </div>
-        </div>
+          {/* Always Visible Summary Cards */}
+          <div className="summary-cards">
+            <div className="summary-card income-card">
+              <div className="card-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div className="card-content">
+                <div className="card-label">Total Monthly Income</div>
+                <div className="card-value">{formatCurrency(displayTotalIncome)}</div>
+                <div className="card-description">Average across 12 months</div>
+              </div>
+            </div>
 
-        <div className="summary-card expense-card">
-          <div className="card-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-            </svg>
-          </div>
-          <div className="card-content">
-            <div className="card-label">Total Monthly Expenses</div>
-            <div className="card-value">{formatCurrency(displayTotalExpenses)}</div>
-            <div className="card-description">Recurring expenses only</div>
-          </div>
-        </div>
+            <div className="summary-card expense-card">
+              <div className="card-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                </svg>
+              </div>
+              <div className="card-content">
+                <div className="card-label">Total Monthly Expenses</div>
+                <div className="card-value">{formatCurrency(displayTotalExpenses)}</div>
+                <div className="card-description">Recurring expenses only</div>
+              </div>
+            </div>
 
-        <div className="summary-card cashflow-card">
-          <div className="card-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-            </svg>
+            <div className="summary-card cashflow-card">
+              <div className="card-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                </svg>
+              </div>
+              <div className="card-content">
+                <div className="card-label">Net Cash Flow</div>
+                <div className="card-value positive">{formatCurrency(displayNetCashFlow)}</div>
+                <div className="card-description">Available for loan offset</div>
+              </div>
+            </div>
           </div>
-          <div className="card-content">
-            <div className="card-label">Net Cash Flow</div>
-            <div className="card-value positive">{formatCurrency(displayNetCashFlow)}</div>
-            <div className="card-description">Available for loan offset</div>
-          </div>
-        </div>
-      </div>
+        </>
+      )}
 
       {/* AI automatically detects deposit frequency from statements - no manual input needed */}
 

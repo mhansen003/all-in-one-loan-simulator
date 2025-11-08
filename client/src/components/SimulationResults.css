@@ -4,7 +4,9 @@
 }
 
 .results-header {
-  text-align: center;
+  display: flex;
+  align-items: center;
+  gap: 2rem;
   margin-bottom: 3rem;
 }
 
@@ -29,13 +31,14 @@
 .results-header h1 {
   color: #2d3748;
   font-size: 2.5rem;
-  margin-bottom: 0.5rem;
+  margin: 0 0 0.5rem 0;
   font-weight: 700;
 }
 
 .results-header p {
   color: #718096;
   font-size: 1.1rem;
+  margin: 0;
 }
 
 /* Confidence and Suitability Banners */
