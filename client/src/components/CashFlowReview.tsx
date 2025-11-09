@@ -959,34 +959,6 @@ export default function CashFlowReview({
       {/* Transactions Section */}
       {mainTab === 'transactions' && (
       <div className="transactions-view">
-        {/* Add Transaction Button */}
-        <div style={{ marginBottom: '1rem' }}>
-          <button
-            onClick={() => setShowAddTransaction(true)}
-            style={{
-              background: '#10b981',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              padding: '0.75rem 1.5rem',
-              fontSize: '0.875rem',
-              fontWeight: '600',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              transition: 'all 0.2s'
-            }}
-            onMouseEnter={(e) => e.currentTarget.style.background = '#059669'}
-            onMouseLeave={(e) => e.currentTarget.style.background = '#10b981'}
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '20px', height: '20px' }}>
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-            Add Manual Transaction
-          </button>
-        </div>
-
         {/* Transaction Sub-Tabs - Reordered to match display */}
         <div className="transaction-sub-tabs">
           <button
@@ -1053,6 +1025,40 @@ export default function CashFlowReview({
               onClick={() => setTransactionSubTab('all')}
             >
               All Categories
+            </button>
+
+            {/* Add Manual Transaction Button */}
+            <button
+              onClick={() => setShowAddTransaction(true)}
+              style={{
+                padding: '0.75rem 1.25rem',
+                background: '#10b981',
+                border: '2px solid #10b981',
+                borderRadius: '8px',
+                fontSize: '0.9rem',
+                fontWeight: '600',
+                color: 'white',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                whiteSpace: 'nowrap',
+                marginLeft: 'auto'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = '#059669';
+                e.currentTarget.style.borderColor = '#059669';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = '#10b981';
+                e.currentTarget.style.borderColor = '#10b981';
+              }}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '18px', height: '18px' }}>
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              Add Transaction
             </button>
           </div>
 
