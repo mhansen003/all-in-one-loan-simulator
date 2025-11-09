@@ -400,12 +400,6 @@ export default function CashFlowReview({
     // Monthly interest (what balance growth would be with $0 payment)
     const monthlyInterest = (balance * (rate / 100)) / 12;
 
-    // To pay off in same time as traditional mortgage, need this minimum payment
-    // Using simple amortization formula approximation
-    const monthlyRate = (rate / 100) / 12;
-    const traditionalPayment = balance * (monthlyRate * Math.pow(1 + monthlyRate, termMonths)) /
-                               (Math.pow(1 + monthlyRate, termMonths) - 1);
-
     return {
       monthlyInterest: Math.ceil(monthlyInterest),
       // Absolute minimum: monthly interest (below this, balance grows forever)

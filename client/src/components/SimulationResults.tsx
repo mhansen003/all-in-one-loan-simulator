@@ -141,24 +141,27 @@ export default function SimulationResults({
             className="btn-secondary"
             onClick={onBackToCFA}
             style={{
-              border: '2px solid #64748b',
-              boxShadow: '0 2px 8px rgba(100, 116, 139, 0.2)',
-              background: 'linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%)',
-              transition: 'all 0.2s ease',
-              fontWeight: '500',
-              whiteSpace: 'nowrap'
+              border: '2px solid #9bc53d',
+              boxShadow: '0 3px 10px rgba(155, 197, 61, 0.25)',
+              background: 'linear-gradient(135deg, #ffffff 0%, #f0f9e8 100%)',
+              transition: 'all 0.3s ease',
+              fontWeight: '600',
+              whiteSpace: 'nowrap',
+              color: '#2d3748'
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.boxShadow = '0 4px 12px rgba(100, 116, 139, 0.3)';
-              e.currentTarget.style.transform = 'translateY(-1px)';
+              e.currentTarget.style.boxShadow = '0 6px 16px rgba(155, 197, 61, 0.35)';
+              e.currentTarget.style.transform = 'translateY(-2px)';
+              e.currentTarget.style.borderColor = '#8ab82e';
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.boxShadow = '0 2px 8px rgba(100, 116, 139, 0.2)';
+              e.currentTarget.style.boxShadow = '0 3px 10px rgba(155, 197, 61, 0.25)';
               e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.borderColor = '#9bc53d';
             }}
           >
             <svg className="btn-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 17l-5-5m0 0l5-5m-5 5h12" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
             </svg>
             Edit Cash Flow
           </button>
