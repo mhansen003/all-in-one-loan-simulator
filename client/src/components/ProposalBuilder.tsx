@@ -137,6 +137,7 @@ export default function ProposalBuilder({
   // Loan Officer Email for signature lookup
   const [loanOfficerEmail, setLoanOfficerEmail] = useState('');
   const [signatureFound, setSignatureFound] = useState(false);
+  const [isEditingSignature, setIsEditingSignature] = useState(false);
 
   // AI Pitch state
   const [aiPitch, setAiPitch] = useState('');
@@ -412,9 +413,18 @@ export default function ProposalBuilder({
   };
 
   const handleGeneratePDF = () => {
-    // Use browser's native print dialog to save as PDF
-    // Users can select "Save as PDF" as their printer destination
-    window.print();
+    // Open print dialog in a new window/tab to ensure all content is captured correctly
+    // This prevents issues with React state and ensures print preview gets fresh data
+    const printWindow = window.open(window.location.href, '_blank');
+    if (printWindow) {
+      printWindow.onload = () => {
+        printWindow.print();
+      };
+    } else {
+      // Fallback if popup was blocked
+      alert('Please allow popups for this site to print the proposal. Alternatively, use Ctrl+P to print this page.');
+      window.print();
+    }
   };
 
   const formatCurrency = (amount: number): string => {
@@ -837,24 +847,165 @@ export default function ProposalBuilder({
             </div>
 
             <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-              {signatureFound && (
-                <div style={{
-                  marginBottom: '2rem',
-                  padding: '1rem',
-                  background: '#f0fdf4',
-                  border: '2px solid #86efac',
-                  borderRadius: '8px',
-                  color: '#15803d',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.75rem'
-                }}>
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '24px', height: '24px' }}>
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  <span><strong>Signature loaded!</strong> Review and update your information below if needed.</span>
+              {/* Show signature preview only (with edit button) if signature exists and user is not editing */}
+              {signatureFound && !isEditingSignature && (signatureName || signatureTitle || signatureEmail || signaturePhone) ? (
+                <div>
+                  <div style={{
+                    marginBottom: '1.5rem',
+                    padding: '1rem',
+                    background: '#f0fdf4',
+                    border: '2px solid #86efac',
+                    borderRadius: '8px',
+                    color: '#15803d',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: '0.75rem'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '24px', height: '24px' }}>
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span><strong>Signature loaded!</strong> Your saved signature is ready to use.</span>
+                    </div>
+                    <button
+                      onClick={() => setIsEditingSignature(true)}
+                      style={{
+                        padding: '0.5rem 1rem',
+                        background: 'white',
+                        border: '2px solid #10b981',
+                        borderRadius: '6px',
+                        color: '#059669',
+                        fontWeight: '600',
+                        cursor: 'pointer',
+                        fontSize: '0.9rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        transition: 'all 0.2s'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = '#059669';
+                        e.currentTarget.style.color = 'white';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = 'white';
+                        e.currentTarget.style.color = '#059669';
+                      }}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '16px', height: '16px' }}>
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                      </svg>
+                      Edit Signature
+                    </button>
+                  </div>
+
+                  {/* Signature Preview */}
+                  <div style={{
+                    padding: '2rem',
+                    background: 'white',
+                    border: '2px solid #e2e8f0',
+                    borderRadius: '12px',
+                    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05)'
+                  }}>
+                    <h3 style={{ margin: '0 0 1.5rem 0', fontSize: '1.1rem', color: '#64748b', textAlign: 'center' }}>Your Signature</h3>
+                    <div style={{
+                      fontFamily: 'Arial, sans-serif',
+                      borderLeft: '4px solid #8b5cf6',
+                      paddingLeft: '1.5rem'
+                    }}>
+                      {signatureName && (
+                        <div style={{ fontSize: '1.25rem', fontWeight: '700', color: '#1e293b', marginBottom: '0.25rem' }}>
+                          {signatureName}
+                        </div>
+                      )}
+                      {signatureTitle && (
+                        <div style={{ fontSize: '1rem', color: '#475569', marginBottom: '0.5rem', fontStyle: 'italic' }}>
+                          {signatureTitle}
+                        </div>
+                      )}
+                      {signatureCompany && (
+                        <div style={{ fontSize: '1.05rem', fontWeight: '600', color: '#8b5cf6', marginBottom: '0.75rem' }}>
+                          {signatureCompany}
+                        </div>
+                      )}
+                      <div style={{ fontSize: '0.95rem', color: '#64748b', lineHeight: '1.6' }}>
+                        {signatureEmail && (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '16px', height: '16px', color: '#8b5cf6' }}>
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                            </svg>
+                            <a href={`mailto:${signatureEmail}`} style={{ color: '#8b5cf6', textDecoration: 'none' }}>{signatureEmail}</a>
+                          </div>
+                        )}
+                        {signaturePhone && (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '16px', height: '16px', color: '#8b5cf6' }}>
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                            </svg>
+                            <span>{signaturePhone}</span>
+                          </div>
+                        )}
+                        {signatureWebsite && (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '16px', height: '16px', color: '#8b5cf6' }}>
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+                            </svg>
+                            <a href={`https://${signatureWebsite.replace(/^https?:\/\//, '')}`} style={{ color: '#8b5cf6', textDecoration: 'none' }}>{signatureWebsite.replace(/^https?:\/\//, '')}</a>
+                          </div>
+                        )}
+                        {signatureAddress && (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '16px', height: '16px', color: '#8b5cf6' }}>
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                            <span>{signatureAddress}</span>
+                          </div>
+                        )}
+                        {signatureNMLS && (
+                          <div style={{ marginTop: '0.5rem', fontSize: '0.85rem', color: '#94a3b8' }}>
+                            NMLS# {signatureNMLS}
+                          </div>
+                        )}
+                        {signatureTagline && (
+                          <div style={{ marginTop: '0.75rem', fontSize: '0.85rem', fontWeight: '600', color: '#8b5cf6', letterSpacing: '0.05em' }}>
+                            {signatureTagline}
+                          </div>
+                        )}
+                        {(signatureLinkedIn || signatureFacebook || signatureTwitter || signatureInstagram) && (
+                          <div style={{ marginTop: '1rem', display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                            {signatureLinkedIn && <span style={{ fontSize: '1.25rem' }}>💼</span>}
+                            {signatureFacebook && <span style={{ fontSize: '1.25rem' }}>📘</span>}
+                            {signatureTwitter && <span style={{ fontSize: '1.25rem' }}>🐦</span>}
+                            {signatureInstagram && <span style={{ fontSize: '1.25rem' }}>📷</span>}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              )}
+              ) : (
+                <>
+                  {/* Show form when editing or no signature exists */}
+                  {signatureFound && isEditingSignature && (
+                    <div style={{
+                      marginBottom: '2rem',
+                      padding: '1rem',
+                      background: '#fef3c7',
+                      border: '2px solid #fbbf24',
+                      borderRadius: '8px',
+                      color: '#92400e',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.75rem'
+                    }}>
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '24px', height: '24px' }}>
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                      </svg>
+                      <span><strong>Editing signature.</strong> Make your changes below, then click Next to save.</span>
+                    </div>
+                  )}
 
               {/* Basic Information */}
               <h3 style={{ fontSize: '1.2rem', marginBottom: '1rem', color: '#334155', fontWeight: '600' }}>Basic Information</h3>
@@ -1352,6 +1503,8 @@ export default function ProposalBuilder({
                 </svg>
                 <span>This signature is optional. If you skip this step, the proposal will not include a personalized signature at the end.</span>
               </div>
+                </>
+              )}
             </div>
           </div>
         )}
@@ -1418,7 +1571,7 @@ export default function ProposalBuilder({
                         <tr>
                           <td>Monthly Payment</td>
                           <td>{formatCurrency(simulation.traditionalLoan.monthlyPayment)}</td>
-                          <td>{formatCurrency(simulation.allInOneLoan.monthlyPayment)}</td>
+                          <td>{formatCurrency(simulation.traditionalLoan.monthlyPayment)}</td>
                         </tr>
                         <tr>
                           <td>Total Interest</td>

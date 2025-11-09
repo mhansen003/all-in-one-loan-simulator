@@ -76,6 +76,15 @@ export class AccurateLoanCalculator {
    * Run the accurate AIO loan simulation
    */
   static simulate(input: AccurateCalculationInput): AccurateSimulationResult {
+    // Log simulation start
+    console.log(`[AccurateLoanCalculator] Starting simulation...`);
+    console.log(`[AccurateLoanCalculator] Starting Balance: $${input.startingBalance.toFixed(2)}`);
+    console.log(`[AccurateLoanCalculator] Interest Rate: ${(input.interestRate * 100).toFixed(3)}%`);
+    console.log(`[AccurateLoanCalculator] Monthly Income: $${input.monthlyIncome.toFixed(2)}`);
+    console.log(`[AccurateLoanCalculator] Monthly Expenses: $${input.monthlyExpenses.toFixed(2)}`);
+    console.log(`[AccurateLoanCalculator] Net Cash Flow: $${(input.monthlyIncome - input.monthlyExpenses).toFixed(2)}`);
+    console.log(`[AccurateLoanCalculator] Deposit Frequency: ${input.depositFrequency}`);
+
     // Generate the 11,020-day calendar
     const calendar = CalendarGenerator.generateCalendar(input.startDate);
 
@@ -101,6 +110,11 @@ export class AccurateLoanCalculator {
       calendar,
       input.monthlyExpenses
     );
+
+    // Log first few days of schedules
+    console.log(`[AccurateLoanCalculator] First 30 days deposits: $${depositSchedule.slice(0, 30).reduce((a, b) => a + b, 0).toFixed(2)}`);
+    console.log(`[AccurateLoanCalculator] First 30 days withdrawals: $${withdrawalSchedule.slice(0, 30).reduce((a, b) => a + b, 0).toFixed(2)}`);
+    console.log(`[AccurateLoanCalculator] First 30 days net: $${(depositSchedule.slice(0, 30).reduce((a, b) => a + b, 0) - withdrawalSchedule.slice(0, 30).reduce((a, b) => a + b, 0)).toFixed(2)}`);
 
     // Simulate each day
     for (let dayIndex = 0; dayIndex < calendar.length; dayIndex++) {
@@ -197,7 +211,14 @@ export class AccurateLoanCalculator {
 
       // Stop simulation if loan is paid off
       if (payoffDayIndex !== null) {
+        console.log(`[AccurateLoanCalculator] Loan paid off at day ${payoffDayIndex}`);
         break;
+      }
+
+      // Log progress every year (365 days)
+      if (dayIndex > 0 && dayIndex % 365 === 0) {
+        const yearsElapsed = dayIndex / 365;
+        console.log(`[AccurateLoanCalculator] Year ${yearsElapsed}: Balance = $${currentBalance.toFixed(2)}, Interest Paid = $${totalInterestPaid.toFixed(2)}`);
       }
     }
 
@@ -205,6 +226,11 @@ export class AccurateLoanCalculator {
     const finalBalance = currentBalance;
     const payoffDate = payoffDayIndex !== null ? calendar[payoffDayIndex].date : null;
     const monthsToPayoff = payoffDayIndex !== null ? Math.ceil(payoffDayIndex / 30.42) : null;
+
+    console.log(`[AccurateLoanCalculator] Simulation complete.`);
+    console.log(`[AccurateLoanCalculator] Final Balance: $${finalBalance.toFixed(2)}`);
+    console.log(`[AccurateLoanCalculator] Total Interest Paid: $${totalInterestPaid.toFixed(2)}`);
+    console.log(`[AccurateLoanCalculator] Months to Payoff: ${monthsToPayoff || 'Not paid off in 30 years'}`);
 
     return {
       dailyResults,

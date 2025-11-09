@@ -70,18 +70,38 @@ export function simulateLoan(
   // Run accurate AIO simulation
   // CRITICAL: cashFlow contains the correct MONTHLY values (monthlyDeposits/monthlyExpenses)
   // DO NOT use totalIncome/totalExpenses as those are TOTALS across all statement months!
+  const depositFreq = (cashFlow.depositFrequency as any) || 'monthly';
+  const monthlyIncome = cashFlow.monthlyDeposits || cashFlow.totalIncome || 0;
+  const monthlyExpenses = cashFlow.monthlyExpenses || cashFlow.totalExpenses || 0;
+  const netCashFlow = monthlyIncome - monthlyExpenses;
+
+  console.log(`[loan-calculator-v3] ========== SIMULATION INPUT ==========`);
+  console.log(`[loan-calculator-v3] Starting Balance: $${loanBalance.toFixed(2)}`);
+  console.log(`[loan-calculator-v3] Interest Rate: ${(aioRate * 100).toFixed(3)}%`);
+  console.log(`[loan-calculator-v3] Deposit Frequency: ${depositFreq}`);
+  console.log(`[loan-calculator-v3] Monthly Income: $${monthlyIncome.toFixed(2)}`);
+  console.log(`[loan-calculator-v3] Monthly Expenses: $${monthlyExpenses.toFixed(2)}`);
+  console.log(`[loan-calculator-v3] Net Cash Flow: $${netCashFlow.toFixed(2)}`);
+
   const accurateInput: AccurateCalculationInput = {
     startingBalance: loanBalance,
     interestRate: aioRate,
     propertyValue: mortgageDetails.propertyValue || loanBalance / 0.8,
     loanToValue: 0.80,
-    monthlyIncome: cashFlow.monthlyDeposits || cashFlow.totalIncome || 0,
-    monthlyExpenses: cashFlow.monthlyExpenses || cashFlow.totalExpenses || 0,
-    depositFrequency: (cashFlow.depositFrequency as any) || 'monthly',
+    monthlyIncome: monthlyIncome,
+    monthlyExpenses: monthlyExpenses,
+    depositFrequency: depositFreq,
     startDate: new Date(),
   };
 
   const accurateResult = AccurateLoanCalculator.simulate(accurateInput);
+
+  console.log(`[loan-calculator-v3] ========== SIMULATION RESULT ==========`);
+  console.log(`[loan-calculator-v3] Total Interest Paid: $${accurateResult.summary.totalInterestPaid.toFixed(2)}`);
+  console.log(`[loan-calculator-v3] Months to Payoff: ${accurateResult.summary.monthsToPayoff}`);
+  console.log(`[loan-calculator-v3] Payoff Date: ${accurateResult.summary.payoffDate?.toISOString()}`);
+  console.log(`[loan-calculator-v3] Final Balance: $${accurateResult.summary.finalBalance.toFixed(2)}`);
+  console.log(`[loan-calculator-v3] =======================================`);
 
   // Build AIO projection from accurate results
   const aioPayoffMonths = accurateResult.summary.monthsToPayoff || remainingMonths;
