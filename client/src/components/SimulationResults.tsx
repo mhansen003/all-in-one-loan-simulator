@@ -12,7 +12,7 @@ interface SimulationResultsProps {
   onBackToCFA?: () => void;
 }
 
-type TabView = 'results' | 'paydown' | 'charts';
+type TabView = 'results' | 'paydown' | 'charts' | 'math';
 type PaydownView = 'monthly' | 'yearly';
 
 export default function SimulationResults({
@@ -48,24 +48,78 @@ export default function SimulationResults({
     return `${years} yr${years !== 1 ? 's' : ''} ${months} mo`;
   };
 
-  // Calculate AIO suitability rating based on net cash flow
+  // Calculate AIO suitability rating based on net cash flow (matching CashFlowReview)
   const getTemperatureRating = (netCashFlow: number): {
     rating: string;
     color: string;
+    description: string;
     icon: string;
+    glow: string;
   } => {
-    if (netCashFlow >= 2000) {
-      return { rating: 'EXCELLENT', color: '#10b981', icon: '🔥' };
-    } else if (netCashFlow >= 1000) {
-      return { rating: 'VERY GOOD', color: '#22c55e', icon: '✨' };
-    } else if (netCashFlow >= 500) {
-      return { rating: 'GOOD', color: '#84cc16', icon: '👍' };
-    } else if (netCashFlow >= 200) {
-      return { rating: 'FAIR', color: '#eab308', icon: '⚠️' };
-    } else if (netCashFlow >= 0) {
-      return { rating: 'MARGINAL', color: '#f59e0b', icon: '⚡' };
+    if (netCashFlow >= 8000) {
+      return {
+        rating: 'EXCELLENT',
+        color: '#059669',
+        description: 'Elite candidate! Maximum AIO benefits with exceptional interest savings.',
+        icon: '💎',
+        glow: '0 0 20px rgba(5, 150, 105, 0.8), 0 0 40px rgba(5, 150, 105, 0.5), 0 0 60px rgba(5, 150, 105, 0.3)'
+      };
+    } else if (netCashFlow >= 5500) {
+      return {
+        rating: 'OUTSTANDING',
+        color: '#10b981',
+        description: 'Outstanding candidate! Huge interest savings and rapid payoff expected.',
+        icon: '🔥',
+        glow: '0 0 18px rgba(16, 185, 129, 0.7), 0 0 35px rgba(16, 185, 129, 0.4)'
+      };
+    } else if (netCashFlow >= 4000) {
+      return {
+        rating: 'GREAT',
+        color: '#22c55e',
+        description: 'Great candidate! Substantial AIO benefits with significant savings.',
+        icon: '⭐',
+        glow: '0 0 15px rgba(34, 197, 94, 0.6), 0 0 30px rgba(34, 197, 94, 0.3)'
+      };
+    } else if (netCashFlow >= 2500) {
+      return {
+        rating: 'VERY GOOD',
+        color: '#4ade80',
+        description: 'Very good candidate! Strong benefits from daily interest calculation.',
+        icon: '✨',
+        glow: '0 0 12px rgba(74, 222, 128, 0.5), 0 0 24px rgba(74, 222, 128, 0.25)'
+      };
+    } else if (netCashFlow >= 1500) {
+      return {
+        rating: 'GOOD',
+        color: '#84cc16',
+        description: 'Good candidate! Meaningful interest savings with AIO loan.',
+        icon: '👍',
+        glow: '0 0 10px rgba(132, 204, 22, 0.4), 0 0 20px rgba(132, 204, 22, 0.2)'
+      };
+    } else if (netCashFlow >= 800) {
+      return {
+        rating: 'FAIR',
+        color: '#eab308',
+        description: 'Fair candidate. Moderate benefits, some interest savings possible.',
+        icon: '⚡',
+        glow: '0 0 8px rgba(234, 179, 8, 0.3), 0 0 15px rgba(234, 179, 8, 0.15)'
+      };
+    } else if (netCashFlow > 300) {
+      return {
+        rating: 'POOR',
+        color: '#f97316',
+        description: 'Limited benefits. Minimal savings expected with AIO loan.',
+        icon: '⚠️',
+        glow: '0 0 5px rgba(249, 115, 22, 0.2)'
+      };
     } else {
-      return { rating: 'NOT SUITABLE', color: '#ef4444', icon: '❌' };
+      return {
+        rating: 'INELIGIBLE',
+        color: '#ef4444',
+        description: 'Not recommended. Cash flow insufficient for AIO loan benefits.',
+        icon: '❌',
+        glow: 'none'
+      };
     }
   };
 
@@ -76,136 +130,185 @@ export default function SimulationResults({
 
   return (
     <div className="simulation-results">
-      <div className="results-header">
-        <div className="header-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-        </div>
-        <div style={{ flex: 1 }}>
-          <h1>Simulation Results</h1>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '2rem', gap: '1rem' }}>
+        <div className="form-header" style={{ margin: 0, flex: 1, textAlign: 'left' }}>
+          <h2>Simulation Results</h2>
           <p>Compare traditional mortgage vs All-In-One loan with cash flow offset</p>
         </div>
-        <button
-          className="btn-secondary"
-          onClick={onBackToCFA}
-          style={{
-            marginRight: '1rem',
-            border: '2px solid #64748b',
-            boxShadow: '0 2px 8px rgba(100, 116, 139, 0.2)',
-            background: 'linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%)',
-            transition: 'all 0.2s ease',
-            fontWeight: '500'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.boxShadow = '0 4px 12px rgba(100, 116, 139, 0.3)';
-            e.currentTarget.style.transform = 'translateY(-1px)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.boxShadow = '0 2px 8px rgba(100, 116, 139, 0.2)';
-            e.currentTarget.style.transform = 'translateY(0)';
-          }}
-        >
-          <svg className="btn-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 17l-5-5m0 0l5-5m-5 5h12" />
-          </svg>
-          Edit Cash Flow
-        </button>
-        <button
-          className="btn-primary"
-          onClick={onCreateProposal}
-          style={{
-            alignSelf: 'flex-start',
-            border: '3px solid #3b82f6',
-            boxShadow: '0 0 20px rgba(59, 130, 246, 0.5), 0 0 40px rgba(59, 130, 246, 0.3)',
-            animation: 'pulse-glow 2s ease-in-out infinite',
-            position: 'relative',
-            background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
-          }}
-        >
-          <svg className="btn-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-          </svg>
-          Create Proposal
-          <style>{`
-            @keyframes pulse-glow {
-              0%, 100% {
-                box-shadow: 0 0 20px rgba(59, 130, 246, 0.5), 0 0 40px rgba(59, 130, 246, 0.3);
+        <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
+          <button
+            className="btn-secondary"
+            onClick={onBackToCFA}
+            style={{
+              border: '2px solid #64748b',
+              boxShadow: '0 2px 8px rgba(100, 116, 139, 0.2)',
+              background: 'linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%)',
+              transition: 'all 0.2s ease',
+              fontWeight: '500',
+              whiteSpace: 'nowrap'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.boxShadow = '0 4px 12px rgba(100, 116, 139, 0.3)';
+              e.currentTarget.style.transform = 'translateY(-1px)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.boxShadow = '0 2px 8px rgba(100, 116, 139, 0.2)';
+              e.currentTarget.style.transform = 'translateY(0)';
+            }}
+          >
+            <svg className="btn-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 17l-5-5m0 0l5-5m-5 5h12" />
+            </svg>
+            Edit Cash Flow
+          </button>
+          <button
+            className="btn-primary"
+            onClick={onCreateProposal}
+            style={{
+              border: '3px solid #3b82f6',
+              boxShadow: '0 0 20px rgba(59, 130, 246, 0.5), 0 0 40px rgba(59, 130, 246, 0.3)',
+              animation: 'pulse-glow 2s ease-in-out infinite',
+              position: 'relative',
+              background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+              whiteSpace: 'nowrap'
+            }}
+          >
+            <svg className="btn-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            Create Proposal
+            <style>{`
+              @keyframes pulse-glow {
+                0%, 100% {
+                  box-shadow: 0 0 20px rgba(59, 130, 246, 0.5), 0 0 40px rgba(59, 130, 246, 0.3);
+                }
+                50% {
+                  box-shadow: 0 0 30px rgba(59, 130, 246, 0.8), 0 0 60px rgba(59, 130, 246, 0.5);
+                }
               }
-              50% {
-                box-shadow: 0 0 30px rgba(59, 130, 246, 0.8), 0 0 60px rgba(59, 130, 246, 0.5);
-              }
-            }
-          `}</style>
-        </button>
+            `}</style>
+          </button>
+        </div>
       </div>
 
-      {/* Confidence and Suitability Banners */}
+      {/* Compact 4-Column Header: Confidence + Summary Cards */}
       {cashFlow && (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '2rem' }}>
-          <div className="confidence-banner" style={{ borderColor: confidenceColor, marginBottom: 0 }}>
-            <div className="confidence-icon" style={{ background: confidenceColor }}>
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
+        <div style={{
+          position: 'sticky',
+          top: 0,
+          zIndex: 100,
+          background: 'white',
+          paddingTop: '1rem',
+          paddingBottom: '1rem',
+          marginBottom: '2rem',
+          boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)'
+        }}>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(4, 1fr)',
+            gap: '1rem'
+          }}>
+            {/* Confidence & Suitability Card */}
+            <div style={{
+              background: 'white',
+              border: '2px solid #e2e8f0',
+              borderRadius: '12px',
+              padding: '1.25rem',
+              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+              display: 'flex',
+              flexDirection: 'column'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
+                <div style={{
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '50%',
+                  background: confidenceColor,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0
+                }}>
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="white" style={{ width: '20px', height: '20px' }}>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <div>
+                  <div style={{ fontSize: '0.875rem', fontWeight: '600', color: '#1a202c' }}>
+                    Analysis Confidence: {confidenceLabel}
+                  </div>
+                  <div style={{ fontSize: '0.75rem', color: '#718096' }}>
+                    AI score: {(cashFlow.confidence * 100).toFixed(0)}%
+                  </div>
+                </div>
+              </div>
+              <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '0.75rem', marginTop: 'auto' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
+                  <span style={{
+                    fontSize: '1.5rem',
+                    filter: temperatureRating.glow !== 'none' ? `drop-shadow(${temperatureRating.glow.split(',')[0]})` : 'none',
+                    transition: 'all 0.3s ease'
+                  }}>
+                    {temperatureRating.icon}
+                  </span>
+                  <div>
+                    <div style={{
+                      fontSize: '0.95rem',
+                      fontWeight: '700',
+                      color: temperatureRating.color,
+                      textShadow: temperatureRating.glow,
+                      transition: 'all 0.3s ease'
+                    }}>
+                      {temperatureRating.rating}
+                    </div>
+                    <div style={{ fontSize: '0.75rem', color: '#718096' }}>
+                      AIO Loan Suitability
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div>
-              <strong>Analysis Confidence: {confidenceLabel}</strong>
-              <p>AI confidence score: {(cashFlow.confidence * 100).toFixed(0)}%</p>
-            </div>
-          </div>
 
-          <div className="confidence-banner" style={{ borderColor: temperatureRating.color, marginBottom: 0 }}>
-            <div className="confidence-icon" style={{ background: temperatureRating.color }}>
-              <span style={{ fontSize: '1.5rem' }}>{temperatureRating.icon}</span>
+            {/* Income Card */}
+            <div className="summary-card income-card">
+              <div className="card-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div className="card-content">
+                <div className="card-label">Total Monthly Income</div>
+                <div className="card-value">{formatCurrency(cashFlow.totalIncome)}</div>
+                <div className="card-description">Average across 12 months</div>
+              </div>
             </div>
-            <div>
-              <strong>{temperatureRating.rating}</strong>
-              <p>AIO Loan Suitability</p>
-            </div>
-          </div>
-        </div>
-      )}
 
-      {/* Summary Metric Cards */}
-      {cashFlow && (
-        <div className="summary-cards">
-          <div className="summary-card income-card">
-            <div className="card-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
+            {/* Expense Card */}
+            <div className="summary-card expense-card">
+              <div className="card-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                </svg>
+              </div>
+              <div className="card-content">
+                <div className="card-label">Total Monthly Expenses</div>
+                <div className="card-value">{formatCurrency(cashFlow.totalExpenses)}</div>
+                <div className="card-description">Recurring expenses only</div>
+              </div>
             </div>
-            <div className="card-content">
-              <div className="card-label">Total Monthly Income</div>
-              <div className="card-value">{formatCurrency(cashFlow.totalIncome)}</div>
-              <div className="card-description">Average across 12 months</div>
-            </div>
-          </div>
 
-          <div className="summary-card expense-card">
-            <div className="card-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-              </svg>
-            </div>
-            <div className="card-content">
-              <div className="card-label">Total Monthly Expenses</div>
-              <div className="card-value">{formatCurrency(cashFlow.totalExpenses)}</div>
-              <div className="card-description">Recurring expenses only</div>
-            </div>
-          </div>
-
-          <div className="summary-card cashflow-card">
-            <div className="card-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-              </svg>
-            </div>
-            <div className="card-content">
-              <div className="card-label">Net Cash Flow</div>
-              <div className="card-value positive">{formatCurrency(cashFlow.netCashFlow)}</div>
-              <div className="card-description">Available for loan offset</div>
+            {/* Net Cash Flow Card */}
+            <div className="summary-card cashflow-card">
+              <div className="card-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                </svg>
+              </div>
+              <div className="card-content">
+                <div className="card-label">Net Cash Flow</div>
+                <div className="card-value positive">{formatCurrency(cashFlow.netCashFlow)}</div>
+                <div className="card-description">Available for loan offset</div>
+              </div>
             </div>
           </div>
         </div>
@@ -240,6 +343,15 @@ export default function SimulationResults({
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
             </svg>
             Charts
+          </button>
+          <button
+            className={`results-tab ${activeTab === 'math' ? 'active' : ''}`}
+            onClick={() => setActiveTab('math')}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+            </svg>
+            Math
           </button>
         </div>
       )}
@@ -282,6 +394,11 @@ export default function SimulationResults({
 
             <div className="card-body">
               <div className="metric-row">
+                <span className="metric-label">Starting Balance</span>
+                <span className="metric-value">{formatCurrency(mortgageDetails.currentBalance)}</span>
+              </div>
+
+              <div className="metric-row">
                 <span className="metric-label">Monthly Payment</span>
                 <span className="metric-value">{formatCurrency(simulation.traditionalLoan.monthlyPayment)}</span>
               </div>
@@ -311,6 +428,11 @@ export default function SimulationResults({
             </div>
 
             <div className="card-body">
+              <div className="metric-row">
+                <span className="metric-label">Starting Balance</span>
+                <span className="metric-value">{formatCurrency(mortgageDetails.currentBalance)}</span>
+              </div>
+
               <div className="metric-row">
                 <span className="metric-label">Monthly Payment</span>
                 <span className="metric-value">{formatCurrency(simulation.allInOneLoan.monthlyPayment)}</span>
@@ -430,18 +552,30 @@ export default function SimulationResults({
               <table style={{
                 width: '100%',
                 borderCollapse: 'collapse',
-                fontSize: '0.9rem'
+                fontSize: '0.875rem'
               }}>
                 <thead style={{ position: 'sticky', top: 0, zIndex: 10 }}>
                   <tr style={{ background: '#1e293b', color: 'white' }}>
-                    <th style={{ padding: '1rem', textAlign: 'left', borderBottom: '2px solid #cbd5e1', minWidth: '100px' }}>
+                    <th style={{ padding: '0.75rem', textAlign: 'left', borderBottom: '2px solid #cbd5e1', minWidth: '80px' }}>
                       {paydownView === 'monthly' ? 'Period' : 'Year'}
                     </th>
-                    <th style={{ padding: '1rem', textAlign: 'center', borderBottom: '2px solid #cbd5e1', minWidth: '280px' }}>
-                      Loan Balance Comparison
+                    <th style={{ padding: '0.75rem', textAlign: 'right', borderBottom: '2px solid #cbd5e1', minWidth: '110px', background: '#2d3748' }}>
+                      Traditional Balance
                     </th>
-                    <th style={{ padding: '1rem', textAlign: 'center', borderBottom: '2px solid #cbd5e1', minWidth: '280px' }}>
-                      Principal Paid Comparison
+                    <th style={{ padding: '0.75rem', textAlign: 'right', borderBottom: '2px solid #cbd5e1', minWidth: '110px', background: '#15803d' }}>
+                      AIO Balance
+                    </th>
+                    <th style={{ padding: '0.75rem', textAlign: 'right', borderBottom: '2px solid #cbd5e1', minWidth: '100px', background: '#166534' }}>
+                      Δ Balance
+                    </th>
+                    <th style={{ padding: '0.75rem', textAlign: 'right', borderBottom: '2px solid #cbd5e1', minWidth: '110px', background: '#2d3748' }}>
+                      Trad. Principal
+                    </th>
+                    <th style={{ padding: '0.75rem', textAlign: 'right', borderBottom: '2px solid #cbd5e1', minWidth: '110px', background: '#15803d' }}>
+                      AIO Principal
+                    </th>
+                    <th style={{ padding: '0.75rem', textAlign: 'right', borderBottom: '2px solid #cbd5e1', minWidth: '100px', background: '#166534' }}>
+                      Δ Principal
                     </th>
                   </tr>
                 </thead>
@@ -509,119 +643,41 @@ export default function SimulationResults({
                             background: year % 2 === 0 ? '#f8fafc' : 'white',
                             borderBottom: '1px solid #e2e8f0'
                           }}>
+                            {/* Year */}
                             <td style={{ padding: '0.75rem', fontWeight: '700', color: '#334155' }}>{year}</td>
 
-                            {/* Balance Comparison Column */}
-                            <td style={{ padding: '0.75rem' }}>
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                                {/* Traditional Balance */}
-                                <div style={{
-                                  display: 'flex',
-                                  justifyContent: 'space-between',
-                                  alignItems: 'center',
-                                  padding: '0.5rem 0.75rem',
-                                  background: '#eff6ff',
-                                  borderRadius: '6px',
-                                  border: '1px solid #bfdbfe'
-                                }}>
-                                  <span style={{ fontSize: '0.75rem', color: '#1e40af', fontWeight: '600' }}>Traditional</span>
-                                  <span style={{ fontSize: '0.9rem', fontWeight: '700', color: '#1e40af' }}>
-                                    {formatCurrency(tradBalance)}
-                                  </span>
-                                </div>
-
-                                {/* AIO Balance with Delta Badge */}
-                                <div style={{
-                                  display: 'flex',
-                                  justifyContent: 'space-between',
-                                  alignItems: 'center',
-                                  padding: '0.5rem 0.75rem',
-                                  background: '#f0fdf4',
-                                  borderRadius: '6px',
-                                  border: '1px solid #86efac',
-                                  position: 'relative'
-                                }}>
-                                  <span style={{ fontSize: '0.75rem', color: '#15803d', fontWeight: '600' }}>All-In-One</span>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                    {aioBalance > 0.01 ? (
-                                      <>
-                                        <span style={{ fontSize: '0.9rem', fontWeight: '700', color: '#15803d' }}>
-                                          {formatCurrency(aioBalance)}
-                                        </span>
-                                        {balanceDelta > 0 && (
-                                          <span style={{
-                                            fontSize: '0.7rem',
-                                            fontWeight: '700',
-                                            color: '#10b981',
-                                            background: '#d1fae5',
-                                            padding: '0.15rem 0.5rem',
-                                            borderRadius: '9999px',
-                                            border: '1px solid #10b981'
-                                          }}>
-                                            ▼ {formatCurrency(balanceDelta)}
-                                          </span>
-                                        )}
-                                      </>
-                                    ) : (
-                                      <span style={{ fontSize: '0.85rem', fontWeight: '700', color: '#10b981' }}>
-                                        ✓ PAID OFF
-                                      </span>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
+                            {/* Traditional Balance */}
+                            <td style={{ padding: '0.75rem', textAlign: 'right', fontWeight: '600', color: '#1e40af' }}>
+                              {formatCurrency(tradBalance)}
                             </td>
 
-                            {/* Principal Paid Comparison Column */}
-                            <td style={{ padding: '0.75rem' }}>
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                                {/* Traditional Principal */}
-                                <div style={{
-                                  display: 'flex',
-                                  justifyContent: 'space-between',
-                                  alignItems: 'center',
-                                  padding: '0.5rem 0.75rem',
-                                  background: '#eff6ff',
-                                  borderRadius: '6px',
-                                  border: '1px solid #bfdbfe'
-                                }}>
-                                  <span style={{ fontSize: '0.75rem', color: '#1e40af', fontWeight: '600' }}>Traditional</span>
-                                  <span style={{ fontSize: '0.9rem', fontWeight: '600', color: '#1e40af' }}>
-                                    {formatCurrency(yearTradPrincipal)}
-                                  </span>
-                                </div>
+                            {/* AIO Balance */}
+                            <td style={{ padding: '0.75rem', textAlign: 'right', fontWeight: '600', color: '#15803d' }}>
+                              {aioBalance > 0.01 ? formatCurrency(aioBalance) : (
+                                <span style={{ fontSize: '0.85rem', fontWeight: '700', color: '#10b981' }}>
+                                  ✓ PAID OFF
+                                </span>
+                              )}
+                            </td>
 
-                                {/* AIO Principal with Delta Badge */}
-                                <div style={{
-                                  display: 'flex',
-                                  justifyContent: 'space-between',
-                                  alignItems: 'center',
-                                  padding: '0.5rem 0.75rem',
-                                  background: '#f0fdf4',
-                                  borderRadius: '6px',
-                                  border: '1px solid #86efac'
-                                }}>
-                                  <span style={{ fontSize: '0.75rem', color: '#15803d', fontWeight: '600' }}>All-In-One</span>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                    <span style={{ fontSize: '0.9rem', fontWeight: '600', color: '#15803d' }}>
-                                      {formatCurrency(yearAioPrincipal)}
-                                    </span>
-                                    {principalDelta > 0 && (
-                                      <span style={{
-                                        fontSize: '0.7rem',
-                                        fontWeight: '700',
-                                        color: '#10b981',
-                                        background: '#d1fae5',
-                                        padding: '0.15rem 0.5rem',
-                                        borderRadius: '9999px',
-                                        border: '1px solid #10b981'
-                                      }}>
-                                        ▲ {formatCurrency(principalDelta)}
-                                      </span>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
+                            {/* Balance Delta */}
+                            <td style={{ padding: '0.75rem', textAlign: 'right', fontWeight: '700', color: balanceDelta > 0 ? '#10b981' : '#64748b' }}>
+                              {balanceDelta > 0 ? `▼ ${formatCurrency(balanceDelta)}` : '-'}
+                            </td>
+
+                            {/* Traditional Principal */}
+                            <td style={{ padding: '0.75rem', textAlign: 'right', fontWeight: '600', color: '#1e40af' }}>
+                              {formatCurrency(yearTradPrincipal)}
+                            </td>
+
+                            {/* AIO Principal */}
+                            <td style={{ padding: '0.75rem', textAlign: 'right', fontWeight: '600', color: '#15803d' }}>
+                              {formatCurrency(yearAioPrincipal)}
+                            </td>
+
+                            {/* Principal Delta */}
+                            <td style={{ padding: '0.75rem', textAlign: 'right', fontWeight: '700', color: principalDelta > 0 ? '#10b981' : '#64748b' }}>
+                              {principalDelta > 0 ? `▲ ${formatCurrency(principalDelta)}` : '-'}
                             </td>
                           </tr>
                         );
@@ -669,120 +725,43 @@ export default function SimulationResults({
                             background: 'white',
                             borderBottom: '1px solid #e2e8f0'
                           }}>
+                            {/* Period */}
                             <td style={{ padding: '0.75rem', fontWeight: '600', color: '#334155' }}>
                               Y{year}-M{monthInYear}
                             </td>
 
-                            {/* Balance Comparison Column */}
-                            <td style={{ padding: '0.75rem' }}>
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                                {/* Traditional Balance */}
-                                <div style={{
-                                  display: 'flex',
-                                  justifyContent: 'space-between',
-                                  alignItems: 'center',
-                                  padding: '0.5rem 0.75rem',
-                                  background: '#eff6ff',
-                                  borderRadius: '6px',
-                                  border: '1px solid #bfdbfe'
-                                }}>
-                                  <span style={{ fontSize: '0.75rem', color: '#1e40af', fontWeight: '600' }}>Traditional</span>
-                                  <span style={{ fontSize: '0.9rem', fontWeight: '700', color: '#1e40af' }}>
-                                    {formatCurrency(tradBalance)}
-                                  </span>
-                                </div>
-
-                                {/* AIO Balance with Delta Badge */}
-                                <div style={{
-                                  display: 'flex',
-                                  justifyContent: 'space-between',
-                                  alignItems: 'center',
-                                  padding: '0.5rem 0.75rem',
-                                  background: '#f0fdf4',
-                                  borderRadius: '6px',
-                                  border: '1px solid #86efac'
-                                }}>
-                                  <span style={{ fontSize: '0.75rem', color: '#15803d', fontWeight: '600' }}>All-In-One</span>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                    {aioBalance > 0.01 ? (
-                                      <>
-                                        <span style={{ fontSize: '0.9rem', fontWeight: '700', color: '#15803d' }}>
-                                          {formatCurrency(aioBalance)}
-                                        </span>
-                                        {balanceDelta > 0 && (
-                                          <span style={{
-                                            fontSize: '0.7rem',
-                                            fontWeight: '700',
-                                            color: '#10b981',
-                                            background: '#d1fae5',
-                                            padding: '0.15rem 0.5rem',
-                                            borderRadius: '9999px',
-                                            border: '1px solid #10b981'
-                                          }}>
-                                            ▼ {formatCurrency(balanceDelta)}
-                                          </span>
-                                        )}
-                                      </>
-                                    ) : (
-                                      <span style={{ fontSize: '0.85rem', fontWeight: '700', color: '#10b981' }}>
-                                        ✓ PAID OFF
-                                      </span>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
+                            {/* Traditional Balance */}
+                            <td style={{ padding: '0.75rem', textAlign: 'right', fontWeight: '600', color: '#1e40af' }}>
+                              {formatCurrency(tradBalance)}
                             </td>
 
-                            {/* Principal Paid Comparison Column */}
-                            <td style={{ padding: '0.75rem' }}>
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                                {/* Traditional Principal */}
-                                <div style={{
-                                  display: 'flex',
-                                  justifyContent: 'space-between',
-                                  alignItems: 'center',
-                                  padding: '0.5rem 0.75rem',
-                                  background: '#eff6ff',
-                                  borderRadius: '6px',
-                                  border: '1px solid #bfdbfe'
-                                }}>
-                                  <span style={{ fontSize: '0.75rem', color: '#1e40af', fontWeight: '600' }}>Traditional</span>
-                                  <span style={{ fontSize: '0.9rem', fontWeight: '600', color: '#1e40af' }}>
-                                    {formatCurrency(tradPrincipal)}
-                                  </span>
-                                </div>
+                            {/* AIO Balance */}
+                            <td style={{ padding: '0.75rem', textAlign: 'right', fontWeight: '600', color: '#15803d' }}>
+                              {aioBalance > 0.01 ? formatCurrency(aioBalance) : (
+                                <span style={{ fontSize: '0.85rem', fontWeight: '700', color: '#10b981' }}>
+                                  ✓ PAID OFF
+                                </span>
+                              )}
+                            </td>
 
-                                {/* AIO Principal with Delta Badge */}
-                                <div style={{
-                                  display: 'flex',
-                                  justifyContent: 'space-between',
-                                  alignItems: 'center',
-                                  padding: '0.5rem 0.75rem',
-                                  background: '#f0fdf4',
-                                  borderRadius: '6px',
-                                  border: '1px solid #86efac'
-                                }}>
-                                  <span style={{ fontSize: '0.75rem', color: '#15803d', fontWeight: '600' }}>All-In-One</span>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                    <span style={{ fontSize: '0.9rem', fontWeight: '600', color: '#15803d' }}>
-                                      {formatCurrency(aioPrincipal)}
-                                    </span>
-                                    {principalDelta > 0 && (
-                                      <span style={{
-                                        fontSize: '0.7rem',
-                                        fontWeight: '700',
-                                        color: '#10b981',
-                                        background: '#d1fae5',
-                                        padding: '0.15rem 0.5rem',
-                                        borderRadius: '9999px',
-                                        border: '1px solid #10b981'
-                                      }}>
-                                        ▲ {formatCurrency(principalDelta)}
-                                      </span>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
+                            {/* Balance Delta */}
+                            <td style={{ padding: '0.75rem', textAlign: 'right', fontWeight: '700', color: balanceDelta > 0 ? '#10b981' : '#64748b' }}>
+                              {balanceDelta > 0 ? `▼ ${formatCurrency(balanceDelta)}` : '-'}
+                            </td>
+
+                            {/* Traditional Principal */}
+                            <td style={{ padding: '0.75rem', textAlign: 'right', fontWeight: '600', color: '#1e40af' }}>
+                              {formatCurrency(tradPrincipal)}
+                            </td>
+
+                            {/* AIO Principal */}
+                            <td style={{ padding: '0.75rem', textAlign: 'right', fontWeight: '600', color: '#15803d' }}>
+                              {formatCurrency(aioPrincipal)}
+                            </td>
+
+                            {/* Principal Delta */}
+                            <td style={{ padding: '0.75rem', textAlign: 'right', fontWeight: '700', color: principalDelta > 0 ? '#10b981' : '#64748b' }}>
+                              {principalDelta > 0 ? `▲ ${formatCurrency(principalDelta)}` : '-'}
                             </td>
                           </tr>
                         );
@@ -798,31 +777,30 @@ export default function SimulationResults({
                               fontWeight: '700',
                               borderBottom: '2px solid #cbd5e1'
                             }}>
-                              <td style={{ padding: '1rem', fontSize: '1rem' }}>
+                              <td style={{ padding: '1rem', fontSize: '0.9rem' }}>
                                 Year {year} Total
                               </td>
-                              <td style={{ padding: '1rem', textAlign: 'center' }}>
+                              <td colSpan={3} style={{ padding: '1rem', textAlign: 'center', fontSize: '0.85rem' }}>
                                 —
                               </td>
-                              <td style={{ padding: '1rem' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                  <span style={{ fontSize: '0.9rem' }}>Total Principal:</span>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                    <span style={{ color: '#93c5fd' }}>{formatCurrency(yearTradPrincipal)}</span>
-                                    <span style={{ color: '#6ee7b7' }}>{formatCurrency(yearAioPrincipal)}</span>
-                                    {yearPrincipalDelta > 0 && (
-                                      <span style={{
-                                        fontSize: '0.8rem',
-                                        color: '#10b981',
-                                        background: 'rgba(16, 185, 129, 0.2)',
-                                        padding: '0.25rem 0.75rem',
-                                        borderRadius: '9999px'
-                                      }}>
-                                        ▲ {formatCurrency(yearPrincipalDelta)}
-                                      </span>
-                                    )}
-                                  </div>
-                                </div>
+                              <td style={{ padding: '1rem', textAlign: 'right', color: '#93c5fd' }}>
+                                {formatCurrency(yearTradPrincipal)}
+                              </td>
+                              <td style={{ padding: '1rem', textAlign: 'right', color: '#6ee7b7' }}>
+                                {formatCurrency(yearAioPrincipal)}
+                              </td>
+                              <td style={{ padding: '1rem', textAlign: 'right' }}>
+                                {yearPrincipalDelta > 0 && (
+                                  <span style={{
+                                    fontSize: '0.85rem',
+                                    color: '#10b981',
+                                    background: 'rgba(16, 185, 129, 0.2)',
+                                    padding: '0.25rem 0.75rem',
+                                    borderRadius: '9999px'
+                                  }}>
+                                    ▲ {formatCurrency(yearPrincipalDelta)}
+                                  </span>
+                                )}
                               </td>
                             </tr>
                           );
@@ -1245,6 +1223,286 @@ export default function SimulationResults({
                       </div>
                     )}
                   </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Math Tab */}
+      {activeTab === 'math' && (
+        <div className="math-tab-content" style={{ padding: '2rem', background: 'white', borderRadius: '12px', border: '2px solid #e2e8f0' }}>
+          <h2 style={{ textAlign: 'center', marginBottom: '2rem', color: '#1e293b' }}>🧮 Calculation Details & Formulas</h2>
+
+          {/* Input Values Section */}
+          <div style={{ marginBottom: '3rem', padding: '2rem', background: '#f8fafc', borderRadius: '8px' }}>
+            <h3 style={{ marginBottom: '1.5rem', color: '#334155', fontSize: '1.25rem' }}>📊 Input Values</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+              <div style={{ padding: '1rem', background: 'white', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+                <div style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '0.25rem' }}>Loan Amount</div>
+                <div style={{ fontSize: '1.25rem', fontWeight: '700', color: '#1e293b' }}>{formatCurrency(mortgageDetails.currentBalance)}</div>
+              </div>
+              <div style={{ padding: '1rem', background: 'white', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+                <div style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '0.25rem' }}>Traditional Rate</div>
+                <div style={{ fontSize: '1.25rem', fontWeight: '700', color: '#1e293b' }}>{mortgageDetails.interestRate.toFixed(3)}%</div>
+              </div>
+              <div style={{ padding: '1rem', background: 'white', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+                <div style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '0.25rem' }}>AIO Rate</div>
+                <div style={{ fontSize: '1.25rem', fontWeight: '700', color: '#1e293b' }}>{mortgageDetails.aioInterestRate.toFixed(3)}%</div>
+              </div>
+              <div style={{ padding: '1rem', background: 'white', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+                <div style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '0.25rem' }}>Net Cash Flow (Monthly)</div>
+                <div style={{ fontSize: '1.25rem', fontWeight: '700', color: '#1e293b' }}>{formatCurrency(cashFlow?.netCashFlow || 0)}</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Traditional Loan Math */}
+          <div style={{ marginBottom: '3rem', padding: '2rem', background: 'white', borderRadius: '8px', border: '2px solid #4299e1' }}>
+            <h3 style={{ marginBottom: '1.5rem', color: '#2563eb', fontSize: '1.25rem' }}>🏦 Traditional Fixed-Rate Mortgage Math</h3>
+
+            <div style={{ marginBottom: '2rem' }}>
+              <h4 style={{ fontSize: '1rem', fontWeight: '600', color: '#334155', marginBottom: '1rem' }}>Monthly Payment Formula</h4>
+              <div style={{ padding: '1.5rem', background: '#f8fafc', borderRadius: '8px', fontFamily: 'monospace', fontSize: '1.1rem', color: '#1e293b', textAlign: 'center', marginBottom: '1rem' }}>
+                M = P × [r(1+r)ⁿ] / [(1+r)ⁿ - 1]
+              </div>
+              <div style={{ padding: '1rem', background: '#eff6ff', borderRadius: '6px', fontSize: '0.9rem' }}>
+                <strong>Where:</strong>
+                <ul style={{ marginTop: '0.5rem', marginLeft: '1.5rem', lineHeight: '1.8' }}>
+                  <li><strong>P</strong> = Principal = {formatCurrency(mortgageDetails.currentBalance)}</li>
+                  <li><strong>r</strong> = Monthly interest rate = {(mortgageDetails.interestRate / 12).toFixed(6)}% = {(mortgageDetails.interestRate / 1200).toFixed(8)}</li>
+                  <li><strong>n</strong> = Number of payments = 360 (30 years × 12 months)</li>
+                </ul>
+              </div>
+            </div>
+
+            <div style={{ marginBottom: '2rem' }}>
+              <h4 style={{ fontSize: '1rem', fontWeight: '600', color: '#334155', marginBottom: '1rem' }}>Calculation Steps</h4>
+              <div style={{ padding: '1.5rem', background: '#f8fafc', borderRadius: '8px', fontFamily: 'monospace', fontSize: '0.95rem', lineHeight: '2' }}>
+                {(() => {
+                  const P = mortgageDetails.currentBalance;
+                  const r = mortgageDetails.interestRate / 1200;
+                  const n = 360;
+                  const onePlusR = 1 + r;
+                  const onePlusRn = Math.pow(onePlusR, n);
+                  const numerator = P * r * onePlusRn;
+                  const denominator = onePlusRn - 1;
+                  const M = numerator / denominator;
+
+                  return (
+                    <>
+                      <div>1. (1 + r) = 1 + {r.toFixed(8)} = <strong>{onePlusR.toFixed(8)}</strong></div>
+                      <div>2. (1 + r)ⁿ = {onePlusR.toFixed(8)}³⁶⁰ = <strong>{onePlusRn.toFixed(4)}</strong></div>
+                      <div>3. Numerator = {formatCurrency(P)} × {r.toFixed(8)} × {onePlusRn.toFixed(4)} = <strong>{formatCurrency(numerator)}</strong></div>
+                      <div>4. Denominator = {onePlusRn.toFixed(4)} - 1 = <strong>{denominator.toFixed(4)}</strong></div>
+                      <div style={{ marginTop: '1rem', padding: '0.75rem', background: '#dbeafe', borderRadius: '6px', fontSize: '1.1rem' }}>
+                        <strong>5. Monthly Payment (M) = {formatCurrency(numerator)} / {denominator.toFixed(4)} = {formatCurrency(M)}</strong>
+                      </div>
+                    </>
+                  );
+                })()}
+              </div>
+            </div>
+
+            <div style={{ padding: '1.5rem', background: '#dbeafe', borderRadius: '8px', border: '2px solid #3b82f6' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <div>
+                  <div style={{ fontSize: '0.85rem', color: '#1e40af', marginBottom: '0.25rem' }}>Monthly Payment</div>
+                  <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#1e293b' }}>{formatCurrency(simulation.traditionalLoan.monthlyPayment)}</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: '0.85rem', color: '#1e40af', marginBottom: '0.25rem' }}>Total Interest Paid</div>
+                  <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#1e293b' }}>{formatCurrency(simulation.traditionalLoan.totalInterestPaid)}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* AIO Loan Math */}
+          <div style={{ marginBottom: '3rem', padding: '2rem', background: 'white', borderRadius: '8px', border: '2px solid #9bc53d' }}>
+            <h3 style={{ marginBottom: '1.5rem', color: '#7da62e', fontSize: '1.25rem' }}>✨ All-In-One Loan Math (Cash Flow Offset Method)</h3>
+
+            <div style={{ marginBottom: '2rem' }}>
+              <h4 style={{ fontSize: '1rem', fontWeight: '600', color: '#334155', marginBottom: '1rem' }}>Key Concept: Effective Principal</h4>
+              <div style={{ padding: '1.5rem', background: '#f8fafc', borderRadius: '8px', fontFamily: 'monospace', fontSize: '1.1rem', color: '#1e293b', textAlign: 'center', marginBottom: '1rem' }}>
+                Effective Principal = Actual Balance - Average Balance Offset
+              </div>
+              <div style={{ padding: '1rem', background: '#f0fdf4', borderRadius: '6px', fontSize: '0.9rem' }}>
+                <strong>The Secret Sauce:</strong>
+                <p style={{ marginTop: '0.5rem', lineHeight: '1.6' }}>
+                  Your income deposits create an average balance that <em>offsets</em> the principal. Interest is only calculated on the effective (reduced) principal, not the full loan balance!
+                </p>
+              </div>
+            </div>
+
+            <div style={{ marginBottom: '2rem' }}>
+              <h4 style={{ fontSize: '1rem', fontWeight: '600', color: '#334155', marginBottom: '1rem' }}>Average Balance Offset Calculation</h4>
+              <div style={{ padding: '1.5rem', background: '#f8fafc', borderRadius: '8px', fontFamily: 'monospace', fontSize: '0.95rem', lineHeight: '2' }}>
+                {(() => {
+                  const monthlyDeposits = cashFlow?.monthlyDeposits || cashFlow?.totalIncome || 0;
+                  const netCashFlow = cashFlow?.netCashFlow || 0;
+                  const baseAvg = (monthlyDeposits + netCashFlow) / 2;
+                  // Assume monthly frequency for simplicity
+                  const avgBalance = baseAvg;
+
+                  return (
+                    <>
+                      <div>Monthly Deposits = <strong>{formatCurrency(monthlyDeposits)}</strong></div>
+                      <div>Net Cash Flow = <strong>{formatCurrency(netCashFlow)}</strong></div>
+                      <div style={{ marginTop: '1rem', padding: '0.75rem', background: '#d1fae5', borderRadius: '6px', fontSize: '1.05rem' }}>
+                        <strong>Average Balance Offset = ({formatCurrency(monthlyDeposits)} + {formatCurrency(netCashFlow)}) / 2 = {formatCurrency(avgBalance)}</strong>
+                      </div>
+                    </>
+                  );
+                })()}
+              </div>
+            </div>
+
+            <div style={{ marginBottom: '2rem' }}>
+              <h4 style={{ fontSize: '1rem', fontWeight: '600', color: '#334155', marginBottom: '1rem' }}>Monthly Interest Calculation</h4>
+              <div style={{ padding: '1.5rem', background: '#f8fafc', borderRadius: '8px', fontFamily: 'monospace', fontSize: '1.1rem', color: '#1e293b', textAlign: 'center', marginBottom: '1rem' }}>
+                Monthly Interest = Effective Principal × Monthly Rate
+              </div>
+              <div style={{ padding: '1.5rem', background: '#f8fafc', borderRadius: '8px', fontFamily: 'monospace', fontSize: '0.95rem', lineHeight: '2' }}>
+                {(() => {
+                  const balance = mortgageDetails.currentBalance;
+                  const monthlyDeposits = cashFlow?.monthlyDeposits || cashFlow?.totalIncome || 0;
+                  const netCashFlow = cashFlow?.netCashFlow || 0;
+                  const avgBalance = (monthlyDeposits + netCashFlow) / 2;
+                  const effectivePrincipal = Math.max(0, balance - avgBalance);
+                  const monthlyRate = mortgageDetails.aioInterestRate / 1200;
+                  const monthlyInterest = effectivePrincipal * monthlyRate;
+
+                  return (
+                    <>
+                      <div>Actual Balance = <strong>{formatCurrency(balance)}</strong></div>
+                      <div>Average Balance Offset = <strong>{formatCurrency(avgBalance)}</strong></div>
+                      <div>Effective Principal = {formatCurrency(balance)} - {formatCurrency(avgBalance)} = <strong>{formatCurrency(effectivePrincipal)}</strong></div>
+                      <div>Monthly Rate = {mortgageDetails.aioInterestRate.toFixed(3)}% / 12 = <strong>{(monthlyRate * 100).toFixed(6)}%</strong></div>
+                      <div style={{ marginTop: '1rem', padding: '0.75rem', background: '#d1fae5', borderRadius: '6px', fontSize: '1.05rem' }}>
+                        <strong>Monthly Interest = {formatCurrency(effectivePrincipal)} × {(monthlyRate * 100).toFixed(6)}% = {formatCurrency(monthlyInterest)}</strong>
+                      </div>
+                    </>
+                  );
+                })()}
+              </div>
+            </div>
+
+            <div style={{ marginBottom: '2rem' }}>
+              <h4 style={{ fontSize: '1rem', fontWeight: '600', color: '#334155', marginBottom: '1rem' }}>Principal Reduction Per Month</h4>
+              <div style={{ padding: '1.5rem', background: '#f8fafc', borderRadius: '8px', fontFamily: 'monospace', fontSize: '0.95rem', lineHeight: '2' }}>
+                {(() => {
+                  const netCashFlow = cashFlow?.netCashFlow || 0;
+
+                  return (
+                    <>
+                      <div>Net Cash Flow (Available) = <strong>{formatCurrency(netCashFlow)}</strong></div>
+                      <div style={{ marginTop: '1rem', padding: '0.75rem', background: '#d1fae5', borderRadius: '6px', fontSize: '1.05rem' }}>
+                        <strong>Principal Reduction = {formatCurrency(netCashFlow)} per month</strong>
+                      </div>
+                      <div style={{ marginTop: '0.5rem', fontSize: '0.85rem', color: '#15803d', fontStyle: 'italic' }}>
+                        This entire amount goes toward reducing the principal balance each month!
+                      </div>
+                    </>
+                  );
+                })()}
+              </div>
+            </div>
+
+            <div style={{ padding: '1.5rem', background: '#d1fae5', borderRadius: '8px', border: '2px solid #9bc53d' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <div>
+                  <div style={{ fontSize: '0.85rem', color: '#15803d', marginBottom: '0.25rem' }}>Payoff Time</div>
+                  <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#1e293b' }}>{yearsMonthsFromMonths(simulation.allInOneLoan.payoffMonths)}</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: '0.85rem', color: '#15803d', marginBottom: '0.25rem' }}>Total Interest Paid</div>
+                  <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#1e293b' }}>{formatCurrency(simulation.allInOneLoan.totalInterestPaid)}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Sample Month Calculations */}
+          <div style={{ marginBottom: '2rem', padding: '2rem', background: '#fefce8', borderRadius: '8px', border: '2px solid #eab308' }}>
+            <h3 style={{ marginBottom: '1.5rem', color: '#92400e', fontSize: '1.25rem' }}>📅 Sample Month 1 Calculation</h3>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
+              {/* Traditional Loan Month 1 */}
+              <div>
+                <h4 style={{ fontSize: '1rem', fontWeight: '600', color: '#334155', marginBottom: '1rem' }}>Traditional Loan</h4>
+                <div style={{ padding: '1rem', background: 'white', borderRadius: '6px', fontSize: '0.9rem', lineHeight: '1.8' }}>
+                  {(() => {
+                    const balance = mortgageDetails.currentBalance;
+                    const monthlyRate = mortgageDetails.interestRate / 1200;
+                    const monthlyPayment = simulation.traditionalLoan.monthlyPayment;
+                    const interest = balance * monthlyRate;
+                    const principal = monthlyPayment - interest;
+                    const newBalance = balance - principal;
+
+                    return (
+                      <>
+                        <div>Starting Balance: <strong>{formatCurrency(balance)}</strong></div>
+                        <div>Interest: {formatCurrency(balance)} × {(monthlyRate * 100).toFixed(6)}% = <strong>{formatCurrency(interest)}</strong></div>
+                        <div>Principal: {formatCurrency(monthlyPayment)} - {formatCurrency(interest)} = <strong>{formatCurrency(principal)}</strong></div>
+                        <div style={{ marginTop: '0.5rem', paddingTop: '0.5rem', borderTop: '2px solid #e2e8f0' }}>
+                          New Balance: <strong>{formatCurrency(newBalance)}</strong>
+                        </div>
+                      </>
+                    );
+                  })()}
+                </div>
+              </div>
+
+              {/* AIO Loan Month 1 */}
+              <div>
+                <h4 style={{ fontSize: '1rem', fontWeight: '600', color: '#334155', marginBottom: '1rem' }}>All-In-One Loan</h4>
+                <div style={{ padding: '1rem', background: 'white', borderRadius: '6px', fontSize: '0.9rem', lineHeight: '1.8' }}>
+                  {(() => {
+                    const balance = mortgageDetails.currentBalance;
+                    const monthlyDeposits = cashFlow?.monthlyDeposits || cashFlow?.totalIncome || 0;
+                    const netCashFlow = cashFlow?.netCashFlow || 0;
+                    const avgBalance = (monthlyDeposits + netCashFlow) / 2;
+                    const effectivePrincipal = Math.max(0, balance - avgBalance);
+                    const monthlyRate = mortgageDetails.aioInterestRate / 1200;
+                    const interest = effectivePrincipal * monthlyRate;
+                    const principal = netCashFlow;
+                    const newBalance = balance - principal;
+
+                    return (
+                      <>
+                        <div>Starting Balance: <strong>{formatCurrency(balance)}</strong></div>
+                        <div>Effective Principal: {formatCurrency(balance)} - {formatCurrency(avgBalance)} = <strong>{formatCurrency(effectivePrincipal)}</strong></div>
+                        <div>Interest: {formatCurrency(effectivePrincipal)} × {(monthlyRate * 100).toFixed(6)}% = <strong>{formatCurrency(interest)}</strong></div>
+                        <div>Principal Reduction: <strong>{formatCurrency(principal)}</strong></div>
+                        <div style={{ marginTop: '0.5rem', paddingTop: '0.5rem', borderTop: '2px solid #e2e8f0' }}>
+                          New Balance: <strong>{formatCurrency(newBalance)}</strong>
+                        </div>
+                      </>
+                    );
+                  })()}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Comparison Summary */}
+          <div style={{ padding: '2rem', background: 'linear-gradient(135deg, #e8f5e9 0%, #f1f8e9 100%)', borderRadius: '12px', border: '3px solid #9bc53d' }}>
+            <h3 style={{ textAlign: 'center', marginBottom: '1.5rem', color: '#1e293b', fontSize: '1.5rem' }}>💰 The Bottom Line</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1.5rem', textAlign: 'center' }}>
+              <div style={{ padding: '1.5rem', background: 'white', borderRadius: '8px' }}>
+                <div style={{ fontSize: '0.9rem', color: '#64748b', marginBottom: '0.5rem' }}>Time Saved</div>
+                <div style={{ fontSize: '2rem', fontWeight: '700', color: '#7da62e' }}>{yearsMonthsFromMonths(Math.max(0, simulation.comparison.timeSavedMonths))}</div>
+              </div>
+              <div style={{ padding: '1.5rem', background: 'white', borderRadius: '8px' }}>
+                <div style={{ fontSize: '0.9rem', color: '#64748b', marginBottom: '0.5rem' }}>Interest Savings</div>
+                <div style={{ fontSize: '2rem', fontWeight: '700', color: '#7da62e' }}>{formatCurrency(Math.max(0, simulation.comparison.interestSavings))}</div>
+              </div>
+              <div style={{ padding: '1.5rem', background: 'white', borderRadius: '8px' }}>
+                <div style={{ fontSize: '0.9rem', color: '#64748b', marginBottom: '0.5rem' }}>Interest Reduction</div>
+                <div style={{ fontSize: '2rem', fontWeight: '700', color: '#7da62e' }}>
+                  {((Math.max(0, simulation.comparison.interestSavings) / simulation.traditionalLoan.totalInterestPaid) * 100).toFixed(1)}%
                 </div>
               </div>
             </div>

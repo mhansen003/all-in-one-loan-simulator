@@ -244,11 +244,10 @@ function calculateAllInOneLoan(
       break;
     }
 
-    // If principal reduction is very small, warn after 180 months
-    if (monthResult.principalReduction < 10 && monthsToPayoff > 180) {
-      console.log(`   ⚠️  Stopping at month ${monthsToPayoff}: Minimal principal reduction ($${monthResult.principalReduction.toFixed(2)}/month)`);
-      break;
-    }
+    // REMOVED: Early exit for slow principal reduction
+    // Per user requirement: "As long as the scenario was eligible, it should calculate"
+    // Let the simulation run to completion even if principal reduction is small
+    // The max 360 months (30 years) limit will prevent infinite loops
   }
 
   console.log(`\n✅ [AIO CALC] Simulation Complete:`);

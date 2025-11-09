@@ -321,41 +321,71 @@ export default function CashFlowReview({
     color: string;
     description: string;
     icon: string;
+    glow: string;
   } => {
-    if (netCashFlow >= 2000) {
+    if (netCashFlow >= 8000) {
       return {
         rating: 'EXCELLENT',
-        color: '#10b981',
-        description: 'Perfect candidate for AIO loan! Significant interest savings expected.',
-        icon: '🔥'
+        color: '#059669',
+        description: 'Elite candidate! Maximum AIO benefits with exceptional interest savings.',
+        icon: '💎',
+        glow: '0 0 20px rgba(5, 150, 105, 0.8), 0 0 40px rgba(5, 150, 105, 0.5), 0 0 60px rgba(5, 150, 105, 0.3)'
       };
-    } else if (netCashFlow >= 1000) {
+    } else if (netCashFlow >= 5500) {
+      return {
+        rating: 'OUTSTANDING',
+        color: '#10b981',
+        description: 'Outstanding candidate! Huge interest savings and rapid payoff expected.',
+        icon: '🔥',
+        glow: '0 0 18px rgba(16, 185, 129, 0.7), 0 0 35px rgba(16, 185, 129, 0.4)'
+      };
+    } else if (netCashFlow >= 4000) {
+      return {
+        rating: 'GREAT',
+        color: '#22c55e',
+        description: 'Great candidate! Substantial AIO benefits with significant savings.',
+        icon: '⭐',
+        glow: '0 0 15px rgba(34, 197, 94, 0.6), 0 0 30px rgba(34, 197, 94, 0.3)'
+      };
+    } else if (netCashFlow >= 2500) {
       return {
         rating: 'VERY GOOD',
-        color: '#22c55e',
-        description: 'Great candidate! Will see substantial benefits from daily interest calculation.',
-        icon: '✨'
+        color: '#4ade80',
+        description: 'Very good candidate! Strong benefits from daily interest calculation.',
+        icon: '✨',
+        glow: '0 0 12px rgba(74, 222, 128, 0.5), 0 0 24px rgba(74, 222, 128, 0.25)'
       };
-    } else if (netCashFlow >= 500) {
+    } else if (netCashFlow >= 1500) {
       return {
         rating: 'GOOD',
         color: '#84cc16',
-        description: 'Good candidate. AIO loan will provide meaningful interest savings.',
-        icon: '👍'
+        description: 'Good candidate! Meaningful interest savings with AIO loan.',
+        icon: '👍',
+        glow: '0 0 10px rgba(132, 204, 22, 0.4), 0 0 20px rgba(132, 204, 22, 0.2)'
       };
-    } else if (netCashFlow > 300) {
+    } else if (netCashFlow >= 800) {
       return {
         rating: 'FAIR',
         color: '#eab308',
-        description: 'Moderate benefits. AIO loan can help, but savings will be modest.',
-        icon: '⚠️'
+        description: 'Fair candidate. Moderate benefits, some interest savings possible.',
+        icon: '⚡',
+        glow: '0 0 8px rgba(234, 179, 8, 0.3), 0 0 15px rgba(234, 179, 8, 0.15)'
+      };
+    } else if (netCashFlow > 300) {
+      return {
+        rating: 'POOR',
+        color: '#f97316',
+        description: 'Limited benefits. Minimal savings expected with AIO loan.',
+        icon: '⚠️',
+        glow: '0 0 5px rgba(249, 115, 22, 0.2)'
       };
     } else {
       return {
-        rating: 'NOT SUITABLE',
+        rating: 'INELIGIBLE',
         color: '#ef4444',
-        description: 'Not recommended. Cash flow of $300 or less per month is insufficient for AIO loan benefits.',
-        icon: '❌'
+        description: 'Not recommended. Cash flow insufficient for AIO loan benefits.',
+        icon: '❌',
+        glow: 'none'
       };
     }
   };
@@ -380,12 +410,19 @@ export default function CashFlowReview({
     return { [transactionSubTab]: filtered };
   };
 
-  // Calculate category totals
-  const getCategoryTotal = (category: string) => {
+  // Calculate category totals - returns both included and excluded amounts
+  const getCategoryTotals = (category: string) => {
     const categoryTransactions = groupedTransactions[category] || [];
     const includedOnly = categoryTransactions.filter(t => !t.excluded);
-    const categoryActualMonths = calculateActualMonths(includedOnly);
-    return includedOnly.reduce((sum, t) => sum + Math.abs(t.amount), 0) / categoryActualMonths;
+    const excludedOnly = categoryTransactions.filter(t => t.excluded);
+
+    const includedMonths = calculateActualMonths(includedOnly.length > 0 ? includedOnly : categoryTransactions);
+    const excludedMonths = calculateActualMonths(excludedOnly.length > 0 ? excludedOnly : categoryTransactions);
+
+    const includedTotal = includedOnly.reduce((sum, t) => sum + Math.abs(t.amount), 0) / includedMonths;
+    const excludedTotal = excludedOnly.reduce((sum, t) => sum + Math.abs(t.amount), 0) / (excludedOnly.length > 0 ? excludedMonths : 1);
+
+    return { included: includedTotal, excluded: excludedTotal };
   };
 
   return (
@@ -400,9 +437,9 @@ export default function CashFlowReview({
             marginBottom: '1.5rem',
             gap: '1rem'
           }}>
-            <div className="form-header" style={{ margin: 0, flex: 1 }}>
-              <h2 style={{ margin: '0 0 0.5rem 0' }}>Cash Flow Analysis Complete</h2>
-              <p style={{ margin: 0 }}>Review the AI-generated analysis of your bank statements</p>
+            <div className="form-header" style={{ margin: 0, flex: 1, textAlign: 'left' }}>
+              <h2>Cash Flow Analysis Complete</h2>
+              <p>Review the AI-generated analysis of your bank statements</p>
             </div>
 
             <button
@@ -474,9 +511,21 @@ export default function CashFlowReview({
               </div>
               <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '0.75rem', marginTop: 'auto' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
-                  <span style={{ fontSize: '1.5rem' }}>{temperatureRating.icon}</span>
+                  <span style={{
+                    fontSize: '1.5rem',
+                    filter: temperatureRating.glow !== 'none' ? `drop-shadow(${temperatureRating.glow.split(',')[0]})` : 'none',
+                    transition: 'all 0.3s ease'
+                  }}>
+                    {temperatureRating.icon}
+                  </span>
                   <div>
-                    <div style={{ fontSize: '0.95rem', fontWeight: '700', color: temperatureRating.color }}>
+                    <div style={{
+                      fontSize: '0.95rem',
+                      fontWeight: '700',
+                      color: temperatureRating.color,
+                      textShadow: temperatureRating.glow,
+                      transition: 'all 0.3s ease'
+                    }}>
                       {temperatureRating.rating}
                     </div>
                     <div style={{ fontSize: '0.75rem', color: '#718096' }}>
@@ -912,28 +961,59 @@ export default function CashFlowReview({
             onClick={() => setTransactionSubTab('income')}
           >
             Income
-            <span className="sub-tab-badge">{formatCurrency(getCategoryTotal('income'))}</span>
+            <span className="sub-tab-badge">
+              {(() => {
+                const totals = getCategoryTotals('income');
+                return totals.excluded > 0
+                  ? `${formatCurrency(totals.included)} (${formatCurrency(totals.excluded)} excluded)`
+                  : formatCurrency(totals.included);
+              })()}
+            </span>
           </button>
           <button
             className={`sub-tab ${transactionSubTab === 'expense' ? 'active' : ''}`}
             onClick={() => setTransactionSubTab('expense')}
           >
             Expenses
-            <span className="sub-tab-badge">{formatCurrency(getCategoryTotal('expense') + getCategoryTotal('recurring'))}</span>
+            <span className="sub-tab-badge">
+              {(() => {
+                const expenseTotals = getCategoryTotals('expense');
+                const recurringTotals = getCategoryTotals('recurring');
+                const includedTotal = expenseTotals.included + recurringTotals.included;
+                const excludedTotal = expenseTotals.excluded + recurringTotals.excluded;
+                return excludedTotal > 0
+                  ? `${formatCurrency(includedTotal)} (${formatCurrency(excludedTotal)} excluded)`
+                  : formatCurrency(includedTotal);
+              })()}
+            </span>
           </button>
           <button
             className={`sub-tab ${transactionSubTab === 'housing' ? 'active' : ''}`}
             onClick={() => setTransactionSubTab('housing')}
             >
               Housing
-              <span className="sub-tab-badge">{formatCurrency(getCategoryTotal('housing'))}</span>
+              <span className="sub-tab-badge">
+                {(() => {
+                  const totals = getCategoryTotals('housing');
+                  return totals.excluded > 0
+                    ? `${formatCurrency(totals.included)} (${formatCurrency(totals.excluded)} excluded)`
+                    : formatCurrency(totals.included);
+                })()}
+              </span>
             </button>
             <button
               className={`sub-tab ${transactionSubTab === 'one-time' ? 'active' : ''}`}
               onClick={() => setTransactionSubTab('one-time')}
             >
               One-Time
-              <span className="sub-tab-badge">{formatCurrency(getCategoryTotal('one-time'))}</span>
+              <span className="sub-tab-badge">
+                {(() => {
+                  const totals = getCategoryTotals('one-time');
+                  return totals.excluded > 0
+                    ? `${formatCurrency(totals.included)} (${formatCurrency(totals.excluded)} excluded)`
+                    : formatCurrency(totals.included);
+                })()}
+              </span>
             </button>
             <button
               className={`sub-tab ${transactionSubTab === 'all' ? 'active' : ''}`}

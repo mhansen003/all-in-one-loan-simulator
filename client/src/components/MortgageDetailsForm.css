@@ -1,6 +1,7 @@
 .mortgage-form-container {
-  max-width: 900px;
+  max-width: 1000px;
   margin: 0 auto;
+  padding: 0 1rem;
 }
 
 .form-header {
@@ -9,15 +10,17 @@
 }
 
 .form-header h2 {
-  color: #2d3748;
+  color: #1a202c;
   font-size: 2rem;
   margin-bottom: 0.5rem;
-  font-weight: 600;
+  font-weight: 700;
+  letter-spacing: -0.025em;
 }
 
 .form-header p {
   color: #718096;
-  font-size: 1rem;
+  font-size: 1.05rem;
+  font-weight: 400;
 }
 
 .mortgage-form {
@@ -28,22 +31,43 @@
 .form-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 1.5rem;
-  margin-bottom: 1.5rem;
+  gap: 2rem;
+  margin-bottom: 2rem;
 }
 
 /* Make each column a flex container so items stack independently */
 .form-column {
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: 1.5rem;
 }
 
 .form-group {
   display: flex;
   flex-direction: column;
+  gap: 0.5rem;
 }
 
+/* Form Labels */
+.form-label {
+  color: #2d3748;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.form-label.required::after {
+  content: '*';
+  color: #ef4444;
+  margin-left: 0.25rem;
+  font-size: 1rem;
+}
+
+/* Input Fields */
 .input-wrapper {
   position: relative;
   display: flex;
@@ -53,74 +77,154 @@
 .input-prefix,
 .input-suffix {
   position: absolute;
-  color: #718096;
+  color: #94a3b8;
   font-weight: 600;
-  font-size: 1rem;
+  font-size: 0.95rem;
   pointer-events: none;
+  user-select: none;
 }
 
 .input-prefix {
-  left: 0.75rem;
+  left: 1rem;
 }
 
 .input-suffix {
-  right: 0.75rem;
+  right: 1rem;
 }
 
 .form-input {
   width: 100%;
-  padding: 0.75rem;
+  padding: 0.875rem 1rem;
   border: 2px solid #e2e8f0;
-  border-radius: 6px;
+  border-radius: 8px;
   font-size: 1rem;
   font-family: inherit;
-  transition: border-color 0.2s;
+  font-weight: 500;
+  color: #1a202c;
+  background: white;
+  transition: all 0.2s ease;
 }
 
 .input-wrapper .form-input {
-  padding-left: 2.5rem;
-  padding-right: 2.5rem;
+  padding-left: 2.75rem;
+  padding-right: 2.75rem;
 }
 
 /* Special padding for number inputs with suffixes to prevent arrow overlap */
 .input-wrapper input[type="number"].form-input {
-  padding-right: 4.5rem;
+  padding-right: 5rem;
 }
 
-/* Make placeholder text more obviously grey */
+/* Placeholder styling */
 .form-input::placeholder {
   color: #cbd5e0;
+  font-weight: 400;
   opacity: 1;
 }
 
+/* Focus state */
 .form-input:focus {
   outline: none;
   border-color: #9bc53d;
-  box-shadow: 0 0 0 3px rgba(155, 197, 61, 0.1);
+  box-shadow: 0 0 0 4px rgba(155, 197, 61, 0.12);
+  background: #fafdf5;
 }
 
+/* Hover state */
+.form-input:hover:not(:focus) {
+  border-color: #cbd5e0;
+}
+
+/* Error state */
 .form-input.input-error {
-  border-color: #fc8181;
+  border-color: #ef4444;
+  background: #fef2f2;
 }
 
 .form-input.input-error:focus {
-  border-color: #fc8181;
-  box-shadow: 0 0 0 3px rgba(252, 129, 129, 0.1);
+  border-color: #ef4444;
+  box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.12);
 }
 
 .error-text {
-  color: #c53030;
-  font-size: 0.85rem;
+  color: #dc2626;
+  font-size: 0.8125rem;
+  font-weight: 500;
   margin-top: 0.25rem;
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
 }
 
+.error-text::before {
+  content: '⚠';
+  font-size: 0.875rem;
+}
+
+/* Help Text */
+.form-help-text {
+  color: #64748b;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  margin-top: 0.375rem;
+}
+
+/* Select Dropdowns */
+select.form-input {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E");
+  background-position: right 0.75rem center;
+  background-repeat: no-repeat;
+  background-size: 1.25rem;
+  padding-right: 3rem;
+  cursor: pointer;
+}
+
+select.form-input:hover {
+  border-color: #9bc53d;
+}
+
+/* Form Sections */
+.form-section {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1.5rem;
+  transition: all 0.3s ease;
+}
+
+.form-section:hover {
+  border-color: #cbd5e0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.form-section-title {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: #1a202c;
+  margin-bottom: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Inline Fields (Term Years/Months) */
+.inline-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+/* Form Actions */
 .form-actions {
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 1rem;
-  padding-top: 1.5rem;
+  padding-top: 2rem;
+  margin-top: 2rem;
   border-top: 2px solid #e2e8f0;
 }
 
@@ -135,10 +239,52 @@
   align-items: center;
   gap: 0.5rem;
   margin-left: auto;
+  padding: 0.875rem 2rem;
+  font-size: 1rem;
+  font-weight: 600;
 }
 
+/* Checkbox styling */
+input[type="checkbox"] {
+  width: 1.125rem;
+  height: 1.125rem;
+  border: 2px solid #cbd5e0;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+input[type="checkbox"]:hover {
+  border-color: #9bc53d;
+}
+
+input[type="checkbox"]:checked {
+  accent-color: #9bc53d;
+}
+
+/* Dividers */
+.form-divider {
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #e2e8f0, transparent);
+  margin: 2rem 0;
+}
+
+/* Responsive Design */
 @media (max-width: 768px) {
+  .mortgage-form-container {
+    padding: 0 0.75rem;
+  }
+
   .form-grid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+
+  .form-column {
+    gap: 1.25rem;
+  }
+
+  .inline-fields {
     grid-template-columns: 1fr;
   }
 
@@ -149,10 +295,66 @@
   .form-actions .btn-primary {
     margin-left: 0;
     width: 100%;
+    justify-content: center;
   }
 
   .form-actions .btn-secondary {
     width: 100%;
     justify-content: center;
   }
+
+  .form-header h2 {
+    font-size: 1.75rem;
+  }
+
+  .form-header p {
+    font-size: 0.95rem;
+  }
+}
+
+/* Loading State */
+.form-input:disabled {
+  background: #f7fafc;
+  color: #a0aec0;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Info Icons */
+.info-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  background: #64748b;
+  color: white;
+  border-radius: 50%;
+  font-size: 0.625rem;
+  font-weight: 700;
+  font-style: italic;
+  cursor: help;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.info-icon:hover {
+  background: #475569;
+  transform: scale(1.1);
+}
+
+/* Animation for smooth transitions */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.form-group {
+  animation: fadeIn 0.3s ease;
 }

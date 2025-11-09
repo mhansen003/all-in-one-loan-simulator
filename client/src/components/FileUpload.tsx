@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
 import Papa from 'papaparse';
 import type { CashFlowAnalysis } from '../types';
@@ -33,6 +33,79 @@ export default function FileUpload({
   const [filesWithData, setFilesWithData] = useState<FileWithData[]>(files.map(f => ({ file: f })));
   const [isProcessingPdf, setIsProcessingPdf] = useState(false);
   const [showManualEntryModal, setShowManualEntryModal] = useState(false);
+
+  // Analyzing animation state
+  const [currentStep, setCurrentStep] = useState(0);
+  const [currentTip, setCurrentTip] = useState(0);
+
+  const analyzingSteps = [
+    { label: 'Extracting text from documents', duration: 3000 },
+    { label: 'Analyzing transactions', duration: 4000 },
+    { label: 'Detecting deposit patterns', duration: 2500 },
+    { label: 'Calculating monthly averages', duration: 2000 },
+    { label: 'Flagging irregular transactions', duration: 2500 },
+    { label: 'Finalizing analysis', duration: 2000 },
+  ];
+
+  const analyzingTips = [
+    {
+      title: "What is an All-In-One Loan?",
+      content: "An All-In-One (AIO) loan combines your mortgage and bank account into one, allowing your income to offset your loan balance daily, reducing interest charges."
+    },
+    {
+      title: "How Does Cash Flow Matter?",
+      content: "The more positive cash flow you have each month, the greater your interest savings. Every dollar in your account works to reduce the balance that accrues interest."
+    },
+    {
+      title: "What About Access to My Money?",
+      content: "You have complete access to your funds anytime with checks, debit cards, and online transfers. Your money remains fully liquid while saving you interest."
+    },
+    {
+      title: "How Much Can I Save?",
+      content: "Most borrowers save 30-50% on total interest and pay off their mortgage 8-12 years faster, depending on their cash flow."
+    },
+    {
+      title: "Is This Right for Everyone?",
+      content: "AIO loans work best for borrowers with consistent positive cash flow. Our analysis will show your suitability based on your transaction history."
+    },
+    {
+      title: "What Makes This Different?",
+      content: "Unlike traditional mortgages that calculate interest monthly, AIO loans calculate daily. This means every deposit immediately starts reducing your interest."
+    },
+  ];
+
+  // Cycle through analyzing steps when analyzing
+  useEffect(() => {
+    if (!isAnalyzing) return;
+
+    let stepTimeout: NodeJS.Timeout;
+    let currentIndex = 0;
+
+    const nextStep = () => {
+      if (currentIndex < analyzingSteps.length) {
+        setCurrentStep(currentIndex);
+        currentIndex++;
+        stepTimeout = setTimeout(nextStep, analyzingSteps[currentIndex - 1]?.duration || 2000);
+      }
+    };
+
+    nextStep();
+
+    return () => {
+      clearTimeout(stepTimeout);
+    };
+  }, [isAnalyzing]);
+
+  // Rotate through tips every 6 seconds when analyzing
+  useEffect(() => {
+    if (!isAnalyzing) return;
+
+    const tipInterval = setInterval(() => {
+      setCurrentTip((prev) => (prev + 1) % analyzingTips.length);
+    }, 6000);
+
+    return () => clearInterval(tipInterval);
+  }, [isAnalyzing]);
 
   const parseCSV = (file: File): Promise<any[]> => {
     return new Promise((resolve, reject) => {
@@ -193,36 +266,111 @@ export default function FileUpload({
         </div>
       )}
 
-      <div
-        {...getRootProps()}
-        className={`dropzone ${isDragActive ? 'active' : ''} ${isAnalyzing || isProcessingPdf ? 'disabled' : ''}`}
-      >
-        <input {...getInputProps()} disabled={isAnalyzing || isProcessingPdf} />
-        <div className="dropzone-content">
-          <div className="upload-icon">
-            {isProcessingPdf ? (
-              <div className="spinner-small"></div>
-            ) : (
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+      {isAnalyzing ? (
+        /* Inline Analyzing Animation */
+        <div className="analyzing-inline">
+          {/* AI Brain Animation */}
+          <div className="ai-brain-container">
+            <div className="ai-brain">
+              <div className="brain-pulse"></div>
+              <div className="brain-pulse pulse-2"></div>
+              <div className="brain-pulse pulse-3"></div>
+              <svg
+                className="brain-icon"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1.5}
+                  d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                />
               </svg>
+            </div>
+          </div>
+
+          {/* Content */}
+          <div className="analyzing-content">
+            <h2 className="analyzing-title">🤖 AI Analysis in Progress</h2>
+            <p className="analyzing-subtitle">
+              Analyzing {selectedFiles.length} {selectedFiles.length === 1 ? 'document' : 'documents'} with advanced AI
+            </p>
+
+            {/* Knight Rider Progress Bar */}
+            <div className="progress-container">
+              <div className="progress-bar knight-rider">
+                <div className="knight-rider-bar"></div>
+              </div>
+            </div>
+
+            {/* Current Step */}
+            <div className="current-step">
+              <div className="step-indicator">
+                <span className="step-icon">✨</span>
+                <span className="step-text">{analyzingSteps[currentStep]?.label}</span>
+              </div>
+            </div>
+
+            {/* FAQ Tips Carousel */}
+            <div className="tips-carousel">
+              <div className="tip-content-wrapper">
+                <div className="tip-icon">💡</div>
+                <div className="tip-text">
+                  <h4 className="tip-title">{analyzingTips[currentTip].title}</h4>
+                  <p className="tip-description">{analyzingTips[currentTip].content}</p>
+                </div>
+              </div>
+              <div className="tip-dots">
+                {analyzingTips.map((_, index) => (
+                  <div
+                    key={index}
+                    className={`tip-dot ${index === currentTip ? 'active' : ''}`}
+                  />
+                ))}
+              </div>
+            </div>
+
+            <p className="analyzing-note">
+              Sit back, this might take a few minutes...
+            </p>
+          </div>
+        </div>
+      ) : (
+        /* Normal Dropzone */
+        <div
+          {...getRootProps()}
+          className={`dropzone ${isDragActive ? 'active' : ''} ${isProcessingPdf ? 'disabled' : ''}`}
+        >
+          <input {...getInputProps()} disabled={isProcessingPdf} />
+          <div className="dropzone-content">
+            <div className="upload-icon">
+              {isProcessingPdf ? (
+                <div className="spinner-small"></div>
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                </svg>
+              )}
+            </div>
+            <p className="dropzone-text">
+              {isProcessingPdf
+                ? 'Converting PDF pages to images...'
+                : isDragActive
+                ? 'Drop files here...'
+                : 'Drag & drop bank statements here'}
+            </p>
+            {!isProcessingPdf && (
+              <>
+                <p className="dropzone-subtext">or click to browse</p>
+                <p className="dropzone-formats">PDF, JPG, PNG, CSV, XLSX (max 10MB each)</p>
+              </>
             )}
           </div>
-          <p className="dropzone-text">
-            {isProcessingPdf
-              ? 'Converting PDF pages to images...'
-              : isDragActive
-              ? 'Drop files here...'
-              : 'Drag & drop bank statements here'}
-          </p>
-          {!isProcessingPdf && (
-            <>
-              <p className="dropzone-subtext">or click to browse</p>
-              <p className="dropzone-formats">PDF, JPG, PNG, CSV, XLSX (max 10MB each)</p>
-            </>
-          )}
         </div>
-      </div>
+      )}
 
       {/* Analyze Button - Stays at top when files are uploaded */}
       {selectedFiles.length > 0 && (

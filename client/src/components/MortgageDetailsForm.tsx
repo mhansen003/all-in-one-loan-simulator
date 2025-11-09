@@ -231,13 +231,12 @@ export default function MortgageDetailsForm({
 
   return (
     <div className="mortgage-form-container">
-      <div className="form-header">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div>
-            <h2>Current Mortgage Details</h2>
-            <p>Enter information about the borrower's existing mortgage loan</p>
-          </div>
-          <button
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.75rem', gap: '1rem' }}>
+        <div className="form-header" style={{ margin: 0, flex: 1, textAlign: 'left' }}>
+          <h2>Current Mortgage Details</h2>
+          <p>Enter information about the borrower's existing mortgage loan</p>
+        </div>
+        <button
             type="button"
             onClick={fillTestData}
             className="btn-secondary"
@@ -250,75 +249,60 @@ export default function MortgageDetailsForm({
           >
             🔧 Fill Test Data
           </button>
-        </div>
       </div>
 
       <form onSubmit={handleSubmit} className="mortgage-form">
-        {/* Product Type Selector - Full Width at Top */}
-        <div className="form-group" style={{
-          gridColumn: '1 / -1',
-          marginBottom: '2rem',
-          padding: '1.5rem',
-          background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)',
-          borderRadius: '12px',
-          border: '2px solid #dee2e6'
-        }}>
-          <label htmlFor="productType" className="form-label required" style={{
-            fontSize: '1.1rem',
-            fontWeight: 600,
-            color: '#2d3748',
-            marginBottom: '0.75rem'
-          }}>
-            Comparison Product Type
-          </label>
-          <select
-            id="productType"
-            className="form-input"
-            style={{
-              fontSize: '1rem',
-              padding: '0.875rem',
-              fontWeight: 500
-            }}
-            value={formData.productType || '30-year-fixed'}
-            onChange={(e) => {
-              const productType = e.target.value as any;
-              setFormData((prev) => ({ ...prev, productType }));
-
-              // Auto-adjust term based on product
-              const termMap: { [key: string]: number } = {
-                '15-year-fixed': 15,
-                '20-year-fixed': 20,
-                '25-year-fixed': 25,
-                '30-year-fixed': 30,
-              };
-              const years = termMap[productType] || 30;
-              setTermYears(years);
-              setTermMonths(0);
-              setFormData((prev) => ({
-                ...prev,
-                productType,
-                remainingTermMonths: years * 12
-              }));
-
-              // Clear term error if exists
-              if (errors.remainingTermMonths) {
-                setErrors((prev) => ({ ...prev, remainingTermMonths: undefined }));
-              }
-            }}
-          >
-            <option value="15-year-fixed">15-Year Fixed Mortgage</option>
-            <option value="20-year-fixed">20-Year Fixed Mortgage</option>
-            <option value="25-year-fixed">25-Year Fixed Mortgage</option>
-            <option value="30-year-fixed">30-Year Fixed Mortgage</option>
-          </select>
-          <span className="form-help-text" style={{ marginTop: '0.5rem', display: 'block' }}>
-            Select the type of traditional mortgage to compare against the All-In-One loan
-          </span>
-        </div>
-
         <div className="form-grid">
           {/* LEFT COLUMN: Loan Details */}
           <div className="form-column">
+            {/* Comparison Product Type - Now in Left Column */}
+            <div className="form-section">
+              <div className="form-section-title">Comparison Product Type</div>
+              <div className="form-group">
+                <label htmlFor="productType" className="form-label required">
+                  Mortgage Type
+                </label>
+                <select
+                  id="productType"
+                  className="form-input"
+                  value={formData.productType || '30-year-fixed'}
+                  onChange={(e) => {
+                    const productType = e.target.value as any;
+                    setFormData((prev) => ({ ...prev, productType }));
+
+                    // Auto-adjust term based on product
+                    const termMap: { [key: string]: number } = {
+                      '15-year-fixed': 15,
+                      '20-year-fixed': 20,
+                      '25-year-fixed': 25,
+                      '30-year-fixed': 30,
+                    };
+                    const years = termMap[productType] || 30;
+                    setTermYears(years);
+                    setTermMonths(0);
+                    setFormData((prev) => ({
+                      ...prev,
+                      productType,
+                      remainingTermMonths: years * 12
+                    }));
+
+                    // Clear term error if exists
+                    if (errors.remainingTermMonths) {
+                      setErrors((prev) => ({ ...prev, remainingTermMonths: undefined }));
+                    }
+                  }}
+                >
+                  <option value="15-year-fixed">15-Year Fixed Rate</option>
+                  <option value="20-year-fixed">20-Year Fixed Rate</option>
+                  <option value="25-year-fixed">25-Year Fixed Rate</option>
+                  <option value="30-year-fixed">30-Year Fixed Rate</option>
+                </select>
+                <span className="form-help-text">
+                  Select the traditional mortgage type to compare against the All-In-One loan
+                </span>
+              </div>
+            </div>
+
             {/* Current Balance */}
             <div className="form-group">
             <label htmlFor="currentBalance" className="form-label required">
@@ -659,223 +643,221 @@ export default function MortgageDetailsForm({
               This total is used to exclude all housing costs from your cash flow analysis
             </span>
             </div>
+          </div>
+        </div>
 
-            {/* AIO Interest Rate - Highlighted */}
-            <div className="form-group" style={{
-              border: '3px solid #9bc53d',
-              borderRadius: '0.5rem',
-              padding: '1rem',
-              backgroundColor: '#f0f9f0',
-              marginTop: '1.5rem'
+        {/* AIO Interest Rate - Full Width Section */}
+        <div className="form-section" style={{
+          gridColumn: '1 / -1',
+          border: '3px solid #9bc53d',
+          background: 'linear-gradient(135deg, #f0fdf4 0%, #e8f5e9 100%)',
+          marginTop: '2rem',
+          marginBottom: '1.5rem'
+        }}>
+          <div className="form-section-title" style={{ color: '#2f855a', marginBottom: '1rem' }}>
+            📊 Calculate All-In-One Interest Rate
+          </div>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '1rem',
+            flexWrap: 'wrap',
+            marginBottom: useMarketRateCalculation ? '1.25rem' : '0'
+          }}>
+            <label style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.75rem',
+              cursor: 'pointer',
+              flex: '0 0 auto'
             }}>
-              <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
-                  <input
-                    type="checkbox"
-                    checked={useMarketRateCalculation}
-                    onChange={(e) => setUseMarketRateCalculation(e.target.checked)}
-                    style={{ width: '18px', height: '18px', cursor: 'pointer' }}
-                  />
-                  <span style={{ fontWeight: '600', color: '#2d3748' }}>
-                    Calculate AIO Rate from Market Rate + Margin
-                  </span>
-                </label>
-                <span className="form-help-text" style={{ marginLeft: '26px' }}>
-                  Use current market rate plus a margin to determine the AIO rate
-                </span>
-              </div>
+              <input
+                type="checkbox"
+                checked={useMarketRateCalculation}
+                onChange={(e) => setUseMarketRateCalculation(e.target.checked)}
+              />
+              <span style={{ fontWeight: '600', color: '#1a202c', fontSize: '1rem' }}>
+                Calculate from Market Rate + Margin
+              </span>
+            </label>
+            {!useMarketRateCalculation && (
+              <span className="form-help-text" style={{ margin: 0 }}>
+                Or check the box to calculate from market rate
+              </span>
+            )}
+          </div>
 
-              {useMarketRateCalculation ? (
-                <>
-                  {/* Base Market Rate */}
-                  <div style={{ marginBottom: '1rem' }}>
-                    <label htmlFor="baseMarketRate" className="form-label">
-                      Base Market Rate
-                    </label>
-                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-start' }}>
-                      <div className="input-wrapper" style={{ flex: 1 }}>
-                        <input
-                          type="text"
-                          inputMode="decimal"
-                          id="baseMarketRate"
-                          className="form-input"
-                          placeholder="6.500"
-                          value={baseMarketRateInput}
-                          onChange={(e) => {
-                            const value = e.target.value.replace(/[^0-9.]/g, '');
-                            const parts = value.split('.');
-                            const sanitized = parts.length > 2 ? parts[0] + '.' + parts.slice(1).join('') : value;
-                            setBaseMarketRateInput(sanitized);
-                            const numValue = parseFloat(sanitized);
-                            if (!isNaN(numValue)) {
-                              setBaseMarketRate(numValue);
-                            }
-                          }}
-                        />
-                        <span className="input-suffix">%</span>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={fetchMarketRate}
-                        disabled={isFetchingRate}
-                        style={{
-                          padding: '0.625rem 1rem',
-                          background: '#3b82f6',
-                          color: 'white',
-                          border: 'none',
-                          borderRadius: '0.375rem',
-                          cursor: isFetchingRate ? 'not-allowed' : 'pointer',
-                          fontWeight: '600',
-                          fontSize: '0.875rem',
-                          whiteSpace: 'nowrap',
-                          opacity: isFetchingRate ? 0.6 : 1,
-                          transition: 'opacity 0.2s'
-                        }}
-                      >
-                        {isFetchingRate ? 'Fetching...' : 'Fetch Current Rate'}
-                      </button>
-                      <span
+          {useMarketRateCalculation ? (
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+              gap: '1.5rem',
+              alignItems: 'end'
+            }}>
+              {/* Base Market Rate */}
+              <div>
+                <label htmlFor="baseMarketRate" className="form-label" style={{ fontSize: '0.9rem', marginBottom: '0.5rem' }}>
+                  Base Market Rate
+                </label>
+                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                  <div className="input-wrapper" style={{ flex: 1 }}>
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      id="baseMarketRate"
+                      className="form-input"
+                      placeholder="6.500"
+                      value={baseMarketRateInput}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/[^0-9.]/g, '');
+                        const parts = value.split('.');
+                        const sanitized = parts.length > 2 ? parts[0] + '.' + parts.slice(1).join('') : value;
+                        setBaseMarketRateInput(sanitized);
+                        const numValue = parseFloat(sanitized);
+                        if (!isNaN(numValue)) {
+                          setBaseMarketRate(numValue);
+                        }
+                      }}
+                    />
+                    <span className="input-suffix">%</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={fetchMarketRate}
+                    disabled={isFetchingRate}
+                    style={{
+                      padding: '0.625rem 1.25rem',
+                      background: '#3b82f6',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '0.375rem',
+                      cursor: isFetchingRate ? 'not-allowed' : 'pointer',
+                      fontWeight: '600',
+                      fontSize: '0.875rem',
+                      whiteSpace: 'nowrap',
+                      opacity: isFetchingRate ? 0.6 : 1,
+                      transition: 'all 0.2s',
+                      height: '42px'
+                    }}
+                    onMouseEnter={(e) => !isFetchingRate && (e.currentTarget.style.background = '#2563eb')}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = '#3b82f6')}
+                  >
+                    {isFetchingRate ? 'Fetching...' : 'Get Rate'}
+                  </button>
+                  <span
                         title={`Fetch Current Mortgage Rate\n\n` +
                           `📊 Source: Federal Reserve Economic Data (FRED)\n` +
                           `📅 Updates: Weekly (national average)\n` +
                           `🎯 Rate Type: 30-year fixed mortgage\n\n` +
                           `Click "Fetch Current Rate" to automatically retrieve the latest market rate from the official FRED database.`}
-                        style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          width: '20px',
-                          height: '20px',
-                          marginLeft: '0.5rem',
-                          background: 'linear-gradient(135deg, #64748b 0%, #475569 100%)',
-                          color: 'white',
-                          borderRadius: '50%',
-                          fontSize: '0.7rem',
-                          fontWeight: '700',
-                          fontStyle: 'italic',
-                          cursor: 'help',
-                          userSelect: 'none',
-                          boxShadow: '0 2px 4px rgba(100, 116, 139, 0.3)',
-                          transition: 'all 0.2s ease',
-                          border: '1.5px solid rgba(255, 255, 255, 0.2)',
-                          flexShrink: 0
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.transform = 'scale(1.1)';
-                          e.currentTarget.style.boxShadow = '0 4px 8px rgba(100, 116, 139, 0.4)';
-                          e.currentTarget.style.background = 'linear-gradient(135deg, #475569 0%, #334155 100%)';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.transform = 'scale(1)';
-                          e.currentTarget.style.boxShadow = '0 2px 4px rgba(100, 116, 139, 0.3)';
-                          e.currentTarget.style.background = 'linear-gradient(135deg, #64748b 0%, #475569 100%)';
-                        }}
-                      >
-                        i
-                      </span>
-                    </div>
-                    <span className="form-help-text">
-                      Current 30-year fixed mortgage rate from FRED
-                    </span>
-                  </div>
-
-                  {/* Rate Margin */}
-                  <div style={{ marginBottom: '1rem' }}>
-                    <label htmlFor="rateMargin" className="form-label">
-                      Margin / Spread
-                    </label>
-                    <div className="input-wrapper">
-                      <input
-                        type="text"
-                        inputMode="decimal"
-                        id="rateMargin"
-                        className="form-input"
-                        placeholder="0.750"
-                        value={rateMarginInput}
-                        onChange={(e) => {
-                          const value = e.target.value.replace(/[^0-9.]/g, '');
-                          const parts = value.split('.');
-                          const sanitized = parts.length > 2 ? parts[0] + '.' + parts.slice(1).join('') : value;
-                          setRateMarginInput(sanitized);
-                          const numValue = parseFloat(sanitized);
-                          if (!isNaN(numValue)) {
-                            setRateMargin(numValue);
-                          }
-                        }}
-                      />
-                      <span className="input-suffix">%</span>
-                    </div>
-                    <span className="form-help-text">
-                      Additional percentage points added to base rate
-                    </span>
-                  </div>
-
-                  {/* Calculated AIO Rate Display */}
-                  <div style={{
-                    background: 'white',
-                    padding: '1rem',
-                    borderRadius: '0.5rem',
-                    border: '2px solid #9bc53d'
-                  }}>
-                    <div style={{ fontSize: '0.875rem', color: '#718096', marginBottom: '0.5rem' }}>
-                      Calculated AIO Rate:
-                    </div>
-                    <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#2d3748' }}>
-                      {baseMarketRate.toFixed(3)}% + {rateMargin.toFixed(3)}% = <span style={{ color: '#9bc53d' }}>{(baseMarketRate + rateMargin).toFixed(3)}%</span>
-                    </div>
-                  </div>
-                </>
-              ) : (
-                <>
-                  {/* Manual AIO Rate Input */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                    <label htmlFor="aioInterestRate" className="form-label required" style={{ marginBottom: 0 }}>
-                      All-In-One Loan Interest Rate
-                    </label>
-                    <span
-                      title={`All-In-One Loan Rate\n\n` +
-                        `💡 Why Higher Rate?\n` +
-                        `   • Flexible banking features included\n` +
-                        `   • Daily interest calculation (not monthly)\n` +
-                        `   • Offset capability reduces principal\n\n` +
-                        `💰 You Still Save Money:\n` +
-                        `   Daily interest on reduced principal = Lower costs\n` +
-                        `   Your cash flow directly offsets the balance\n\n` +
-                        `📊 Typical Range: 0.5% - 2.5% above traditional rate`}
                       style={{
                         display: 'inline-flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        width: '20px',
-                        height: '20px',
-                        background: 'linear-gradient(135deg, #64748b 0%, #475569 100%)',
+                        width: '18px',
+                        height: '18px',
+                        background: '#64748b',
                         color: 'white',
                         borderRadius: '50%',
-                        fontSize: '0.7rem',
+                        fontSize: '0.65rem',
                         fontWeight: '700',
                         fontStyle: 'italic',
                         cursor: 'help',
-                        userSelect: 'none',
-                        boxShadow: '0 2px 4px rgba(100, 116, 139, 0.3)',
-                        transition: 'all 0.2s ease',
-                        border: '1.5px solid rgba(255, 255, 255, 0.2)',
                         flexShrink: 0
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.transform = 'scale(1.1)';
-                        e.currentTarget.style.boxShadow = '0 4px 8px rgba(100, 116, 139, 0.4)';
-                        e.currentTarget.style.background = 'linear-gradient(135deg, #475569 0%, #334155 100%)';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.transform = 'scale(1)';
-                        e.currentTarget.style.boxShadow = '0 2px 4px rgba(100, 116, 139, 0.3)';
-                        e.currentTarget.style.background = 'linear-gradient(135deg, #64748b 0%, #475569 100%)';
                       }}
                     >
                       i
                     </span>
-                  </div>
-                  <div className="input-wrapper">
+                </div>
+              </div>
+
+              {/* Rate Margin */}
+              <div>
+                <label htmlFor="rateMargin" className="form-label" style={{ fontSize: '0.9rem', marginBottom: '0.5rem' }}>
+                  Margin / Spread
+                </label>
+                <div className="input-wrapper">
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    id="rateMargin"
+                    className="form-input"
+                    placeholder="0.750"
+                    value={rateMarginInput}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/[^0-9.]/g, '');
+                      const parts = value.split('.');
+                      const sanitized = parts.length > 2 ? parts[0] + '.' + parts.slice(1).join('') : value;
+                      setRateMarginInput(sanitized);
+                      const numValue = parseFloat(sanitized);
+                      if (!isNaN(numValue)) {
+                        setRateMargin(numValue);
+                      }
+                    }}
+                  />
+                  <span className="input-suffix">%</span>
+                </div>
+              </div>
+
+              {/* Calculated AIO Rate Display */}
+              <div style={{
+                background: 'white',
+                padding: '1rem 1.5rem',
+                borderRadius: '0.5rem',
+                border: '3px solid #9bc53d',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
+                minHeight: '70px'
+              }}>
+                <div style={{ fontSize: '0.8rem', color: '#718096', marginBottom: '0.25rem', fontWeight: '600' }}>
+                  Calculated AIO Rate:
+                </div>
+                <div style={{ fontSize: '1.35rem', fontWeight: '700', color: '#2d3748', lineHeight: '1.2' }}>
+                  {baseMarketRate.toFixed(3)}% + {rateMargin.toFixed(3)}% = <span style={{ color: '#9bc53d', fontSize: '1.5rem' }}>{(baseMarketRate + rateMargin).toFixed(3)}%</span>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div>
+              {/* Manual AIO Rate Input */}
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                  <label htmlFor="aioInterestRate" className="form-label required" style={{ marginBottom: 0, fontSize: '0.9rem' }}>
+                    All-In-One Loan Interest Rate
+                  </label>
+                  <span
+                    title={`All-In-One Loan Rate\n\n` +
+                      `💡 Why Higher Rate?\n` +
+                      `   • Flexible banking features included\n` +
+                      `   • Daily interest calculation (not monthly)\n` +
+                      `   • Offset capability reduces principal\n\n` +
+                      `💰 You Still Save Money:\n` +
+                      `   Daily interest on reduced principal = Lower costs\n` +
+                      `   Your cash flow directly offsets the balance\n\n` +
+                      `📊 Typical Range: 0.5% - 2.5% above traditional rate`}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      width: '18px',
+                      height: '18px',
+                      background: '#64748b',
+                      color: 'white',
+                      borderRadius: '50%',
+                      fontSize: '0.65rem',
+                      fontWeight: '700',
+                      fontStyle: 'italic',
+                      cursor: 'help',
+                      flexShrink: 0
+                    }}
+                  >
+                    i
+                  </span>
+                </div>
+                <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start', flexWrap: 'wrap' }}>
+                  <div className="input-wrapper" style={{ flex: '0 0 200px' }}>
                     <input
                       type="text"
                       inputMode="decimal"
@@ -909,15 +891,31 @@ export default function MortgageDetailsForm({
                     />
                     <span className="input-suffix">%</span>
                   </div>
-                  {errors.aioInterestRate && <span className="error-text">{errors.aioInterestRate}</span>}
-                  <span className="form-help-text">Typically 0.5% - 2.5% higher than traditional rate</span>
-                </>
-              )}
+                  <div style={{ flex: 1, display: 'flex', alignItems: 'center', minHeight: '42px' }}>
+                    <span className="form-help-text" style={{ margin: 0, fontSize: '0.85rem' }}>
+                      Typically 0.5% - 2.5% higher than traditional rate
+                    </span>
+                  </div>
+                </div>
+                {errors.aioInterestRate && (
+                  <span className="error-text" style={{ display: 'block', marginTop: '0.5rem' }}>
+                    {errors.aioInterestRate}
+                  </span>
+                )}
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
-        <div className="form-actions">
+        <div className="form-actions" style={{
+          position: 'sticky',
+          bottom: 0,
+          zIndex: 99,
+          background: 'white',
+          padding: '1rem 0',
+          boxShadow: '0 -2px 10px rgba(0, 0, 0, 0.1)',
+          marginTop: '2rem'
+        }}>
           {onBack && (
             <button type="button" className="btn-secondary" onClick={onBack}>
               <svg className="btn-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -934,116 +932,6 @@ export default function MortgageDetailsForm({
           </button>
         </div>
       </form>
-
-      {/* How the All-In-One Loan Works */}
-      <div className="details-section" style={{ marginTop: '3rem' }}>
-        <h2 style={{ textAlign: 'center', color: '#2d3748', fontSize: '2rem', marginBottom: '2rem', fontWeight: 600 }}>
-          How the All-In-One Loan Works
-        </h2>
-
-        <div className="detail-cards" style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-          gap: '2rem',
-          marginBottom: '2rem'
-        }}>
-          <div className="detail-card" style={{
-            background: 'white',
-            border: '2px solid #e2e8f0',
-            borderRadius: '12px',
-            padding: '2rem',
-            textAlign: 'center',
-            transition: 'all 0.3s ease'
-          }}>
-            <div style={{
-              width: '64px',
-              height: '64px',
-              background: '#e8f5e9',
-              borderRadius: '50%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              margin: '0 auto 1.5rem',
-              color: '#9bc53d'
-            }}>
-              <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <h3 style={{ color: '#2d3748', fontSize: '1.25rem', marginBottom: '0.75rem', fontWeight: 600 }}>
-              Cash Flow Offset
-            </h3>
-            <p style={{ color: '#718096', fontSize: '0.95rem', lineHeight: 1.6, margin: 0 }}>
-              Your positive cash flow sits in the loan account, reducing the balance
-              used for interest calculations. This creates massive savings over time.
-            </p>
-          </div>
-
-          <div className="detail-card" style={{
-            background: 'white',
-            border: '2px solid #e2e8f0',
-            borderRadius: '12px',
-            padding: '2rem',
-            textAlign: 'center',
-            transition: 'all 0.3s ease'
-          }}>
-            <div style={{
-              width: '64px',
-              height: '64px',
-              background: '#e8f5e9',
-              borderRadius: '50%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              margin: '0 auto 1.5rem',
-              color: '#9bc53d'
-            }}>
-              <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-              </svg>
-            </div>
-            <h3 style={{ color: '#2d3748', fontSize: '1.25rem', marginBottom: '0.75rem', fontWeight: 600 }}>
-              Accelerated Payoff
-            </h3>
-            <p style={{ color: '#718096', fontSize: '0.95rem', lineHeight: 1.6, margin: 0 }}>
-              Every dollar that stays in your account works to reduce interest.
-              Pay off your mortgage years faster while maintaining full access to your funds.
-            </p>
-          </div>
-
-          <div className="detail-card" style={{
-            background: 'white',
-            border: '2px solid #e2e8f0',
-            borderRadius: '12px',
-            padding: '2rem',
-            textAlign: 'center',
-            transition: 'all 0.3s ease'
-          }}>
-            <div style={{
-              width: '64px',
-              height: '64px',
-              background: '#e8f5e9',
-              borderRadius: '50%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              margin: '0 auto 1.5rem',
-              color: '#9bc53d'
-            }}>
-              <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0121 12c0 5.523-4.477 10-10 10S1 17.523 1 12 5.477 2 11 2c1.821 0 3.532.465 5.018 1.284m0 0a9.001 9.001 0 00-5.018-1.284c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c0-1.821-.465-3.532-1.284-5.018" />
-              </svg>
-            </div>
-            <h3 style={{ color: '#2d3748', fontSize: '1.25rem', marginBottom: '0.75rem', fontWeight: 600 }}>
-              Full Flexibility
-            </h3>
-            <p style={{ color: '#718096', fontSize: '0.95rem', lineHeight: 1.6, margin: 0 }}>
-              Access your funds anytime with checks, debit card, or online transfers.
-              Your money works for you while remaining completely accessible.
-            </p>
-          </div>
-        </div>
-      </div>
 
       {/* Rate Fetch Modal */}
       {showRateModal && (

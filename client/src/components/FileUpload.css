@@ -1092,3 +1092,50 @@
     justify-content: center;
   }
 }
+
+/* Inline Analyzing Animation */
+.analyzing-inline {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 16px;
+  padding: 3rem 2rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 10px 40px rgba(102, 126, 234, 0.3);
+  animation: slideIn 0.4s ease;
+  position: relative;
+  overflow: hidden;
+  text-align: center;
+}
+
+/* Animated Background Effect */
+.analyzing-inline::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+  animation: rotateBackground 20s linear infinite;
+  z-index: 0;
+}
+
+@keyframes rotateBackground {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Ensure content is above the animated background */
+.analyzing-inline > * {
+  position: relative;
+  z-index: 1;
+}
+
+@media (max-width: 768px) {
+  .analyzing-inline {
+    padding: 2rem 1.5rem;
+  }
+}
