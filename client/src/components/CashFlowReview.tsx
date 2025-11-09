@@ -175,7 +175,12 @@ export default function CashFlowReview({
       return { chartData: [], oneTimeIncomeData: [], oneTimeExpenseData: [] };
     }
 
-    // Group transactions by MONTH (not day) to create smooth area charts
+    // Find the date range
+    const dates = transactions.map(t => new Date(t.date));
+    const minDate = new Date(Math.min(...dates.map(d => d.getTime())));
+    const maxDate = new Date(Math.max(...dates.map(d => d.getTime())));
+
+    // Create entries for ALL months in the range (fill gaps)
     const monthlyData: {
       [key: string]: {
         incoming: number;
@@ -185,16 +190,22 @@ export default function CashFlowReview({
       }
     } = {};
 
+    // Fill all months between min and max dates
+    const currentMonth = new Date(minDate.getFullYear(), minDate.getMonth(), 1);
+    const endMonth = new Date(maxDate.getFullYear(), maxDate.getMonth(), 1);
+
+    while (currentMonth <= endMonth) {
+      const monthKey = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}`;
+      monthlyData[monthKey] = { incoming: 0, outgoing: 0, oneTimeIncome: [], oneTimeExpense: [] };
+      currentMonth.setMonth(currentMonth.getMonth() + 1);
+    }
+
     // Process regular transactions (income, expense, recurring) for area charts
     transactions
       .filter(t => t.category !== 'housing' && t.category !== 'one-time')
       .forEach(transaction => {
         const date = new Date(transaction.date);
         const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-
-        if (!monthlyData[monthKey]) {
-          monthlyData[monthKey] = { incoming: 0, outgoing: 0, oneTimeIncome: [], oneTimeExpense: [] };
-        }
 
         if (transaction.category === 'income' || transaction.amount > 0) {
           monthlyData[monthKey].incoming += Math.abs(transaction.amount);
@@ -211,10 +222,6 @@ export default function CashFlowReview({
         const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
         const amount = Math.abs(transaction.amount);
         const isIncome = transaction.amount > 0;
-
-        if (!monthlyData[monthKey]) {
-          monthlyData[monthKey] = { incoming: 0, outgoing: 0, oneTimeIncome: [], oneTimeExpense: [] };
-        }
 
         const dataPoint = {
           amount,
@@ -238,6 +245,7 @@ export default function CashFlowReview({
         return {
           month,
           monthLabel: date.toLocaleDateString('en-US', { month: 'short', year: '2-digit' }),
+          timestamp: date.getTime(), // Add numeric timestamp for scatter positioning
           incoming: Math.round(data.incoming),
           outgoing: Math.round(data.outgoing),
           oneTimeIncome: data.oneTimeIncome,
@@ -246,15 +254,17 @@ export default function CashFlowReview({
       })
       .sort((a, b) => a.month.localeCompare(b.month));
 
-    // Flatten one-time data for scatter plots while maintaining monthLabel reference
+    // Flatten one-time data for scatter plots using ACTUAL DATES (not monthly aggregation)
     const incomeScatter: any[] = [];
     const expenseScatter: any[] = [];
 
     chartArray.forEach(monthData => {
       monthData.oneTimeIncome.forEach(item => {
+        const txDate = new Date(item.date);
         incomeScatter.push({
-          monthLabel: monthData.monthLabel,
-          month: monthData.month,
+          // Use timestamp for precise positioning on numeric axis
+          timestamp: txDate.getTime(),
+          dayLabel: txDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' }),
           amount: item.amount,
           description: item.description,
           excluded: item.excluded,
@@ -262,9 +272,11 @@ export default function CashFlowReview({
         });
       });
       monthData.oneTimeExpense.forEach(item => {
+        const txDate = new Date(item.date);
         expenseScatter.push({
-          monthLabel: monthData.monthLabel,
-          month: monthData.month,
+          // Use timestamp for precise positioning on numeric axis
+          timestamp: txDate.getTime(),
+          dayLabel: txDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' }),
           amount: item.amount,
           description: item.description,
           excluded: item.excluded,
@@ -738,41 +750,6 @@ export default function CashFlowReview({
               >
                 All Categories
               </button>
-
-              {/* Add Manual Transaction Button */}
-              <button
-                onClick={() => setShowAddTransaction(true)}
-                style={{
-                  padding: '0.5rem 0.75rem',
-                  background: '#10b981',
-                  border: '2px solid #10b981',
-                  borderRadius: '8px',
-                  fontSize: '0.8rem',
-                  fontWeight: '600',
-                  color: 'white',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.375rem',
-                  whiteSpace: 'nowrap',
-                  marginLeft: 'auto',
-                  flexShrink: 0
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = '#059669';
-                  e.currentTarget.style.borderColor = '#059669';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = '#10b981';
-                  e.currentTarget.style.borderColor = '#10b981';
-                }}
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '16px', height: '16px' }}>
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
-                Add Transaction
-              </button>
             </div>
           )}
           </div>
@@ -859,12 +836,18 @@ export default function CashFlowReview({
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                   <XAxis
-                    dataKey="monthLabel"
+                    dataKey="timestamp"
+                    type="number"
+                    domain={['dataMin', 'dataMax']}
                     stroke="#718096"
                     style={{ fontSize: '0.75rem' }}
-                    type="category"
-                    allowDuplicatedCategory={false}
-                    interval="preserveStartEnd"
+                    tickFormatter={(timestamp) => {
+                      const date = new Date(timestamp);
+                      return date.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+                    }}
+                    ticks={chartData
+                      .filter((_, idx) => idx % Math.max(1, Math.floor(chartData.length / 12)) === 0)
+                      .map(d => d.timestamp)}
                     angle={-45}
                     textAnchor="end"
                     height={60}
@@ -958,6 +941,7 @@ export default function CashFlowReview({
                   <Area
                     type="monotone"
                     dataKey="incoming"
+                    xAxisId={0}
                     stroke="#60a5fa"
                     strokeWidth={2}
                     fillOpacity={1}
@@ -967,6 +951,7 @@ export default function CashFlowReview({
                   <Area
                     type="monotone"
                     dataKey="outgoing"
+                    xAxisId={0}
                     stroke="#fbbf24"
                     strokeWidth={2}
                     fillOpacity={1}
@@ -979,7 +964,7 @@ export default function CashFlowReview({
                     fill="#10b981"
                     name="One-Time Income"
                     shape="circle"
-                    r={2}
+                    r={5}
                   />
                   <Scatter
                     data={oneTimeExpenseData}
@@ -987,7 +972,7 @@ export default function CashFlowReview({
                     fill="#ef4444"
                     name="One-Time Expense"
                     shape="circle"
-                    r={2}
+                    r={5}
                   />
                 </ComposedChart>
               </ResponsiveContainer>
@@ -1055,9 +1040,41 @@ export default function CashFlowReview({
           </span>
         </div>
 
-          {/* Transaction Header - Count */}
-          <div className="transactions-header" style={{ marginTop: '1rem' }}>
+          {/* Transaction Header - Count and Add Button */}
+          <div className="transactions-header" style={{ marginTop: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <p>Showing {transactions.length} categorized transactions</p>
+            <button
+              onClick={() => setShowAddTransaction(true)}
+              style={{
+                padding: '0.5rem 0.75rem',
+                background: '#10b981',
+                border: '2px solid #10b981',
+                borderRadius: '8px',
+                fontSize: '0.8rem',
+                fontWeight: '600',
+                color: 'white',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.375rem',
+                whiteSpace: 'nowrap',
+                flexShrink: 0
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = '#059669';
+                e.currentTarget.style.borderColor = '#059669';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = '#10b981';
+                e.currentTarget.style.borderColor = '#10b981';
+              }}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '16px', height: '16px' }}>
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              Add Transaction
+            </button>
           </div>
 
           {/* Scrollable Transaction Container */}
