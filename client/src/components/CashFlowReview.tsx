@@ -450,44 +450,11 @@ export default function CashFlowReview({
             marginBottom: '1.5rem',
             marginTop: '-1rem'
           }}>
-            {/* Header with Continue Button */}
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'flex-start',
-              marginBottom: '1.5rem',
-              gap: '1rem'
-            }}>
-            <div className="form-header" style={{ margin: 0, flex: 1, textAlign: 'left' }}>
+            {/* Header */}
+            <div className="form-header" style={{ margin: 0, marginBottom: '1.5rem' }}>
               <h2>Cash Flow Analysis Complete</h2>
               <p>Review the AI-generated analysis of your bank statements</p>
             </div>
-
-            <button
-              type="button"
-              className="btn-primary"
-              onClick={onContinue}
-              disabled={displayNetCashFlow <= 300}
-              style={{
-                opacity: displayNetCashFlow <= 300 ? 0.5 : 1,
-                cursor: displayNetCashFlow <= 300 ? 'not-allowed' : 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                padding: '0.75rem 1.5rem',
-                fontSize: '1rem',
-                fontWeight: '600',
-                whiteSpace: 'nowrap',
-                flexShrink: 0
-              }}
-              title={displayNetCashFlow <= 300 ? 'Cash flow must exceed $300/month to continue' : ''}
-            >
-              Continue to Simulation
-              <svg style={{ width: '20px', height: '20px' }} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </button>
-          </div>
 
           {/* Two Column Layout: Analysis Left, Totals Stacked Right */}
           <div style={{
@@ -1298,7 +1265,17 @@ export default function CashFlowReview({
         </div>
       )}
 
-      <div className="form-actions">
+      {/* Sticky Bottom Actions */}
+      <div className="form-actions" style={{
+        position: 'sticky',
+        bottom: 0,
+        backgroundColor: 'white',
+        padding: '1rem',
+        borderTop: '2px solid #e2e8f0',
+        marginTop: '2rem',
+        zIndex: 10,
+        boxShadow: '0 -4px 12px rgba(0, 0, 0, 0.05)'
+      }}>
         {onBack && (
           <button type="button" className="btn-secondary" onClick={onBack}>
             <svg className="btn-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
