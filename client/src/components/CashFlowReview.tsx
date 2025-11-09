@@ -468,19 +468,19 @@ export default function CashFlowReview({
             </button>
           </div>
 
-          {/* Compact Layout: All Cards Equal Width */}
+          {/* Two Column Layout: Analysis Left, Totals Stacked Right */}
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(4, 1fr)',
+            gridTemplateColumns: '1fr 1fr',
             gap: '1rem',
             marginBottom: '2rem'
           }}>
-            {/* Confidence & Suitability Card */}
+            {/* LEFT: Confidence & Suitability Card */}
             <div style={{
               background: 'white',
               border: '2px solid #e2e8f0',
               borderRadius: '12px',
-              padding: '1.25rem',
+              padding: '1.5rem',
               boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
               display: 'flex',
               flexDirection: 'column'
@@ -542,8 +542,14 @@ export default function CashFlowReview({
               </div>
             </div>
 
-            {/* Income Card */}
-            <div className="summary-card income-card">
+            {/* RIGHT: Stacked Total Cards */}
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '1rem'
+            }}>
+              {/* Income Card */}
+              <div className="summary-card income-card" style={{ minHeight: 'auto' }}>
               <div className="card-icon">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -558,8 +564,8 @@ export default function CashFlowReview({
               </div>
             </div>
 
-            {/* Expense Card */}
-            <div className="summary-card expense-card">
+              {/* Expense Card */}
+              <div className="summary-card expense-card" style={{ minHeight: 'auto' }}>
               <div className="card-icon">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
@@ -574,8 +580,8 @@ export default function CashFlowReview({
               </div>
             </div>
 
-            {/* Net Cash Flow Card */}
-            <div className="summary-card cashflow-card">
+              {/* Net Cash Flow Card */}
+              <div className="summary-card cashflow-card" style={{ minHeight: 'auto' }}>
               <div className="card-icon">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
@@ -590,6 +596,7 @@ export default function CashFlowReview({
                   {displayNetCashFlow >= 0 ? 'Net Monthly Average Cash Flow' : 'Negative - Not suitable for AIO'}
                 </div>
               </div>
+            </div>
             </div>
           </div>
 
