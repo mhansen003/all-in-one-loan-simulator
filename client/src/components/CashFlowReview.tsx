@@ -14,7 +14,7 @@ interface CashFlowReviewProps {
 
 export default function CashFlowReview({
   cashFlow,
-  mortgageDetails,
+  mortgageDetails: _mortgageDetails, // Kept for future use, currently unused
   onContinue,
   onBack,
   onCashFlowUpdate,
