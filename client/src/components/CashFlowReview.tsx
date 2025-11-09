@@ -807,7 +807,7 @@ export default function CashFlowReview({
                     fill="#10b981"
                     name="One-Time Income"
                     shape="circle"
-                    r={3}
+                    r={2}
                   />
                   <Scatter
                     data={oneTimeExpenseData}
@@ -815,7 +815,7 @@ export default function CashFlowReview({
                     fill="#ef4444"
                     name="One-Time Expense"
                     shape="circle"
-                    r={3}
+                    r={2}
                   />
                 </ComposedChart>
               </ResponsiveContainer>
