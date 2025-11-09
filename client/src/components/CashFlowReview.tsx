@@ -461,7 +461,7 @@ export default function CashFlowReview({
             display: 'grid',
             gridTemplateColumns: '1fr 1fr',
             gap: '1rem',
-            marginBottom: '2rem'
+            marginBottom: '1rem'
           }}>
             {/* LEFT: Confidence & Suitability Card */}
             <div style={{
@@ -587,12 +587,9 @@ export default function CashFlowReview({
             </div>
             </div>
           </div>
-          </div>
-          {/* End Sticky Header Section */}
 
-          {/* Scrollable Content: Main Tabs & Content */}
           {/* Main Tabs: Chart vs Transactions */}
-          <div className="tabs">
+          <div className="tabs" style={{ marginTop: '1rem' }}>
             <button
               className={`tab ${mainTab === 'transactions' ? 'active' : ''}`}
               onClick={() => setMainTab('transactions')}
@@ -606,7 +603,10 @@ export default function CashFlowReview({
               Cash Flow Chart
             </button>
           </div>
+          </div>
+          {/* End Sticky Header Section */}
 
+          {/* Scrollable Content: Charts and Transactions */}
           {/* Cash Flow Chart */}
           {mainTab === 'chart' && chartData.length > 0 && (
             <div className="cash-flow-chart" style={{
