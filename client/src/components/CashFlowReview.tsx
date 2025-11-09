@@ -255,33 +255,52 @@ export default function CashFlowReview({
       .sort((a, b) => a.month.localeCompare(b.month));
 
     // Flatten one-time data for scatter plots using ACTUAL DATES (not monthly aggregation)
+    // Only include scatter points that fall within their respective month's range
     const incomeScatter: any[] = [];
     const expenseScatter: any[] = [];
 
     chartArray.forEach(monthData => {
       monthData.oneTimeIncome.forEach(item => {
         const txDate = new Date(item.date);
-        incomeScatter.push({
-          // Use timestamp for precise positioning on numeric axis
-          timestamp: txDate.getTime(),
-          dayLabel: txDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' }),
-          amount: item.amount,
-          description: item.description,
-          excluded: item.excluded,
-          date: item.date
-        });
+        const txTimestamp = txDate.getTime();
+
+        // Only add if within the month's range (timestamp of month start to end of month)
+        const monthStart = monthData.timestamp;
+        const monthEnd = new Date(monthStart);
+        monthEnd.setMonth(monthEnd.getMonth() + 1);
+
+        if (txTimestamp >= monthStart && txTimestamp < monthEnd.getTime()) {
+          incomeScatter.push({
+            // Use timestamp for precise positioning on numeric axis
+            timestamp: txTimestamp,
+            dayLabel: txDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' }),
+            amount: item.amount,
+            description: item.description,
+            excluded: item.excluded,
+            date: item.date
+          });
+        }
       });
       monthData.oneTimeExpense.forEach(item => {
         const txDate = new Date(item.date);
-        expenseScatter.push({
-          // Use timestamp for precise positioning on numeric axis
-          timestamp: txDate.getTime(),
-          dayLabel: txDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' }),
-          amount: item.amount,
-          description: item.description,
-          excluded: item.excluded,
-          date: item.date
-        });
+        const txTimestamp = txDate.getTime();
+
+        // Only add if within the month's range
+        const monthStart = monthData.timestamp;
+        const monthEnd = new Date(monthStart);
+        monthEnd.setMonth(monthEnd.getMonth() + 1);
+
+        if (txTimestamp >= monthStart && txTimestamp < monthEnd.getTime()) {
+          expenseScatter.push({
+            // Use timestamp for precise positioning on numeric axis
+            timestamp: txTimestamp,
+            dayLabel: txDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' }),
+            amount: item.amount,
+            description: item.description,
+            excluded: item.excluded,
+            date: item.date
+          });
+        }
       });
     });
 
@@ -960,6 +979,7 @@ export default function CashFlowReview({
                   />
                   <Scatter
                     data={oneTimeIncomeData}
+                    xAxisId={0}
                     dataKey="amount"
                     fill="#10b981"
                     name="One-Time Income"
@@ -968,6 +988,7 @@ export default function CashFlowReview({
                   />
                   <Scatter
                     data={oneTimeExpenseData}
+                    xAxisId={0}
                     dataKey="amount"
                     fill="#ef4444"
                     name="One-Time Expense"
@@ -987,7 +1008,7 @@ export default function CashFlowReview({
       {/* Transactions Section */}
       {mainTab === 'transactions' && (
       <div className="transactions-view">
-        {/* Deposit Frequency Dropdown */}
+        {/* Deposit Frequency and Add Transaction Row */}
         <div style={{
           display: 'flex',
           alignItems: 'center',
@@ -996,86 +1017,86 @@ export default function CashFlowReview({
           padding: '0.75rem 1rem',
           background: '#f7fafc',
           border: '1px solid #e2e8f0',
-          borderRadius: '8px'
+          borderRadius: '8px',
+          justifyContent: 'space-between'
         }}>
-          <svg style={{ width: '20px', height: '20px', color: '#9bc53d', flexShrink: 0 }} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-          </svg>
-          <label style={{ fontSize: '0.9rem', fontWeight: '600', color: '#2d3748', whiteSpace: 'nowrap' }}>
-            Deposit Frequency:
-          </label>
-          <select
-            value={depositFrequency}
-            onChange={(e) => {
-              const newFreq = e.target.value as 'weekly' | 'biweekly' | 'semi-monthly' | 'monthly';
-              console.log(`[CashFlowReview] Deposit frequency changed from "${depositFrequency}" to "${newFreq}"`);
-              setDepositFrequency(newFreq);
-            }}
-            style={{
-              padding: '0.5rem 2rem 0.5rem 0.75rem',
-              border: '2px solid #cbd5e0',
-              borderRadius: '6px',
-              fontSize: '0.875rem',
-              fontWeight: '600',
-              color: '#2d3748',
-              background: 'white',
-              cursor: 'pointer',
-              outline: 'none',
-              transition: 'border-color 0.2s'
-            }}
-            onFocus={(e) => e.currentTarget.style.borderColor = '#9bc53d'}
-            onBlur={(e) => e.currentTarget.style.borderColor = '#cbd5e0'}
-          >
-            <option value="weekly">Weekly (Every 7 days)</option>
-            <option value="biweekly">Biweekly (Every 14 days)</option>
-            <option value="semi-monthly">Semi-Monthly (Twice per month)</option>
-            <option value="monthly">Monthly (Once per month)</option>
-          </select>
-          <span style={{
-            fontSize: '0.8rem',
-            color: '#718096',
-            fontStyle: 'italic'
-          }}>
-            ✨ AI detected: <strong>{aiRecommendedFrequency}</strong>
-          </span>
-        </div>
-
-          {/* Transaction Header - Count and Add Button */}
-          <div className="transactions-header" style={{ marginTop: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <p>Showing {transactions.length} categorized transactions</p>
-            <button
-              onClick={() => setShowAddTransaction(true)}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: 1 }}>
+            <svg style={{ width: '20px', height: '20px', color: '#9bc53d', flexShrink: 0 }} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            <label style={{ fontSize: '0.9rem', fontWeight: '600', color: '#2d3748', whiteSpace: 'nowrap' }}>
+              Deposit Frequency:
+            </label>
+            <select
+              value={depositFrequency}
+              onChange={(e) => {
+                const newFreq = e.target.value as 'weekly' | 'biweekly' | 'semi-monthly' | 'monthly';
+                console.log(`[CashFlowReview] Deposit frequency changed from "${depositFrequency}" to "${newFreq}"`);
+                setDepositFrequency(newFreq);
+              }}
               style={{
-                padding: '0.5rem 0.75rem',
-                background: '#10b981',
-                border: '2px solid #10b981',
-                borderRadius: '8px',
-                fontSize: '0.8rem',
+                padding: '0.5rem 2rem 0.5rem 0.75rem',
+                border: '2px solid #cbd5e0',
+                borderRadius: '6px',
+                fontSize: '0.875rem',
                 fontWeight: '600',
-                color: 'white',
+                color: '#2d3748',
+                background: 'white',
                 cursor: 'pointer',
-                transition: 'all 0.2s ease',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.375rem',
-                whiteSpace: 'nowrap',
-                flexShrink: 0
+                outline: 'none',
+                transition: 'border-color 0.2s'
               }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = '#059669';
-                e.currentTarget.style.borderColor = '#059669';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = '#10b981';
-                e.currentTarget.style.borderColor = '#10b981';
-              }}
+              onFocus={(e) => e.currentTarget.style.borderColor = '#9bc53d'}
+              onBlur={(e) => e.currentTarget.style.borderColor = '#cbd5e0'}
             >
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '16px', height: '16px' }}>
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-              Add Transaction
-            </button>
+              <option value="weekly">Weekly (Every 7 days)</option>
+              <option value="biweekly">Biweekly (Every 14 days)</option>
+              <option value="semi-monthly">Semi-Monthly (Twice per month)</option>
+              <option value="monthly">Monthly (Once per month)</option>
+            </select>
+            <span style={{
+              fontSize: '0.8rem',
+              color: '#718096',
+              fontStyle: 'italic'
+            }}>
+              ✨ AI detected: <strong>{aiRecommendedFrequency}</strong>
+            </span>
           </div>
+
+          {/* Add Transaction Button */}
+          <button
+            onClick={() => setShowAddTransaction(true)}
+            style={{
+              padding: '0.5rem 0.75rem',
+              background: '#10b981',
+              border: '2px solid #10b981',
+              borderRadius: '8px',
+              fontSize: '0.8rem',
+              fontWeight: '600',
+              color: 'white',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.375rem',
+              whiteSpace: 'nowrap',
+              flexShrink: 0
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = '#059669';
+              e.currentTarget.style.borderColor = '#059669';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = '#10b981';
+              e.currentTarget.style.borderColor = '#10b981';
+            }}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '16px', height: '16px' }}>
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            Add Transaction
+          </button>
+        </div>
 
           {/* Scrollable Transaction Container */}
           {true && (
