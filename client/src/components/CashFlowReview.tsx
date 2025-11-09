@@ -81,27 +81,43 @@ export default function CashFlowReview({
       totalIncome,
       totalExpenses,
       netCashFlow,
+      monthlyDeposits: totalIncome,
+      monthlyExpenses: totalExpenses,
+      monthlyLeftover: netCashFlow,
       depositFrequency
     };
 
+    console.log('[CashFlowReview] Cash flow recalculated:', {
+      totalIncome: totalIncome.toFixed(2),
+      totalExpenses: totalExpenses.toFixed(2),
+      netCashFlow: netCashFlow.toFixed(2),
+      depositFrequency,
+      includedTransactionCount: includedTransactions.length,
+      excludedTransactionCount: transactions.length - includedTransactions.length
+    });
     onCashFlowUpdate?.(updatedCashFlow);
   }, [transactions, depositFrequency]);
 
   const toggleTransactionExclusion = (index: number) => {
     const updatedTransactions = [...transactions];
+    const transaction = updatedTransactions[index];
+    const wasExcluded = transaction.excluded;
     updatedTransactions[index] = {
-      ...updatedTransactions[index],
-      excluded: !updatedTransactions[index].excluded
+      ...transaction,
+      excluded: !wasExcluded
     };
+    console.log(`[CashFlowReview] Transaction toggled: ${transaction.description} ($${Math.abs(transaction.amount)}) - ${wasExcluded ? 'INCLUDED' : 'EXCLUDED'}`);
     setTransactions(updatedTransactions);
   };
 
   const updateTransactionAmount = (index: number, newAmount: number) => {
     const updatedTransactions = [...transactions];
+    const oldAmount = updatedTransactions[index].amount;
     updatedTransactions[index] = {
       ...updatedTransactions[index],
       amount: newAmount
     };
+    console.log(`[CashFlowReview] Transaction amount updated: ${updatedTransactions[index].description} - $${Math.abs(oldAmount)} → $${Math.abs(newAmount)}`);
     setTransactions(updatedTransactions);
     setEditingTransaction(null);
   };
@@ -152,46 +168,38 @@ export default function CashFlowReview({
 
   const displayNetCashFlow = displayTotalIncome - displayTotalExpenses;
 
-  // Prepare unified chart data - group by DAY and calculate incoming/outgoing
+  // Prepare unified chart data - group by MONTH and calculate incoming/outgoing
   const { chartData, oneTimeIncomeData, oneTimeExpenseData } = useMemo(() => {
     // First, find min and max dates from ALL transactions
     if (transactions.length === 0) {
       return { chartData: [], oneTimeIncomeData: [], oneTimeExpenseData: [] };
     }
 
-    const dates = transactions.map(t => new Date(t.date));
-    const minDate = new Date(Math.min(...dates.map(d => d.getTime())));
-    const maxDate = new Date(Math.max(...dates.map(d => d.getTime())));
-
-    // Create an entry for EVERY SINGLE DAY between min and max dates
-    const dailyData: {
+    // Group transactions by MONTH (not day) to create smooth area charts
+    const monthlyData: {
       [key: string]: {
         incoming: number;
         outgoing: number;
-        oneTimeIncome: Array<{ amount: number; description: string; excluded: boolean }>;
-        oneTimeExpense: Array<{ amount: number; description: string; excluded: boolean }>;
+        oneTimeIncome: Array<{ amount: number; description: string; excluded: boolean; date: string }>;
+        oneTimeExpense: Array<{ amount: number; description: string; excluded: boolean; date: string }>;
       }
     } = {};
-
-    // Fill in all days with zero values
-    const currentDate = new Date(minDate);
-    while (currentDate <= maxDate) {
-      const dayKey = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(currentDate.getDate()).padStart(2, '0')}`;
-      dailyData[dayKey] = { incoming: 0, outgoing: 0, oneTimeIncome: [], oneTimeExpense: [] };
-      currentDate.setDate(currentDate.getDate() + 1);
-    }
 
     // Process regular transactions (income, expense, recurring) for area charts
     transactions
       .filter(t => t.category !== 'housing' && t.category !== 'one-time')
       .forEach(transaction => {
         const date = new Date(transaction.date);
-        const dayKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+        const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+
+        if (!monthlyData[monthKey]) {
+          monthlyData[monthKey] = { incoming: 0, outgoing: 0, oneTimeIncome: [], oneTimeExpense: [] };
+        }
 
         if (transaction.category === 'income' || transaction.amount > 0) {
-          dailyData[dayKey].incoming += Math.abs(transaction.amount);
+          monthlyData[monthKey].incoming += Math.abs(transaction.amount);
         } else {
-          dailyData[dayKey].outgoing += Math.abs(transaction.amount);
+          monthlyData[monthKey].outgoing += Math.abs(transaction.amount);
         }
       });
 
@@ -200,56 +208,67 @@ export default function CashFlowReview({
       .filter(t => t.category === 'one-time')
       .forEach(transaction => {
         const date = new Date(transaction.date);
-        const dayKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+        const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
         const amount = Math.abs(transaction.amount);
         const isIncome = transaction.amount > 0;
+
+        if (!monthlyData[monthKey]) {
+          monthlyData[monthKey] = { incoming: 0, outgoing: 0, oneTimeIncome: [], oneTimeExpense: [] };
+        }
 
         const dataPoint = {
           amount,
           description: transaction.description,
-          excluded: transaction.excluded || false
+          excluded: transaction.excluded || false,
+          date: transaction.date
         };
 
         if (isIncome) {
-          dailyData[dayKey].oneTimeIncome.push(dataPoint);
+          monthlyData[monthKey].oneTimeIncome.push(dataPoint);
         } else {
-          dailyData[dayKey].oneTimeExpense.push(dataPoint);
+          monthlyData[monthKey].oneTimeExpense.push(dataPoint);
         }
       });
 
-    // Convert to array and sort by date
-    const chartArray = Object.entries(dailyData)
-      .map(([day, data]) => ({
-        day,
-        dayLabel: new Date(day).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-        incoming: Math.round(data.incoming),
-        outgoing: Math.round(data.outgoing),
-        oneTimeIncome: data.oneTimeIncome,
-        oneTimeExpense: data.oneTimeExpense
-      }))
-      .sort((a, b) => a.day.localeCompare(b.day));
+    // Convert to array and sort by month
+    const chartArray = Object.entries(monthlyData)
+      .map(([month, data]) => {
+        const [year, monthNum] = month.split('-');
+        const date = new Date(parseInt(year), parseInt(monthNum) - 1, 1);
+        return {
+          month,
+          monthLabel: date.toLocaleDateString('en-US', { month: 'short', year: '2-digit' }),
+          incoming: Math.round(data.incoming),
+          outgoing: Math.round(data.outgoing),
+          oneTimeIncome: data.oneTimeIncome,
+          oneTimeExpense: data.oneTimeExpense
+        };
+      })
+      .sort((a, b) => a.month.localeCompare(b.month));
 
-    // Flatten one-time data for scatter plots while maintaining dayLabel reference
+    // Flatten one-time data for scatter plots while maintaining monthLabel reference
     const incomeScatter: any[] = [];
     const expenseScatter: any[] = [];
 
-    chartArray.forEach(dayData => {
-      dayData.oneTimeIncome.forEach(item => {
+    chartArray.forEach(monthData => {
+      monthData.oneTimeIncome.forEach(item => {
         incomeScatter.push({
-          dayLabel: dayData.dayLabel,
-          day: dayData.day,
+          monthLabel: monthData.monthLabel,
+          month: monthData.month,
           amount: item.amount,
           description: item.description,
-          excluded: item.excluded
+          excluded: item.excluded,
+          date: item.date
         });
       });
-      dayData.oneTimeExpense.forEach(item => {
+      monthData.oneTimeExpense.forEach(item => {
         expenseScatter.push({
-          dayLabel: dayData.dayLabel,
-          day: dayData.day,
+          monthLabel: monthData.monthLabel,
+          month: monthData.month,
           amount: item.amount,
           description: item.description,
-          excluded: item.excluded
+          excluded: item.excluded,
+          date: item.date
         });
       });
     });
@@ -650,6 +669,112 @@ export default function CashFlowReview({
               Cash Flow Chart
             </button>
           </div>
+
+          {/* Transaction Filter Buttons - Only show when on Transactions tab */}
+          {mainTab === 'transactions' && (
+            <div className="transaction-sub-tabs" style={{ marginTop: '1rem', marginBottom: 0 }}>
+              <button
+                className={`sub-tab ${transactionSubTab === 'income' ? 'active' : ''}`}
+                onClick={() => setTransactionSubTab('income')}
+              >
+                Income
+                <span className="sub-tab-badge">
+                  {(() => {
+                    const totals = getCategoryTotals('income');
+                    return totals.excluded > 0
+                      ? `$${formatCurrency(totals.included)} ($${formatCurrency(totals.excluded)} excluded)`
+                      : formatCurrency(totals.included);
+                  })()}
+                </span>
+              </button>
+              <button
+                className={`sub-tab ${transactionSubTab === 'expense' ? 'active' : ''}`}
+                onClick={() => setTransactionSubTab('expense')}
+              >
+                Expenses
+                <span className="sub-tab-badge">
+                  {(() => {
+                    const expenseTotals = getCategoryTotals('expense');
+                    const recurringTotals = getCategoryTotals('recurring');
+                    const includedTotal = expenseTotals.included + recurringTotals.included;
+                    const excludedTotal = expenseTotals.excluded + recurringTotals.excluded;
+                    return excludedTotal > 0
+                      ? `${formatCurrency(includedTotal)} (${formatCurrency(excludedTotal)} excluded)`
+                      : formatCurrency(includedTotal);
+                  })()}
+                </span>
+              </button>
+              <button
+                className={`sub-tab ${transactionSubTab === 'housing' ? 'active' : ''}`}
+                onClick={() => setTransactionSubTab('housing')}
+              >
+                Housing
+                <span className="sub-tab-badge">
+                  {(() => {
+                    const totals = getCategoryTotals('housing');
+                    return totals.excluded > 0
+                      ? `${formatCurrency(totals.included)} (${formatCurrency(totals.excluded)} excluded)`
+                      : formatCurrency(totals.included);
+                  })()}
+                </span>
+              </button>
+              <button
+                className={`sub-tab ${transactionSubTab === 'one-time' ? 'active' : ''}`}
+                onClick={() => setTransactionSubTab('one-time')}
+              >
+                One-Time
+                <span className="sub-tab-badge">
+                  {(() => {
+                    const totals = getCategoryTotals('one-time');
+                    return totals.excluded > 0
+                      ? `${formatCurrency(totals.included)} (${formatCurrency(totals.excluded)} excluded)`
+                      : formatCurrency(totals.included);
+                  })()}
+                </span>
+              </button>
+              <button
+                className={`sub-tab ${transactionSubTab === 'all' ? 'active' : ''}`}
+                onClick={() => setTransactionSubTab('all')}
+              >
+                All Categories
+              </button>
+
+              {/* Add Manual Transaction Button */}
+              <button
+                onClick={() => setShowAddTransaction(true)}
+                style={{
+                  padding: '0.5rem 0.75rem',
+                  background: '#10b981',
+                  border: '2px solid #10b981',
+                  borderRadius: '8px',
+                  fontSize: '0.8rem',
+                  fontWeight: '600',
+                  color: 'white',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.375rem',
+                  whiteSpace: 'nowrap',
+                  marginLeft: 'auto',
+                  flexShrink: 0
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = '#059669';
+                  e.currentTarget.style.borderColor = '#059669';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = '#10b981';
+                  e.currentTarget.style.borderColor = '#10b981';
+                }}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '16px', height: '16px' }}>
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                Add Transaction
+              </button>
+            </div>
+          )}
           </div>
           {/* End Sticky Header Section */}
 
@@ -678,7 +803,7 @@ export default function CashFlowReview({
                     color: '#718096',
                     margin: '0'
                   }}>
-                    Showing {chartData.length} month{chartData.length !== 1 ? 's' : ''} of transaction data
+                    Showing {chartData.length} month{chartData.length !== 1 ? 's' : ''} of aggregated transaction data
                   </p>
                 </div>
                 <button
@@ -734,12 +859,12 @@ export default function CashFlowReview({
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                   <XAxis
-                    dataKey="dayLabel"
+                    dataKey="monthLabel"
                     stroke="#718096"
                     style={{ fontSize: '0.75rem' }}
                     type="category"
                     allowDuplicatedCategory={false}
-                    interval={4}
+                    interval="preserveStartEnd"
                     angle={-45}
                     textAnchor="end"
                     height={60}
@@ -814,7 +939,7 @@ export default function CashFlowReview({
                           }}
                         >
                           <div style={{ marginBottom: '0.5rem', fontWeight: '600', color: '#1a202c' }}>
-                            {payload[0]?.payload?.dayLabel}
+                            {payload[0]?.payload?.monthLabel}
                           </div>
                           {payload.map((entry: any, index: number) => (
                             <div key={index} style={{ fontSize: '0.875rem', color: '#4a5568', marginBottom: '0.25rem' }}>
@@ -896,7 +1021,11 @@ export default function CashFlowReview({
           </label>
           <select
             value={depositFrequency}
-            onChange={(e) => setDepositFrequency(e.target.value as 'weekly' | 'biweekly' | 'semi-monthly' | 'monthly')}
+            onChange={(e) => {
+              const newFreq = e.target.value as 'weekly' | 'biweekly' | 'semi-monthly' | 'monthly';
+              console.log(`[CashFlowReview] Deposit frequency changed from "${depositFrequency}" to "${newFreq}"`);
+              setDepositFrequency(newFreq);
+            }}
             style={{
               padding: '0.5rem 2rem 0.5rem 0.75rem',
               border: '2px solid #cbd5e0',
@@ -925,109 +1054,6 @@ export default function CashFlowReview({
             ✨ AI detected: <strong>{aiRecommendedFrequency}</strong>
           </span>
         </div>
-
-        {/* Transaction Sub-Tabs - Reordered to match display */}
-        <div className="transaction-sub-tabs">
-          <button
-            className={`sub-tab ${transactionSubTab === 'income' ? 'active' : ''}`}
-            onClick={() => setTransactionSubTab('income')}
-          >
-            Income
-            <span className="sub-tab-badge">
-              {(() => {
-                const totals = getCategoryTotals('income');
-                return totals.excluded > 0
-                  ? `${formatCurrency(totals.included)} (${formatCurrency(totals.excluded)} excluded)`
-                  : formatCurrency(totals.included);
-              })()}
-            </span>
-          </button>
-          <button
-            className={`sub-tab ${transactionSubTab === 'expense' ? 'active' : ''}`}
-            onClick={() => setTransactionSubTab('expense')}
-          >
-            Expenses
-            <span className="sub-tab-badge">
-              {(() => {
-                const expenseTotals = getCategoryTotals('expense');
-                const recurringTotals = getCategoryTotals('recurring');
-                const includedTotal = expenseTotals.included + recurringTotals.included;
-                const excludedTotal = expenseTotals.excluded + recurringTotals.excluded;
-                return excludedTotal > 0
-                  ? `${formatCurrency(includedTotal)} (${formatCurrency(excludedTotal)} excluded)`
-                  : formatCurrency(includedTotal);
-              })()}
-            </span>
-          </button>
-          <button
-            className={`sub-tab ${transactionSubTab === 'housing' ? 'active' : ''}`}
-            onClick={() => setTransactionSubTab('housing')}
-            >
-              Housing
-              <span className="sub-tab-badge">
-                {(() => {
-                  const totals = getCategoryTotals('housing');
-                  return totals.excluded > 0
-                    ? `${formatCurrency(totals.included)} (${formatCurrency(totals.excluded)} excluded)`
-                    : formatCurrency(totals.included);
-                })()}
-              </span>
-            </button>
-            <button
-              className={`sub-tab ${transactionSubTab === 'one-time' ? 'active' : ''}`}
-              onClick={() => setTransactionSubTab('one-time')}
-            >
-              One-Time
-              <span className="sub-tab-badge">
-                {(() => {
-                  const totals = getCategoryTotals('one-time');
-                  return totals.excluded > 0
-                    ? `${formatCurrency(totals.included)} (${formatCurrency(totals.excluded)} excluded)`
-                    : formatCurrency(totals.included);
-                })()}
-              </span>
-            </button>
-            <button
-              className={`sub-tab ${transactionSubTab === 'all' ? 'active' : ''}`}
-              onClick={() => setTransactionSubTab('all')}
-            >
-              All Categories
-            </button>
-
-            {/* Add Manual Transaction Button */}
-            <button
-              onClick={() => setShowAddTransaction(true)}
-              style={{
-                padding: '0.75rem 1.25rem',
-                background: '#10b981',
-                border: '2px solid #10b981',
-                borderRadius: '8px',
-                fontSize: '0.9rem',
-                fontWeight: '600',
-                color: 'white',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                whiteSpace: 'nowrap',
-                marginLeft: 'auto'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = '#059669';
-                e.currentTarget.style.borderColor = '#059669';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = '#10b981';
-                e.currentTarget.style.borderColor = '#10b981';
-              }}
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '18px', height: '18px' }}>
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-              Add Transaction
-            </button>
-          </div>
 
           {/* Transaction Header - Count */}
           <div className="transactions-header" style={{ marginTop: '1rem' }}>
