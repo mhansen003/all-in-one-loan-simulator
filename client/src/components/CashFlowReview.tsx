@@ -408,8 +408,11 @@ export default function CashFlowReview({
 
     return {
       monthlyInterest: Math.ceil(monthlyInterest),
-      recommendedMinimum: Math.ceil(traditionalPayment * 0.5), // 50% of traditional payment
-      breakEvenMinimum: Math.ceil(traditionalPayment * 0.75) // 75% of traditional payment for meaningful savings
+      // Absolute minimum: monthly interest (below this, balance grows forever)
+      absoluteMinimum: Math.ceil(monthlyInterest),
+      // Break-even: monthly interest * 1.3 (need 30% more to make meaningful progress)
+      // Below this, AIO might take longer than traditional mortgage
+      breakEvenMinimum: Math.ceil(monthlyInterest * 1.3)
     };
   };
 
@@ -429,7 +432,7 @@ export default function CashFlowReview({
       return {
         rating: 'TOO LOW',
         color: '#ef4444',
-        description: `Net cash flow too low. AIO will take longer than ${mortgageDetails?.remainingTermMonths ? Math.floor(mortgageDetails.remainingTermMonths / 12) : 30} years, resulting in MORE interest paid.`,
+        description: `Net cash flow is barely above monthly interest ($${minCashFlow.monthlyInterest.toLocaleString()}). At this rate, AIO loan may take longer than ${mortgageDetails?.remainingTermMonths ? Math.floor(mortgageDetails.remainingTermMonths / 12) : 30} years to pay off, resulting in MORE total interest.`,
         icon: '🚫',
         glow: 'none',
         showMinimum: true,
