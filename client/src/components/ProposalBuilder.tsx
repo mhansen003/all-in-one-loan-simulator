@@ -893,19 +893,23 @@ export default function ProposalBuilder({
                   {/* Signature Preview */}
                   <div style={{
                     padding: '2rem',
-                    background: 'white',
-                    border: '2px solid #e2e8f0',
+                    background: 'linear-gradient(135deg, #ffffff 0%, #f0f9e8 100%)',
+                    border: '3px solid #9bc53d',
                     borderRadius: '12px',
-                    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05)'
+                    boxShadow: '0 6px 16px rgba(155, 197, 61, 0.2)'
                   }}>
-                    <h3 style={{ margin: '0 0 1.5rem 0', fontSize: '1.1rem', color: '#64748b', textAlign: 'center' }}>Your Signature</h3>
+                    <h3 style={{ margin: '0 0 1.5rem 0', fontSize: '1.2rem', color: '#2d3748', fontWeight: '700', textAlign: 'center' }}>Your Professional Signature</h3>
                     <div style={{
                       fontFamily: 'Arial, sans-serif',
-                      borderLeft: '4px solid #8b5cf6',
-                      paddingLeft: '1.5rem'
+                      borderLeft: '5px solid #9bc53d',
+                      paddingLeft: '1.5rem',
+                      background: 'white',
+                      padding: '1.5rem',
+                      borderRadius: '8px',
+                      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)'
                     }}>
                       {signatureName && (
-                        <div style={{ fontSize: '1.25rem', fontWeight: '700', color: '#1e293b', marginBottom: '0.25rem' }}>
+                        <div style={{ fontSize: '1.35rem', fontWeight: '700', color: '#1e293b', marginBottom: '0.25rem' }}>
                           {signatureName}
                         </div>
                       )}
@@ -915,22 +919,22 @@ export default function ProposalBuilder({
                         </div>
                       )}
                       {signatureCompany && (
-                        <div style={{ fontSize: '1.05rem', fontWeight: '600', color: '#8b5cf6', marginBottom: '0.75rem' }}>
+                        <div style={{ fontSize: '1.1rem', fontWeight: '700', color: '#9bc53d', marginBottom: '0.75rem' }}>
                           {signatureCompany}
                         </div>
                       )}
                       <div style={{ fontSize: '0.95rem', color: '#64748b', lineHeight: '1.6' }}>
                         {signatureEmail && (
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '16px', height: '16px', color: '#8b5cf6' }}>
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '16px', height: '16px', color: '#9bc53d' }}>
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                             </svg>
-                            <a href={`mailto:${signatureEmail}`} style={{ color: '#8b5cf6', textDecoration: 'none' }}>{signatureEmail}</a>
+                            <a href={`mailto:${signatureEmail}`} style={{ color: '#9bc53d', textDecoration: 'none', fontWeight: '500' }}>{signatureEmail}</a>
                           </div>
                         )}
                         {signaturePhone && (
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '16px', height: '16px', color: '#8b5cf6' }}>
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '16px', height: '16px', color: '#9bc53d' }}>
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                             </svg>
                             <span>{signaturePhone}</span>
@@ -938,15 +942,15 @@ export default function ProposalBuilder({
                         )}
                         {signatureWebsite && (
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '16px', height: '16px', color: '#8b5cf6' }}>
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '16px', height: '16px', color: '#9bc53d' }}>
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
                             </svg>
-                            <a href={`https://${signatureWebsite.replace(/^https?:\/\//, '')}`} style={{ color: '#8b5cf6', textDecoration: 'none' }}>{signatureWebsite.replace(/^https?:\/\//, '')}</a>
+                            <a href={`https://${signatureWebsite.replace(/^https?:\/\//, '')}`} style={{ color: '#9bc53d', textDecoration: 'none', fontWeight: '500' }}>{signatureWebsite.replace(/^https?:\/\//, '')}</a>
                           </div>
                         )}
                         {signatureAddress && (
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '16px', height: '16px', color: '#8b5cf6' }}>
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '16px', height: '16px', color: '#9bc53d' }}>
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                             </svg>
@@ -959,7 +963,7 @@ export default function ProposalBuilder({
                           </div>
                         )}
                         {signatureTagline && (
-                          <div style={{ marginTop: '0.75rem', fontSize: '0.85rem', fontWeight: '600', color: '#8b5cf6', letterSpacing: '0.05em' }}>
+                          <div style={{ marginTop: '0.75rem', fontSize: '0.9rem', fontWeight: '700', color: '#9bc53d', letterSpacing: '0.05em' }}>
                             {signatureTagline}
                           </div>
                         )}
@@ -1394,19 +1398,23 @@ export default function ProposalBuilder({
                 <div style={{
                   marginTop: '2rem',
                   padding: '2rem',
-                  background: 'white',
-                  border: '2px solid #e2e8f0',
+                  background: 'linear-gradient(135deg, #ffffff 0%, #f0f9e8 100%)',
+                  border: '3px solid #9bc53d',
                   borderRadius: '12px',
-                  boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05)'
+                  boxShadow: '0 6px 16px rgba(155, 197, 61, 0.2)'
                 }}>
-                  <h3 style={{ margin: '0 0 1.5rem 0', fontSize: '1.1rem', color: '#64748b', textAlign: 'center' }}>Signature Preview</h3>
+                  <h3 style={{ margin: '0 0 1.5rem 0', fontSize: '1.2rem', color: '#2d3748', fontWeight: '700', textAlign: 'center' }}>Signature Preview</h3>
                   <div style={{
                     fontFamily: 'Arial, sans-serif',
-                    borderLeft: '4px solid #8b5cf6',
-                    paddingLeft: '1.5rem'
+                    borderLeft: '5px solid #9bc53d',
+                    paddingLeft: '1.5rem',
+                    background: 'white',
+                    padding: '1.5rem',
+                    borderRadius: '8px',
+                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)'
                   }}>
                     {signatureName && (
-                      <div style={{ fontSize: '1.25rem', fontWeight: '700', color: '#1e293b', marginBottom: '0.25rem' }}>
+                      <div style={{ fontSize: '1.35rem', fontWeight: '700', color: '#1e293b', marginBottom: '0.25rem' }}>
                         {signatureName}
                       </div>
                     )}
@@ -1416,22 +1424,22 @@ export default function ProposalBuilder({
                       </div>
                     )}
                     {signatureCompany && (
-                      <div style={{ fontSize: '1.05rem', fontWeight: '600', color: '#8b5cf6', marginBottom: '0.75rem' }}>
+                      <div style={{ fontSize: '1.1rem', fontWeight: '700', color: '#9bc53d', marginBottom: '0.75rem' }}>
                         {signatureCompany}
                       </div>
                     )}
                     <div style={{ fontSize: '0.95rem', color: '#64748b', lineHeight: '1.6' }}>
                       {signatureEmail && (
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
-                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '16px', height: '16px', color: '#8b5cf6' }}>
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '16px', height: '16px', color: '#9bc53d' }}>
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                           </svg>
-                          <a href={`mailto:${signatureEmail}`} style={{ color: '#8b5cf6', textDecoration: 'none' }}>{signatureEmail}</a>
+                          <a href={`mailto:${signatureEmail}`} style={{ color: '#9bc53d', textDecoration: 'none', fontWeight: '500' }}>{signatureEmail}</a>
                         </div>
                       )}
                       {signaturePhone && (
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
-                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '16px', height: '16px', color: '#8b5cf6' }}>
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '16px', height: '16px', color: '#9bc53d' }}>
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                           </svg>
                           <span>{signaturePhone}</span>
@@ -1439,15 +1447,15 @@ export default function ProposalBuilder({
                       )}
                       {signatureWebsite && (
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
-                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '16px', height: '16px', color: '#8b5cf6' }}>
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '16px', height: '16px', color: '#9bc53d' }}>
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
                           </svg>
-                          <a href={`https://${signatureWebsite.replace(/^https?:\/\//, '')}`} style={{ color: '#8b5cf6', textDecoration: 'none' }}>{signatureWebsite.replace(/^https?:\/\//, '')}</a>
+                          <a href={`https://${signatureWebsite.replace(/^https?:\/\//, '')}`} style={{ color: '#9bc53d', textDecoration: 'none', fontWeight: '500' }}>{signatureWebsite.replace(/^https?:\/\//, '')}</a>
                         </div>
                       )}
                       {signatureAddress && (
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
-                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '16px', height: '16px', color: '#8b5cf6' }}>
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '16px', height: '16px', color: '#9bc53d' }}>
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                           </svg>
@@ -1460,7 +1468,7 @@ export default function ProposalBuilder({
                         </div>
                       )}
                       {signatureTagline && (
-                        <div style={{ marginTop: '0.75rem', fontSize: '0.85rem', fontWeight: '600', color: '#8b5cf6', letterSpacing: '0.05em' }}>
+                        <div style={{ marginTop: '0.75rem', fontSize: '0.9rem', fontWeight: '700', color: '#9bc53d', letterSpacing: '0.05em' }}>
                           {signatureTagline}
                         </div>
                       )}
@@ -1680,7 +1688,7 @@ export default function ProposalBuilder({
                   <div className="preview-section">
                     <div style={{
                       fontFamily: 'Arial, sans-serif',
-                      borderLeft: '4px solid #8b5cf6',
+                      borderLeft: '5px solid #9bc53d',
                       paddingLeft: '1.5rem',
                       marginTop: '3rem'
                     }}>
@@ -1688,7 +1696,7 @@ export default function ProposalBuilder({
                         Best regards,
                       </div>
                       {signatureName && (
-                        <div style={{ fontSize: '1.25rem', fontWeight: '700', color: '#1e293b', marginBottom: '0.25rem' }}>
+                        <div style={{ fontSize: '1.35rem', fontWeight: '700', color: '#1e293b', marginBottom: '0.25rem' }}>
                           {signatureName}
                         </div>
                       )}
@@ -1698,22 +1706,22 @@ export default function ProposalBuilder({
                         </div>
                       )}
                       {signatureCompany && (
-                        <div style={{ fontSize: '1.05rem', fontWeight: '600', color: '#8b5cf6', marginBottom: '0.75rem' }}>
+                        <div style={{ fontSize: '1.1rem', fontWeight: '700', color: '#9bc53d', marginBottom: '0.75rem' }}>
                           {signatureCompany}
                         </div>
                       )}
                       <div style={{ fontSize: '0.95rem', color: '#64748b', lineHeight: '1.6' }}>
                         {signatureEmail && (
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '16px', height: '16px', color: '#8b5cf6' }}>
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '16px', height: '16px', color: '#9bc53d' }}>
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                             </svg>
-                            <a href={`mailto:${signatureEmail}`} style={{ color: '#8b5cf6', textDecoration: 'none' }}>{signatureEmail}</a>
+                            <a href={`mailto:${signatureEmail}`} style={{ color: '#9bc53d', textDecoration: 'none', fontWeight: '500' }}>{signatureEmail}</a>
                           </div>
                         )}
                         {signaturePhone && (
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '16px', height: '16px', color: '#8b5cf6' }}>
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '16px', height: '16px', color: '#9bc53d' }}>
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                             </svg>
                             <span>{signaturePhone}</span>
@@ -1721,15 +1729,15 @@ export default function ProposalBuilder({
                         )}
                         {signatureWebsite && (
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '16px', height: '16px', color: '#8b5cf6' }}>
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '16px', height: '16px', color: '#9bc53d' }}>
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
                             </svg>
-                            <a href={`https://${signatureWebsite.replace(/^https?:\/\//, '')}`} style={{ color: '#8b5cf6', textDecoration: 'none' }}>{signatureWebsite.replace(/^https?:\/\//, '')}</a>
+                            <a href={`https://${signatureWebsite.replace(/^https?:\/\//, '')}`} style={{ color: '#9bc53d', textDecoration: 'none', fontWeight: '500' }}>{signatureWebsite.replace(/^https?:\/\//, '')}</a>
                           </div>
                         )}
                         {signatureAddress && (
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '16px', height: '16px', color: '#8b5cf6' }}>
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '16px', height: '16px', color: '#9bc53d' }}>
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                             </svg>
@@ -1742,7 +1750,7 @@ export default function ProposalBuilder({
                           </div>
                         )}
                         {signatureTagline && (
-                          <div style={{ marginTop: '0.75rem', fontSize: '0.85rem', fontWeight: '600', color: '#8b5cf6', letterSpacing: '0.05em' }}>
+                          <div style={{ marginTop: '0.75rem', fontSize: '0.9rem', fontWeight: '700', color: '#9bc53d', letterSpacing: '0.05em' }}>
                             {signatureTagline}
                           </div>
                         )}
