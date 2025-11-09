@@ -395,7 +395,6 @@ export default function CashFlowReview({
 
     const balance = mortgageDetails.currentBalance || 0;
     const rate = mortgageDetails.aioInterestRate || mortgageDetails.interestRate || 0;
-    const termMonths = mortgageDetails.remainingTermMonths || 360;
 
     // Monthly interest (what balance growth would be with $0 payment)
     const monthlyInterest = (balance * (rate / 100)) / 12;
@@ -741,16 +740,16 @@ export default function CashFlowReview({
             <div style={{
               background: 'linear-gradient(135deg, #fee2e2 0%, #fecaca 100%)',
               border: '2px solid #ef4444',
-              borderRadius: '12px',
-              padding: '1.5rem',
-              marginTop: '1.5rem',
-              marginBottom: '1.5rem',
-              boxShadow: '0 4px 12px rgba(239, 68, 68, 0.2)'
+              borderRadius: '8px',
+              padding: '0.75rem',
+              marginTop: '0.75rem',
+              marginBottom: '0.75rem',
+              boxShadow: '0 2px 6px rgba(239, 68, 68, 0.15)'
             }}>
-              <div style={{ display: 'flex', gap: '1rem', alignItems: 'start' }}>
+              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'start' }}>
                 <div style={{
-                  width: '48px',
-                  height: '48px',
+                  width: '32px',
+                  height: '32px',
                   borderRadius: '50%',
                   background: '#ef4444',
                   display: 'flex',
@@ -758,36 +757,36 @@ export default function CashFlowReview({
                   justifyContent: 'center',
                   flexShrink: 0
                 }}>
-                  <span style={{ fontSize: '24px' }}>🚫</span>
+                  <span style={{ fontSize: '18px' }}>🚫</span>
                 </div>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: '1.25rem', fontWeight: '700', color: '#991b1b', marginBottom: '0.5rem' }}>
+                  <div style={{ fontSize: '1.1rem', fontWeight: '700', color: '#991b1b', marginBottom: '0.25rem' }}>
                     ⚠️ Cash Flow Insufficient for AIO Loan
                   </div>
-                  <div style={{ fontSize: '1rem', color: '#7f1d1d', marginBottom: '1rem', lineHeight: '1.6' }}>
+                  <div style={{ fontSize: '0.9rem', color: '#7f1d1d', marginBottom: '0.5rem', lineHeight: '1.4' }}>
                     {temperatureRating.description}
                   </div>
                   <div style={{
                     background: 'white',
                     border: '1px solid #fca5a5',
-                    borderRadius: '8px',
-                    padding: '1rem',
-                    marginBottom: '1rem'
+                    borderRadius: '6px',
+                    padding: '0.5rem',
+                    marginBottom: '0.5rem'
                   }}>
-                    <div style={{ fontSize: '0.875rem', color: '#7f1d1d', marginBottom: '0.75rem' }}>
+                    <div style={{ fontSize: '0.8rem', color: '#7f1d1d', marginBottom: '0.3rem' }}>
                       <strong>Current Net Cash Flow:</strong> ${displayNetCashFlow.toLocaleString()}/month
                     </div>
-                    <div style={{ fontSize: '0.875rem', color: '#7f1d1d', marginBottom: '0.75rem' }}>
+                    <div style={{ fontSize: '0.8rem', color: '#7f1d1d', marginBottom: '0.3rem' }}>
                       <strong>Minimum Needed:</strong> ${minCashFlow.breakEvenMinimum.toLocaleString()}/month
                     </div>
-                    <div style={{ fontSize: '0.875rem', color: '#991b1b', fontWeight: '600' }}>
+                    <div style={{ fontSize: '0.8rem', color: '#991b1b', fontWeight: '600' }}>
                       <strong>Shortfall:</strong> ${(minCashFlow.breakEvenMinimum - displayNetCashFlow).toLocaleString()}/month
                     </div>
                   </div>
-                  <div style={{ fontSize: '0.875rem', color: '#7f1d1d', fontWeight: '600', marginBottom: '0.5rem' }}>
+                  <div style={{ fontSize: '0.8rem', color: '#7f1d1d', fontWeight: '600', marginBottom: '0.25rem' }}>
                     💡 Recommendations:
                   </div>
-                  <ul style={{ margin: 0, paddingLeft: '1.5rem', color: '#7f1d1d', fontSize: '0.875rem', lineHeight: '1.8' }}>
+                  <ul style={{ margin: 0, paddingLeft: '1.25rem', color: '#7f1d1d', fontSize: '0.8rem', lineHeight: '1.4' }}>
                     <li>Include additional income sources in the analysis</li>
                     <li>Review and reduce monthly expenses where possible</li>
                     <li>Consider making additional principal payments to the AIO loan</li>
