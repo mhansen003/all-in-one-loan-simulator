@@ -385,6 +385,7 @@ function App() {
             <div className="section-card">
               <CashFlowReview
                 cashFlow={cashFlowAnalysis}
+                mortgageDetails={mortgageDetails as MortgageDetails}
                 onContinue={handleContinueToSimulation}
                 onBack={() => setStep('upload-statements')}
                 onCashFlowUpdate={setCashFlowAnalysis}

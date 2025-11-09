@@ -466,7 +466,15 @@ export default function FileUpload({
       </div>
 
       {onBack && (
-        <div className="form-actions">
+        <div className="form-actions" style={{
+          position: 'sticky',
+          bottom: 0,
+          zIndex: 99,
+          background: 'white',
+          padding: '1rem 0',
+          boxShadow: '0 -2px 10px rgba(0, 0, 0, 0.1)',
+          marginTop: '2rem'
+        }}>
           <button type="button" className="btn-secondary" onClick={onBack} disabled={isAnalyzing || isProcessingPdf}>
             <svg className="btn-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />

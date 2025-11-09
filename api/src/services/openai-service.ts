@@ -969,9 +969,10 @@ Your task is to CATEGORIZE and ANALYZE the above transactions:
    - Cash withdrawals >$500
    - Check deposits >$1000
    - Loan payments (student loans, car loans, personal loans)
-   - Credit card payments (payments TO credit cards, not purchases with cards)
    - Investment/brokerage transfers (Vanguard, Fidelity, Schwab, etc.)
    → flagReason: "One-Time Expense: Wire transfer/financial movement"
+
+   ⚠️ IMPORTANT: Credit card payments are RECURRING EXPENSES (see Step 4), NOT one-time!
 
    Rule C - Irregular/Annual expenses:
    - Insurance payments (auto, life, umbrella - but NOT monthly health insurance)
@@ -1007,6 +1008,8 @@ Your task is to CATEGORIZE and ANALYZE the above transactions:
    - Gym memberships, childcare (if monthly)
    - Regular transportation (Uber, Lyft, public transit)
    - Pet supplies, pet care (routine, <$500)
+   - Credit card payments (payments TO credit cards - these are recurring monthly expenses)
+     * Look for: "Payment To", "Payment", "Card Ending", "Chase", "Amex", "Discover", "Capital One", "Citi", etc.
    → Category: "expense"
 
 2. **FLAGGING - Apply to transactions that need review**:
