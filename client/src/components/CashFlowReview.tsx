@@ -171,10 +171,10 @@ export default function CashFlowReview({
   const displayNetCashFlow = displayTotalIncome - displayTotalExpenses;
 
   // Prepare unified chart data - group by MONTH and calculate incoming/outgoing
-  const { chartData, oneTimeIncomeData, oneTimeExpenseData } = useMemo(() => {
+  const { chartData, oneTimeIncomeData, oneTimeExpenseData, yAxisMax } = useMemo(() => {
     // First, find min and max dates from ALL transactions
     if (transactions.length === 0) {
-      return { chartData: [], oneTimeIncomeData: [], oneTimeExpenseData: [] };
+      return { chartData: [], oneTimeIncomeData: [], oneTimeExpenseData: [], yAxisMax: 0 };
     }
 
     // Find the date range
@@ -318,10 +318,25 @@ export default function CashFlowReview({
       point => point.timestamp >= minTimestamp && point.timestamp <= maxTimestamp
     );
 
+    // Calculate max Y value to ensure all data points (including scatter) fit
+    const maxAreaValue = Math.max(
+      ...chartArray.map(d => Math.max(d.incoming, d.outgoing)),
+      0
+    );
+    const maxScatterValue = Math.max(
+      ...filteredIncomeScatter.map(d => d.amount),
+      ...filteredExpenseScatter.map(d => Math.abs(d.amount)),
+      0
+    );
+    const maxYValue = Math.max(maxAreaValue, maxScatterValue);
+    // Add 20% padding to ensure points don't touch the top
+    const yAxisMax = Math.ceil(maxYValue * 1.2);
+
     return {
       chartData: chartArray,
       oneTimeIncomeData: filteredIncomeScatter,
-      oneTimeExpenseData: filteredExpenseScatter
+      oneTimeExpenseData: filteredExpenseScatter,
+      yAxisMax
     };
   }, [transactions]);
 
@@ -895,7 +910,7 @@ export default function CashFlowReview({
                     stroke="#718096"
                     style={{ fontSize: '0.75rem' }}
                     tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
-                    domain={[0, 'auto']}
+                    domain={[0, yAxisMax || 'auto']}
                   />
                   <Tooltip
                     content={({ active, payload }) => {
