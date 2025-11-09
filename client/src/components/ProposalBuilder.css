@@ -708,13 +708,16 @@
    PRINT STYLES FOR PDF GENERATION
    ============================================ */
 @media print {
-  /* Hide non-printable elements */
+  /* Hide ALL wizard elements - only show preview */
+  .form-header,
+  .wizard-steps,
+  .section-card,
+  .download-actions,
   .proposal-header,
   .wizard-progress,
   .wizard-actions,
   .section-header-with-action button,
   .btn-icon-only,
-  .download-actions,
   .sortable-handle,
   .component-preview-btn,
   nav,
@@ -723,25 +726,28 @@
     display: none !important;
   }
 
-  /* Show only the preview content */
+  /* Make the proposal builder take full page */
   .proposal-builder {
     max-width: 100%;
     padding: 0;
     margin: 0;
   }
 
-  .section-card {
-    border: none !important;
-    box-shadow: none !important;
-    page-break-inside: avoid;
+  /* Make proposal-content container invisible but keep preview visible */
+  .proposal-content {
+    padding: 0 !important;
+    margin: 0 !important;
+    background: transparent !important;
   }
 
-  /* Optimize the preview for printing */
+  /* Optimize the preview for printing - make it full width */
   .proposal-preview {
     border: none !important;
     box-shadow: none !important;
     margin: 0 !important;
     padding: 0 !important;
+    display: block !important;
+    visibility: visible !important;
   }
 
   .preview-content {
