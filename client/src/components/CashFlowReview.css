@@ -353,30 +353,7 @@
 .transactions-header p {
   color: #718096;
   font-size: 0.95rem;
-  margin: 0 0 1rem 0;
-}
-
-.transactions-instructions {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 1rem;
-  background: #fef3c7;
-  border: 1px solid #fbbf24;
-  border-radius: 8px;
-}
-
-.transactions-instructions svg {
-  width: 24px;
-  height: 24px;
-  color: #d97706;
-  flex-shrink: 0;
-}
-
-.transactions-instructions span {
-  color: #78350f;
-  font-size: 0.9rem;
-  line-height: 1.5;
+  margin: 0;
 }
 
 .transaction-group {
