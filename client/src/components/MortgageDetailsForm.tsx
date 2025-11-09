@@ -555,27 +555,35 @@ export default function MortgageDetailsForm({
               Total Monthly Housing Expense
             </label>
 
-            {/* P&I Display (from monthly payment field) */}
+            {/* Bordered Container */}
             <div style={{
-              padding: '0.75rem',
-              backgroundColor: '#f8f9fa',
-              borderRadius: '0.375rem',
-              marginBottom: '0.75rem',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center'
+              border: '2px solid #cbd5e0',
+              borderRadius: '12px',
+              padding: '1rem',
+              background: 'linear-gradient(135deg, #ffffff 0%, #f7fafc 100%)',
+              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)'
             }}>
-              <span style={{ color: '#6c757d', fontSize: '0.9rem' }}>Monthly Mortgage (P&amp;I)</span>
-              <span style={{ fontWeight: '600', fontSize: '1rem' }}>
-                ${formData.monthlyPayment ? formData.monthlyPayment.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00'}
-              </span>
-            </div>
+              {/* P&I Display (from monthly payment field) */}
+              <div style={{
+                padding: '0.75rem',
+                backgroundColor: '#f8f9fa',
+                borderRadius: '0.375rem',
+                marginBottom: '0.75rem',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center'
+              }}>
+                <span style={{ color: '#6c757d', fontSize: '0.9rem' }}>Monthly Mortgage (P&amp;I)</span>
+                <span style={{ fontWeight: '600', fontSize: '1rem' }}>
+                  ${formData.monthlyPayment ? formData.monthlyPayment.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00'}
+                </span>
+              </div>
 
-            {/* Additional Expenses Input */}
-            <label htmlFor="additionalExpenses" style={{ fontSize: '0.9rem', color: '#6c757d', marginBottom: '0.5rem', display: 'block' }}>
-              + Additional Expenses (taxes, insurance, HOA, etc.)
-            </label>
-            <div className="input-wrapper" style={{ marginBottom: '0.75rem' }}>
+              {/* Additional Expenses Input */}
+              <label htmlFor="additionalExpenses" style={{ fontSize: '0.9rem', color: '#6c757d', marginBottom: '0.5rem', display: 'block' }}>
+                + Additional Expenses (taxes, insurance, HOA, etc.)
+              </label>
+              <div className="input-wrapper" style={{ marginBottom: '0.75rem' }}>
               <span className="input-prefix">$</span>
               <input
                 type="text"
@@ -622,26 +630,27 @@ export default function MortgageDetailsForm({
               />
             </div>
 
-            {/* Total Display */}
-            <div style={{
-              padding: '0.75rem',
-              backgroundColor: '#e7f3ff',
-              borderRadius: '0.375rem',
-              border: '2px solid #0066cc',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center'
-            }}>
-              <span style={{ fontWeight: '600', color: '#0066cc', fontSize: '1rem' }}>= Total Monthly Housing Expense</span>
-              <span style={{ fontWeight: '700', fontSize: '1.1rem', color: '#0066cc' }}>
-                ${((formData.monthlyPayment || 0) + additionalExpenses).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              {/* Total Display */}
+              <div style={{
+                padding: '0.75rem',
+                backgroundColor: '#e7f3ff',
+                borderRadius: '0.375rem',
+                border: '2px solid #0066cc',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center'
+              }}>
+                <span style={{ fontWeight: '600', color: '#0066cc', fontSize: '1rem' }}>= Total Monthly Housing Expense</span>
+                <span style={{ fontWeight: '700', fontSize: '1.1rem', color: '#0066cc' }}>
+                  ${((formData.monthlyPayment || 0) + additionalExpenses).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </span>
+              </div>
+
+              {errors.currentHousingPayment && <span className="error-text">{errors.currentHousingPayment}</span>}
+              <span className="form-help-text" style={{ marginTop: '0.5rem', display: 'block' }}>
+                This total is used to exclude all housing costs from your cash flow analysis
               </span>
             </div>
-
-            {errors.currentHousingPayment && <span className="error-text">{errors.currentHousingPayment}</span>}
-            <span className="form-help-text" style={{ marginTop: '0.5rem' }}>
-              This total is used to exclude all housing costs from your cash flow analysis
-            </span>
             </div>
 
             {/* AIO Interest Rate - Moved to Right Column */}
