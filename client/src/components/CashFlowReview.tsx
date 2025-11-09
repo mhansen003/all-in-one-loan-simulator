@@ -438,14 +438,26 @@ export default function CashFlowReview({
     <div className="cash-flow-review">
       {!hideSummary && (
         <>
-          {/* Header with Continue Button */}
+          {/* Sticky Header Section */}
           <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'flex-start',
+            position: 'sticky',
+            top: 0,
+            backgroundColor: 'white',
+            zIndex: 10,
+            paddingTop: '1rem',
+            paddingBottom: '1rem',
+            borderBottom: '2px solid #e2e8f0',
             marginBottom: '1.5rem',
-            gap: '1rem'
+            marginTop: '-1rem'
           }}>
+            {/* Header with Continue Button */}
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'flex-start',
+              marginBottom: '1.5rem',
+              gap: '1rem'
+            }}>
             <div className="form-header" style={{ margin: 0, flex: 1, textAlign: 'left' }}>
               <h2>Cash Flow Analysis Complete</h2>
               <p>Review the AI-generated analysis of your bank statements</p>
@@ -608,7 +620,10 @@ export default function CashFlowReview({
             </div>
             </div>
           </div>
+          </div>
+          {/* End Sticky Header Section */}
 
+          {/* Scrollable Content: Main Tabs & Content */}
           {/* Main Tabs: Chart vs Transactions */}
           <div className="tabs">
             <button
