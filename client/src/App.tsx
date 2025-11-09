@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { AppStep, MortgageDetails, CashFlowAnalysis, EligibilityResult, SimulationResult } from './types';
 import MortgageDetailsForm from './components/MortgageDetailsForm';
 import FileUpload from './components/FileUpload';
@@ -15,11 +15,33 @@ import PitchGuideModal from './components/PitchGuideModal';
 import { analyzeStatements, checkEligibility, simulateLoan } from './api';
 import './App.css';
 
+// LocalStorage keys
+const STORAGE_KEYS = {
+  STEP: 'aio-sim-step',
+  MORTGAGE_DETAILS: 'aio-sim-mortgage',
+  CASH_FLOW: 'aio-sim-cashflow',
+  SIMULATION: 'aio-sim-simulation',
+  ELIGIBILITY: 'aio-sim-eligibility'
+};
+
 function App() {
-  const [step, setStep] = useState<AppStep>('mortgage-details');
-  const [mortgageDetails, setMortgageDetails] = useState<Partial<MortgageDetails>>({});
+  // Initialize state from localStorage if available
+  const [step, setStep] = useState<AppStep>(() => {
+    const saved = localStorage.getItem(STORAGE_KEYS.STEP);
+    return (saved as AppStep) || 'mortgage-details';
+  });
+
+  const [mortgageDetails, setMortgageDetails] = useState<Partial<MortgageDetails>>(() => {
+    const saved = localStorage.getItem(STORAGE_KEYS.MORTGAGE_DETAILS);
+    return saved ? JSON.parse(saved) : {};
+  });
+
   const [bankStatements, setBankStatements] = useState<File[]>([]);
-  const [cashFlowAnalysis, setCashFlowAnalysis] = useState<CashFlowAnalysis | null>(null);
+
+  const [cashFlowAnalysis, setCashFlowAnalysis] = useState<CashFlowAnalysis | null>(() => {
+    const saved = localStorage.getItem(STORAGE_KEYS.CASH_FLOW);
+    return saved ? JSON.parse(saved) : null;
+  });
 
   // REMOVED: Manual entry state (no longer needed - AI auto-detects deposit frequency from bank statements)
   // const [monthlyDeposits, setMonthlyDeposits] = useState<number>(0);
@@ -27,8 +49,16 @@ function App() {
   // const [monthlyLeftover, setMonthlyLeftover] = useState<number>(0);
   // const [depositFrequency, setDepositFrequency] = useState<'monthly' | 'biweekly' | 'weekly'>('monthly');
   // const [aioRate, setAIORate] = useState<number>(8.375);
-  const [_eligibilityResult, setEligibilityResult] = useState<EligibilityResult | null>(null);
-  const [simulationResult, setSimulationResult] = useState<SimulationResult | null>(null);
+  const [_eligibilityResult, setEligibilityResult] = useState<EligibilityResult | null>(() => {
+    const saved = localStorage.getItem(STORAGE_KEYS.ELIGIBILITY);
+    return saved ? JSON.parse(saved) : null;
+  });
+
+  const [simulationResult, setSimulationResult] = useState<SimulationResult | null>(() => {
+    const saved = localStorage.getItem(STORAGE_KEYS.SIMULATION);
+    return saved ? JSON.parse(saved) : null;
+  });
+
   const [error, setError] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
@@ -37,7 +67,35 @@ function App() {
   const [isPitchGuideOpen, setIsPitchGuideOpen] = useState(false);
   const [isHelpDropdownOpen, setIsHelpDropdownOpen] = useState(false);
 
+  // Save state to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.STEP, step);
+  }, [step]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.MORTGAGE_DETAILS, JSON.stringify(mortgageDetails));
+  }, [mortgageDetails]);
+
+  useEffect(() => {
+    if (cashFlowAnalysis) {
+      localStorage.setItem(STORAGE_KEYS.CASH_FLOW, JSON.stringify(cashFlowAnalysis));
+    }
+  }, [cashFlowAnalysis]);
+
+  useEffect(() => {
+    if (_eligibilityResult) {
+      localStorage.setItem(STORAGE_KEYS.ELIGIBILITY, JSON.stringify(_eligibilityResult));
+    }
+  }, [_eligibilityResult]);
+
+  useEffect(() => {
+    if (simulationResult) {
+      localStorage.setItem(STORAGE_KEYS.SIMULATION, JSON.stringify(simulationResult));
+    }
+  }, [simulationResult]);
+
   const handleReset = () => {
+    // Clear all state
     setStep('mortgage-details');
     setMortgageDetails({});
     setBankStatements([]);
@@ -52,6 +110,9 @@ function App() {
     setSimulationResult(null);
     setError(null);
     setIsAnalyzing(false);
+
+    // Clear localStorage
+    Object.values(STORAGE_KEYS).forEach(key => localStorage.removeItem(key));
   };
 
   const handleMortgageSubmit = (data: MortgageDetails) => {
@@ -118,6 +179,14 @@ function App() {
       return;
     }
 
+    console.log('[App] Running simulation with cash flow:', {
+      monthlyDeposits: cashFlowAnalysis.monthlyDeposits,
+      monthlyExpenses: cashFlowAnalysis.monthlyExpenses,
+      netCashFlow: cashFlowAnalysis.netCashFlow,
+      depositFrequency: cashFlowAnalysis.depositFrequency,
+      transactionCount: cashFlowAnalysis.transactions?.length
+    });
+
     setError(null);
     setStep('simulation');
 
@@ -136,6 +205,12 @@ function App() {
         cashFlowAnalysis
       );
       setSimulationResult(simulation);
+
+      console.log('[App] Simulation complete:', {
+        traditionalInterest: simulation.traditionalLoan.totalInterestPaid,
+        aioInterest: simulation.allInOneLoan.totalInterestPaid,
+        savings: simulation.comparison.interestSavings
+      });
 
       setStep('results');
     } catch (error: any) {
