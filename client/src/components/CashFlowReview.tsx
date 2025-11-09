@@ -18,7 +18,8 @@ export default function CashFlowReview({
   onCashFlowUpdate,
   hideSummary = false
 }: CashFlowReviewProps) {
-  // No more tabs - single view
+  // Main tab for Chart vs Transactions (default to transactions)
+  const [mainTab, setMainTab] = useState<'transactions' | 'chart'>('transactions');
   const [transactionSubTab, setTransactionSubTab] = useState<'all' | 'income' | 'expense' | 'housing' | 'one-time'>('income'); // Default to income
   const [transactions, setTransactions] = useState<Transaction[]>(() => {
     // Auto-exclude housing and one-time transactions on initial load
@@ -153,6 +154,16 @@ export default function CashFlowReview({
 
   // Prepare unified chart data - group by DAY and calculate incoming/outgoing
   const { chartData, oneTimeIncomeData, oneTimeExpenseData } = useMemo(() => {
+    // First, find min and max dates from ALL transactions
+    if (transactions.length === 0) {
+      return { chartData: [], oneTimeIncomeData: [], oneTimeExpenseData: [] };
+    }
+
+    const dates = transactions.map(t => new Date(t.date));
+    const minDate = new Date(Math.min(...dates.map(d => d.getTime())));
+    const maxDate = new Date(Math.max(...dates.map(d => d.getTime())));
+
+    // Create an entry for EVERY SINGLE DAY between min and max dates
     const dailyData: {
       [key: string]: {
         incoming: number;
@@ -162,15 +173,13 @@ export default function CashFlowReview({
       }
     } = {};
 
-    // First, create day entries from ALL transactions to establish the x-axis range
-    transactions.forEach(transaction => {
-      const date = new Date(transaction.date);
-      const dayKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-
-      if (!dailyData[dayKey]) {
-        dailyData[dayKey] = { incoming: 0, outgoing: 0, oneTimeIncome: [], oneTimeExpense: [] };
-      }
-    });
+    // Fill in all days with zero values
+    const currentDate = new Date(minDate);
+    while (currentDate <= maxDate) {
+      const dayKey = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(currentDate.getDate()).padStart(2, '0')}`;
+      dailyData[dayKey] = { incoming: 0, outgoing: 0, oneTimeIncome: [], oneTimeExpense: [] };
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
 
     // Process regular transactions (income, expense, recurring) for area charts
     transactions
@@ -711,8 +720,24 @@ export default function CashFlowReview({
             </div>
           </div>
 
+          {/* Main Tabs: Chart vs Transactions */}
+          <div className="tabs">
+            <button
+              className={`tab ${mainTab === 'transactions' ? 'active' : ''}`}
+              onClick={() => setMainTab('transactions')}
+            >
+              Transactions
+            </button>
+            <button
+              className={`tab ${mainTab === 'chart' ? 'active' : ''}`}
+              onClick={() => setMainTab('chart')}
+            >
+              Cash Flow Chart
+            </button>
+          </div>
+
           {/* Cash Flow Chart */}
-          {chartData.length > 0 && (
+          {mainTab === 'chart' && chartData.length > 0 && (
             <div className="cash-flow-chart" style={{
               background: 'white',
               borderRadius: '12px',
@@ -894,7 +919,7 @@ export default function CashFlowReview({
                     strokeWidth={2}
                     fillOpacity={1}
                     fill="url(#colorIncoming)"
-                    name="Regular Income"
+                    name="Recurring Income"
                   />
                   <Area
                     type="monotone"
@@ -903,7 +928,7 @@ export default function CashFlowReview({
                     strokeWidth={2}
                     fillOpacity={1}
                     fill="url(#colorOutgoing)"
-                    name="Regular Expenses"
+                    name="Recurring Expenses"
                   />
                   <Scatter
                     data={oneTimeIncomeData}
@@ -932,6 +957,7 @@ export default function CashFlowReview({
       {/* AI automatically detects deposit frequency from statements - no manual input needed */}
 
       {/* Transactions Section */}
+      {mainTab === 'transactions' && (
       <div className="transactions-view">
         {/* Add Transaction Button */}
         <div style={{ marginBottom: '1rem' }}>
@@ -1142,7 +1168,8 @@ export default function CashFlowReview({
           })}
           </div>
           )}{/* End scrollable container */}
-        </div>{/* End transactions-view */}
+        </div>
+      )}{/* End transactions-view and conditional */}
 
       {/* Cash Flow Threshold Warning */}
       {displayNetCashFlow <= 300 && (
