@@ -1,10 +1,11 @@
 import { useState, useEffect, useMemo } from 'react';
-import type { CashFlowAnalysis, Transaction } from '../types';
+import type { CashFlowAnalysis, Transaction, MortgageDetails } from '../types';
 import { ComposedChart, Area, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import './CashFlowReview.css';
 
 interface CashFlowReviewProps {
   cashFlow: CashFlowAnalysis;
+  mortgageDetails?: MortgageDetails; // For minimum cash flow calculation
   onContinue: () => void;
   onBack?: () => void;
   onCashFlowUpdate?: (updatedCashFlow: CashFlowAnalysis) => void;
@@ -13,6 +14,7 @@ interface CashFlowReviewProps {
 
 export default function CashFlowReview({
   cashFlow,
+  mortgageDetails,
   onContinue,
   onBack,
   onCashFlowUpdate,
@@ -375,13 +377,53 @@ export default function CashFlowReview({
   );
 
   // Get temperature rating based on net cash flow
+  // Calculate minimum net cash flow needed for AIO to work
+  const calculateMinimumCashFlow = () => {
+    if (!mortgageDetails) return null;
+
+    const balance = mortgageDetails.currentBalance || 0;
+    const rate = mortgageDetails.aioInterestRate || mortgageDetails.interestRate || 0;
+    const termMonths = mortgageDetails.remainingTermMonths || 360;
+
+    // Monthly interest (what balance growth would be with $0 payment)
+    const monthlyInterest = (balance * (rate / 100)) / 12;
+
+    // To pay off in same time as traditional mortgage, need this minimum payment
+    // Using simple amortization formula approximation
+    const monthlyRate = (rate / 100) / 12;
+    const traditionalPayment = balance * (monthlyRate * Math.pow(1 + monthlyRate, termMonths)) /
+                               (Math.pow(1 + monthlyRate, termMonths) - 1);
+
+    return {
+      monthlyInterest: Math.ceil(monthlyInterest),
+      recommendedMinimum: Math.ceil(traditionalPayment * 0.5), // 50% of traditional payment
+      breakEvenMinimum: Math.ceil(traditionalPayment * 0.75) // 75% of traditional payment for meaningful savings
+    };
+  };
+
+  const minCashFlow = calculateMinimumCashFlow();
+
   const getTemperatureRating = (netCashFlow: number): {
     rating: string;
     color: string;
     description: string;
     icon: string;
     glow: string;
+    showMinimum?: boolean;
+    minimumNeeded?: number;
   } => {
+    // Check if cash flow is below minimum needed
+    if (minCashFlow && netCashFlow < minCashFlow.breakEvenMinimum) {
+      return {
+        rating: 'TOO LOW',
+        color: '#ef4444',
+        description: `Net cash flow too low. AIO will take longer than ${mortgageDetails?.remainingTermMonths ? Math.floor(mortgageDetails.remainingTermMonths / 12) : 30} years, resulting in MORE interest paid.`,
+        icon: '🚫',
+        glow: 'none',
+        showMinimum: true,
+        minimumNeeded: minCashFlow.breakEvenMinimum
+      };
+    }
     if (netCashFlow >= 8000) {
       return {
         rating: 'EXCELLENT',
@@ -684,6 +726,68 @@ export default function CashFlowReview({
               </div>
             </div>
           </div>
+
+          {/* Warning Banner: Cash Flow Too Low */}
+          {temperatureRating.showMinimum && minCashFlow && (
+            <div style={{
+              background: 'linear-gradient(135deg, #fee2e2 0%, #fecaca 100%)',
+              border: '2px solid #ef4444',
+              borderRadius: '12px',
+              padding: '1.5rem',
+              marginTop: '1.5rem',
+              marginBottom: '1.5rem',
+              boxShadow: '0 4px 12px rgba(239, 68, 68, 0.2)'
+            }}>
+              <div style={{ display: 'flex', gap: '1rem', alignItems: 'start' }}>
+                <div style={{
+                  width: '48px',
+                  height: '48px',
+                  borderRadius: '50%',
+                  background: '#ef4444',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0
+                }}>
+                  <span style={{ fontSize: '24px' }}>🚫</span>
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: '1.25rem', fontWeight: '700', color: '#991b1b', marginBottom: '0.5rem' }}>
+                    ⚠️ Cash Flow Insufficient for AIO Loan
+                  </div>
+                  <div style={{ fontSize: '1rem', color: '#7f1d1d', marginBottom: '1rem', lineHeight: '1.6' }}>
+                    {temperatureRating.description}
+                  </div>
+                  <div style={{
+                    background: 'white',
+                    border: '1px solid #fca5a5',
+                    borderRadius: '8px',
+                    padding: '1rem',
+                    marginBottom: '1rem'
+                  }}>
+                    <div style={{ fontSize: '0.875rem', color: '#7f1d1d', marginBottom: '0.75rem' }}>
+                      <strong>Current Net Cash Flow:</strong> ${displayNetCashFlow.toLocaleString()}/month
+                    </div>
+                    <div style={{ fontSize: '0.875rem', color: '#7f1d1d', marginBottom: '0.75rem' }}>
+                      <strong>Minimum Needed:</strong> ${minCashFlow.breakEvenMinimum.toLocaleString()}/month
+                    </div>
+                    <div style={{ fontSize: '0.875rem', color: '#991b1b', fontWeight: '600' }}>
+                      <strong>Shortfall:</strong> ${(minCashFlow.breakEvenMinimum - displayNetCashFlow).toLocaleString()}/month
+                    </div>
+                  </div>
+                  <div style={{ fontSize: '0.875rem', color: '#7f1d1d', fontWeight: '600', marginBottom: '0.5rem' }}>
+                    💡 Recommendations:
+                  </div>
+                  <ul style={{ margin: 0, paddingLeft: '1.5rem', color: '#7f1d1d', fontSize: '0.875rem', lineHeight: '1.8' }}>
+                    <li>Include additional income sources in the analysis</li>
+                    <li>Review and reduce monthly expenses where possible</li>
+                    <li>Consider making additional principal payments to the AIO loan</li>
+                    <li>Explore refinancing to a lower interest rate</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Main Tabs: Chart vs Transactions */}
           <div className="tabs" style={{ marginTop: '1rem' }}>
@@ -1013,7 +1117,7 @@ export default function CashFlowReview({
           display: 'flex',
           alignItems: 'center',
           gap: '1rem',
-          marginBottom: '1rem',
+          marginBottom: '0.5rem',
           padding: '0.75rem 1rem',
           background: '#f7fafc',
           border: '1px solid #e2e8f0',
@@ -1100,7 +1204,7 @@ export default function CashFlowReview({
 
           {/* Scrollable Transaction Container */}
           {true && (
-          <div style={{ maxHeight: '600px', overflowY: 'auto', border: '1px solid #e2e8f0', borderRadius: '8px', marginTop: '1rem' }}>
+          <div style={{ maxHeight: '600px', overflowY: 'auto', border: '1px solid #e2e8f0', borderRadius: '8px', marginTop: '0.5rem' }}>
           {Object.entries(getFilteredTransactions()).map(([category, categoryTransactions]) => {
             const actualIndices = categoryTransactions.map(t =>
               transactions.findIndex(tr => tr === t)
