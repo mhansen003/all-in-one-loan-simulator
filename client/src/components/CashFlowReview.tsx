@@ -306,10 +306,22 @@ export default function CashFlowReview({
       });
     });
 
+    // Final filter: Only include scatter points within the actual data range
+    // This prevents dots from appearing beyond the last transaction date
+    const maxTimestamp = maxDate.getTime();
+    const minTimestamp = minDate.getTime();
+
+    const filteredIncomeScatter = incomeScatter.filter(
+      point => point.timestamp >= minTimestamp && point.timestamp <= maxTimestamp
+    );
+    const filteredExpenseScatter = expenseScatter.filter(
+      point => point.timestamp >= minTimestamp && point.timestamp <= maxTimestamp
+    );
+
     return {
       chartData: chartArray,
-      oneTimeIncomeData: incomeScatter,
-      oneTimeExpenseData: expenseScatter
+      oneTimeIncomeData: filteredIncomeScatter,
+      oneTimeExpenseData: filteredExpenseScatter
     };
   }, [transactions]);
 

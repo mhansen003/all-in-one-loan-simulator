@@ -413,18 +413,8 @@ export default function ProposalBuilder({
   };
 
   const handleGeneratePDF = () => {
-    // Open print dialog in a new window/tab to ensure all content is captured correctly
-    // This prevents issues with React state and ensures print preview gets fresh data
-    const printWindow = window.open(window.location.href, '_blank');
-    if (printWindow) {
-      printWindow.onload = () => {
-        printWindow.print();
-      };
-    } else {
-      // Fallback if popup was blocked
-      alert('Please allow popups for this site to print the proposal. Alternatively, use Ctrl+P to print this page.');
-      window.print();
-    }
+    // Simply print the current page - user is already on the preview
+    window.print();
   };
 
   const formatCurrency = (amount: number): string => {
