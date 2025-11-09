@@ -609,117 +609,6 @@ export default function CashFlowReview({
             </div>
           </div>
 
-          {/* Deposit Frequency Selector */}
-          <div className="deposit-frequency-section">
-            <div className="frequency-header">
-              <svg className="frequency-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
-              <div>
-                <h3>Deposit Frequency</h3>
-                <p>AI detected: <strong>{aiRecommendedFrequency}</strong>. You can change this if needed.</p>
-              </div>
-            </div>
-            <div className="frequency-options">
-              <div
-                className={`frequency-option ${depositFrequency === 'weekly' ? 'active' : ''}`}
-                onClick={() => setDepositFrequency('weekly')}
-                style={{ position: 'relative' }}
-              >
-                <div className="frequency-label">Weekly</div>
-                <div className="frequency-description">Every 7 days</div>
-                {aiRecommendedFrequency === 'weekly' && (
-                  <span style={{
-                    position: 'absolute',
-                    top: '8px',
-                    right: '8px',
-                    background: '#10b981',
-                    color: 'white',
-                    fontSize: '0.65rem',
-                    fontWeight: '600',
-                    padding: '2px 8px',
-                    borderRadius: '9999px',
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                  }}>
-                    ✨ AI
-                  </span>
-                )}
-              </div>
-              <div
-                className={`frequency-option ${depositFrequency === 'biweekly' ? 'active' : ''}`}
-                onClick={() => setDepositFrequency('biweekly')}
-                style={{ position: 'relative' }}
-              >
-                <div className="frequency-label">Biweekly</div>
-                <div className="frequency-description">Every 14 days</div>
-                {aiRecommendedFrequency === 'biweekly' && (
-                  <span style={{
-                    position: 'absolute',
-                    top: '8px',
-                    right: '8px',
-                    background: '#10b981',
-                    color: 'white',
-                    fontSize: '0.65rem',
-                    fontWeight: '600',
-                    padding: '2px 8px',
-                    borderRadius: '9999px',
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                  }}>
-                    ✨ AI
-                  </span>
-                )}
-              </div>
-              <div
-                className={`frequency-option ${depositFrequency === 'semi-monthly' ? 'active' : ''}`}
-                onClick={() => setDepositFrequency('semi-monthly')}
-                style={{ position: 'relative' }}
-              >
-                <div className="frequency-label">Semi-Monthly</div>
-                <div className="frequency-description">Twice per month</div>
-                {aiRecommendedFrequency === 'semi-monthly' && (
-                  <span style={{
-                    position: 'absolute',
-                    top: '8px',
-                    right: '8px',
-                    background: '#10b981',
-                    color: 'white',
-                    fontSize: '0.65rem',
-                    fontWeight: '600',
-                    padding: '2px 8px',
-                    borderRadius: '9999px',
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                  }}>
-                    ✨ AI
-                  </span>
-                )}
-              </div>
-              <div
-                className={`frequency-option ${depositFrequency === 'monthly' ? 'active' : ''}`}
-                onClick={() => setDepositFrequency('monthly')}
-                style={{ position: 'relative' }}
-              >
-                <div className="frequency-label">Monthly</div>
-                <div className="frequency-description">Once per month</div>
-                {aiRecommendedFrequency === 'monthly' && (
-                  <span style={{
-                    position: 'absolute',
-                    top: '8px',
-                    right: '8px',
-                    background: '#10b981',
-                    color: 'white',
-                    fontSize: '0.65rem',
-                    fontWeight: '600',
-                    padding: '2px 8px',
-                    borderRadius: '9999px',
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                  }}>
-                    ✨ AI
-                  </span>
-                )}
-              </div>
-            </div>
-          </div>
-
           {/* Main Tabs: Chart vs Transactions */}
           <div className="tabs">
             <button
@@ -959,6 +848,55 @@ export default function CashFlowReview({
       {/* Transactions Section */}
       {mainTab === 'transactions' && (
       <div className="transactions-view">
+        {/* Deposit Frequency Dropdown */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '1rem',
+          marginBottom: '1rem',
+          padding: '0.75rem 1rem',
+          background: '#f7fafc',
+          border: '1px solid #e2e8f0',
+          borderRadius: '8px'
+        }}>
+          <svg style={{ width: '20px', height: '20px', color: '#9bc53d', flexShrink: 0 }} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+          <label style={{ fontSize: '0.9rem', fontWeight: '600', color: '#2d3748', whiteSpace: 'nowrap' }}>
+            Deposit Frequency:
+          </label>
+          <select
+            value={depositFrequency}
+            onChange={(e) => setDepositFrequency(e.target.value as 'weekly' | 'biweekly' | 'semi-monthly' | 'monthly')}
+            style={{
+              padding: '0.5rem 2rem 0.5rem 0.75rem',
+              border: '2px solid #cbd5e0',
+              borderRadius: '6px',
+              fontSize: '0.875rem',
+              fontWeight: '600',
+              color: '#2d3748',
+              background: 'white',
+              cursor: 'pointer',
+              outline: 'none',
+              transition: 'border-color 0.2s'
+            }}
+            onFocus={(e) => e.currentTarget.style.borderColor = '#9bc53d'}
+            onBlur={(e) => e.currentTarget.style.borderColor = '#cbd5e0'}
+          >
+            <option value="weekly">Weekly (Every 7 days)</option>
+            <option value="biweekly">Biweekly (Every 14 days)</option>
+            <option value="semi-monthly">Semi-Monthly (Twice per month)</option>
+            <option value="monthly">Monthly (Once per month)</option>
+          </select>
+          <span style={{
+            fontSize: '0.8rem',
+            color: '#718096',
+            fontStyle: 'italic'
+          }}>
+            ✨ AI detected: <strong>{aiRecommendedFrequency}</strong>
+          </span>
+        </div>
+
         {/* Transaction Sub-Tabs - Reordered to match display */}
         <div className="transaction-sub-tabs">
           <button
