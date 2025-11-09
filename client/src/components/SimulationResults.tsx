@@ -26,6 +26,7 @@ export default function SimulationResults({
 }: SimulationResultsProps) {
   const [activeTab, setActiveTab] = useState<TabView>('results');
   const [paydownView, setPaydownView] = useState<PaydownView>('yearly');
+  const [warningDismissed, setWarningDismissed] = useState(false);
   const formatCurrency = (amount: number): string => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -357,6 +358,83 @@ export default function SimulationResults({
       {/* Tab Content */}
       {activeTab === 'results' && (
         <>
+          {/* Warning Banner: Low/No Savings */}
+          {simulation.comparison.interestSavings <= 0 && !warningDismissed && (
+            <div style={{
+              background: 'linear-gradient(135deg, #fee2e2 0%, #fecaca 100%)',
+              border: '2px solid #ef4444',
+              borderRadius: '12px',
+              padding: '1.5rem',
+              marginBottom: '1.5rem',
+              boxShadow: '0 4px 12px rgba(239, 68, 68, 0.2)',
+              position: 'relative'
+            }}>
+              <button
+                onClick={() => setWarningDismissed(true)}
+                style={{
+                  position: 'absolute',
+                  top: '1rem',
+                  right: '1rem',
+                  background: '#dc2626',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  padding: '0.5rem 1rem',
+                  cursor: 'pointer',
+                  fontSize: '0.875rem',
+                  fontWeight: '600',
+                  transition: 'background 0.2s'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.background = '#b91c1c'}
+                onMouseLeave={(e) => e.currentTarget.style.background = '#dc2626'}
+              >
+                Ignore Warning
+              </button>
+              <div style={{ display: 'flex', gap: '1rem', alignItems: 'start', paddingRight: '140px' }}>
+                <div style={{
+                  width: '48px',
+                  height: '48px',
+                  borderRadius: '50%',
+                  background: '#ef4444',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0
+                }}>
+                  <span style={{ fontSize: '24px' }}>🚫</span>
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: '1.25rem', fontWeight: '700', color: '#991b1b', marginBottom: '0.5rem' }}>
+                    ⚠️ AIO Loan Not Beneficial for This Client
+                  </div>
+                  <div style={{ fontSize: '1rem', color: '#7f1d1d', marginBottom: '1rem', lineHeight: '1.6' }}>
+                    Based on the current net cash flow of <strong>${Math.round(cashFlow?.netCashFlow || cashFlow?.monthlyLeftover || 0).toLocaleString()}/month</strong>, the All-In-One loan will take LONGER to pay off than the traditional mortgage, resulting in MORE total interest paid instead of savings.
+                  </div>
+                  <div style={{
+                    background: 'white',
+                    border: '1px solid #fca5a5',
+                    borderRadius: '8px',
+                    padding: '1rem',
+                    marginBottom: '1rem'
+                  }}>
+                    <div style={{ fontSize: '0.875rem', color: '#7f1d1d', marginBottom: '0.5rem' }}>
+                      <strong>Why this happens:</strong> When monthly net cash flow barely exceeds the monthly interest on the loan, the principal reduces very slowly. The AIO loan's daily interest calculation provides no benefit in this scenario.
+                    </div>
+                  </div>
+                  <div style={{ fontSize: '0.875rem', color: '#7f1d1d', fontWeight: '600', marginBottom: '0.5rem' }}>
+                    💡 Recommendations to improve AIO viability:
+                  </div>
+                  <ul style={{ margin: 0, paddingLeft: '1.5rem', color: '#7f1d1d', fontSize: '0.875rem', lineHeight: '1.8' }}>
+                    <li>Review Cash Flow Analysis to include all income sources</li>
+                    <li>Identify expenses that can be reduced or eliminated</li>
+                    <li>Consider whether client can make additional monthly principal payments</li>
+                    <li>Explore refinancing to a lower interest rate before considering AIO</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Savings Highlight */}
       <div className="savings-highlight">
         <div className="highlight-content">
