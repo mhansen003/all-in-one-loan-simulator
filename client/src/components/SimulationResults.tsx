@@ -487,22 +487,22 @@ export default function SimulationResults({
           <h2 className="section-header" style={{ textAlign: 'center' }}>📊 Rate & Paydown Analysis</h2>
 
           {/* Rate Comparison Section */}
-          <div style={{ marginBottom: '3rem', padding: '2rem', background: '#f8fafc', borderRadius: '8px' }}>
-            <h3 style={{ marginBottom: '1.5rem', color: '#334155', fontSize: '1.25rem' }}>Interest Rates</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
-              <div style={{ padding: '1.5rem', background: 'white', borderRadius: '8px', border: '2px solid #4299e1' }}>
-                <div style={{ fontSize: '0.9rem', color: '#718096', marginBottom: '0.5rem' }}>Traditional Mortgage Rate</div>
-                <div style={{ fontSize: '2.5rem', fontWeight: '700', color: '#4299e1' }}>
+          <div style={{ marginBottom: '2rem', padding: '1rem', background: '#f8fafc', borderRadius: '8px' }}>
+            <h3 style={{ marginBottom: '1rem', color: '#334155', fontSize: '1rem' }}>Interest Rates</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <div style={{ padding: '0.75rem 1rem', background: 'white', borderRadius: '8px', border: '2px solid #4299e1' }}>
+                <div style={{ fontSize: '0.75rem', color: '#718096', marginBottom: '0.25rem' }}>Traditional Mortgage Rate</div>
+                <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#4299e1' }}>
                   {mortgageDetails.interestRate.toFixed(3)}%
                 </div>
               </div>
-              <div style={{ padding: '1.5rem', background: 'white', borderRadius: '8px', border: '2px solid #9bc53d' }}>
-                <div style={{ fontSize: '0.9rem', color: '#718096', marginBottom: '0.5rem' }}>All-In-One Loan Rate</div>
-                <div style={{ fontSize: '2.5rem', fontWeight: '700', color: '#9bc53d' }}>
+              <div style={{ padding: '0.75rem 1rem', background: 'white', borderRadius: '8px', border: '2px solid #9bc53d' }}>
+                <div style={{ fontSize: '0.75rem', color: '#718096', marginBottom: '0.25rem' }}>All-In-One Loan Rate</div>
+                <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#9bc53d' }}>
                   {mortgageDetails.aioInterestRate.toFixed(3)}%
                 </div>
-                <div style={{ fontSize: '0.85rem', color: '#7da62e', marginTop: '0.5rem' }}>
-                  +{(mortgageDetails.aioInterestRate - mortgageDetails.interestRate).toFixed(3)}% premium for offset features
+                <div style={{ fontSize: '0.75rem', color: '#7da62e', marginTop: '0.25rem' }}>
+                  +{(mortgageDetails.aioInterestRate - mortgageDetails.interestRate).toFixed(3)}% premium
                 </div>
               </div>
             </div>
@@ -583,6 +583,37 @@ export default function SimulationResults({
                     const { currentBalance, interestRate, aioInterestRate, monthlyPayment } = mortgageDetails;
                     const monthlyRate = interestRate / 100 / 12;
                     const netCashFlow = cashFlow?.monthlyLeftover || cashFlow?.netCashFlow || 0;
+
+                    // Add BASE reference row showing starting balances
+                    rows.push(
+                      <tr key="base" style={{
+                        background: '#f1f5f9',
+                        borderBottom: '3px solid #cbd5e1',
+                        fontWeight: '600'
+                      }}>
+                        <td style={{ padding: '0.75rem', fontWeight: '700', color: '#0f172a', fontSize: '0.9rem' }}>
+                          BASE
+                        </td>
+                        <td style={{ padding: '0.75rem', textAlign: 'right', fontWeight: '700', color: '#1e40af' }}>
+                          {formatCurrency(currentBalance)}
+                        </td>
+                        <td style={{ padding: '0.75rem', textAlign: 'right', fontWeight: '700', color: '#15803d' }}>
+                          {formatCurrency(currentBalance)}
+                        </td>
+                        <td style={{ padding: '0.75rem', textAlign: 'right', color: '#64748b', fontSize: '0.85rem' }}>
+                          —
+                        </td>
+                        <td style={{ padding: '0.75rem', textAlign: 'right', color: '#64748b', fontSize: '0.85rem' }}>
+                          {formatCurrency(0)}
+                        </td>
+                        <td style={{ padding: '0.75rem', textAlign: 'right', color: '#64748b', fontSize: '0.85rem' }}>
+                          {formatCurrency(0)}
+                        </td>
+                        <td style={{ padding: '0.75rem', textAlign: 'right', color: '#64748b', fontSize: '0.85rem' }}>
+                          —
+                        </td>
+                      </tr>
+                    );
 
                     // Traditional loan tracking
                     let tradBalance = currentBalance;
