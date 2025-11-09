@@ -1009,7 +1009,20 @@ Your task is to CATEGORIZE and ANALYZE the above transactions:
    - Regular transportation (Uber, Lyft, public transit)
    - Pet supplies, pet care (routine, <$500)
    - Credit card payments (payments TO credit cards - these are recurring monthly expenses)
-     * Look for: "Payment To", "Payment", "Card Ending", "Chase", "Amex", "Discover", "Capital One", "Citi", etc.
+     * ⚠️ CRITICAL: Credit card payments are ALWAYS "expense", NEVER "one-time"!
+     * Payment patterns to detect: "Payment To", "Payment", "PMT", "MOBILE PMT", "Card Ending", "ACH", "PPD"
+     * Major credit card issuers (match ANY of these names):
+       - American Express: "Amex", "AMEX", "American Express", "AMERICAN EXPRESS"
+       - Chase: "Chase", "CHASE", "JPMorgan Chase", "JPMORGAN CHASE", "JP MORGAN", "Chase Bank", "CHASE BANK"
+       - Capital One: "Capital One", "CAPITAL ONE", "CAPITALONE"
+       - Citibank: "Citi", "CITI", "Citibank", "CITIBANK"
+       - Discover: "Discover", "DISCOVER"
+       - Bank of America: "BofA", "BOFA", "Bank of America", "BANK OF AMERICA"
+       - Wells Fargo: "Wells Fargo", "WELLS FARGO", "WELLSFARGO"
+       - U.S. Bank: "US Bank", "USBANK", "U.S. BANK"
+       - Barclays: "Barclays", "BARCLAYS"
+       - Synchrony: "Synchrony", "SYNCHRONY"
+     * If description contains ANY credit card issuer name + payment keyword → Category: "expense"
    → Category: "expense"
 
 2. **FLAGGING - Apply to transactions that need review**:

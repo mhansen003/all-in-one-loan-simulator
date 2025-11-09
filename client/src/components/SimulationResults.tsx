@@ -366,25 +366,25 @@ export default function SimulationResults({
             <div style={{
               background: 'linear-gradient(135deg, #fee2e2 0%, #fecaca 100%)',
               border: '2px solid #ef4444',
-              borderRadius: '12px',
-              padding: '1.5rem',
-              marginBottom: '1.5rem',
-              boxShadow: '0 4px 12px rgba(239, 68, 68, 0.2)',
+              borderRadius: '8px',
+              padding: '0.75rem',
+              marginBottom: '0.75rem',
+              boxShadow: '0 2px 6px rgba(239, 68, 68, 0.15)',
               position: 'relative'
             }}>
               <button
                 onClick={() => setWarningDismissed(true)}
                 style={{
                   position: 'absolute',
-                  top: '1rem',
-                  right: '1rem',
+                  top: '0.5rem',
+                  right: '0.5rem',
                   background: '#dc2626',
                   color: 'white',
                   border: 'none',
-                  borderRadius: '6px',
-                  padding: '0.5rem 1rem',
+                  borderRadius: '4px',
+                  padding: '0.25rem 0.5rem',
                   cursor: 'pointer',
-                  fontSize: '0.875rem',
+                  fontSize: '0.75rem',
                   fontWeight: '600',
                   transition: 'background 0.2s'
                 }}
@@ -393,10 +393,10 @@ export default function SimulationResults({
               >
                 Ignore Warning
               </button>
-              <div style={{ display: 'flex', gap: '1rem', alignItems: 'start', paddingRight: '140px' }}>
+              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'start', paddingRight: '100px' }}>
                 <div style={{
-                  width: '48px',
-                  height: '48px',
+                  width: '32px',
+                  height: '32px',
                   borderRadius: '50%',
                   background: '#ef4444',
                   display: 'flex',
@@ -404,30 +404,30 @@ export default function SimulationResults({
                   justifyContent: 'center',
                   flexShrink: 0
                 }}>
-                  <span style={{ fontSize: '24px' }}>🚫</span>
+                  <span style={{ fontSize: '18px' }}>🚫</span>
                 </div>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: '1.25rem', fontWeight: '700', color: '#991b1b', marginBottom: '0.5rem' }}>
+                  <div style={{ fontSize: '1.1rem', fontWeight: '700', color: '#991b1b', marginBottom: '0.25rem' }}>
                     ⚠️ AIO Loan Not Beneficial for This Client
                   </div>
-                  <div style={{ fontSize: '1rem', color: '#7f1d1d', marginBottom: '1rem', lineHeight: '1.6' }}>
+                  <div style={{ fontSize: '0.9rem', color: '#7f1d1d', marginBottom: '0.5rem', lineHeight: '1.4' }}>
                     Based on the current net cash flow of <strong>${Math.round(cashFlow?.netCashFlow || cashFlow?.monthlyLeftover || 0).toLocaleString()}/month</strong>, the All-In-One loan will take LONGER to pay off than the traditional mortgage, resulting in MORE total interest paid instead of savings.
                   </div>
                   <div style={{
                     background: 'white',
                     border: '1px solid #fca5a5',
-                    borderRadius: '8px',
-                    padding: '1rem',
-                    marginBottom: '1rem'
+                    borderRadius: '6px',
+                    padding: '0.5rem',
+                    marginBottom: '0.5rem'
                   }}>
-                    <div style={{ fontSize: '0.875rem', color: '#7f1d1d', marginBottom: '0.5rem' }}>
+                    <div style={{ fontSize: '0.8rem', color: '#7f1d1d', marginBottom: '0.25rem' }}>
                       <strong>Why this happens:</strong> When monthly net cash flow barely exceeds the monthly interest on the loan, the principal reduces very slowly. The AIO loan's daily interest calculation provides no benefit in this scenario.
                     </div>
                   </div>
-                  <div style={{ fontSize: '0.875rem', color: '#7f1d1d', fontWeight: '600', marginBottom: '0.5rem' }}>
+                  <div style={{ fontSize: '0.8rem', color: '#7f1d1d', fontWeight: '600', marginBottom: '0.25rem' }}>
                     💡 Recommendations to improve AIO viability:
                   </div>
-                  <ul style={{ margin: 0, paddingLeft: '1.5rem', color: '#7f1d1d', fontSize: '0.875rem', lineHeight: '1.8' }}>
+                  <ul style={{ margin: 0, paddingLeft: '1.25rem', color: '#7f1d1d', fontSize: '0.8rem', lineHeight: '1.4' }}>
                     <li>Review Cash Flow Analysis to include all income sources</li>
                     <li>Identify expenses that can be reduced or eliminated</li>
                     <li>Consider whether client can make additional monthly principal payments</li>
