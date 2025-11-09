@@ -435,9 +435,7 @@ export default function SimulationResults({
 
               <div className="metric-row">
                 <span className="metric-label">Monthly Payment</span>
-                <span className="metric-value">
-                  {cashFlow ? formatCurrency(cashFlow.netCashFlow) : formatCurrency(simulation.allInOneLoan.monthlyPayment)}
-                </span>
+                <span className="metric-value">{formatCurrency(simulation.traditionalLoan.monthlyPayment)}</span>
               </div>
 
               <div className="metric-row highlight">
