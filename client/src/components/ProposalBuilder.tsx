@@ -141,7 +141,6 @@ export default function ProposalBuilder({
   // AI Pitch state
   const [aiPitch, setAiPitch] = useState('');
   const [isGeneratingPitch, setIsGeneratingPitch] = useState(false);
-  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const [showPitchOptions, setShowPitchOptions] = useState(false);
   const [isEditingPitch, setIsEditingPitch] = useState(false);
   const [editedPitch, setEditedPitch] = useState('');
@@ -412,64 +411,10 @@ export default function ProposalBuilder({
     }
   };
 
-  const handleGeneratePDF = async () => {
-    setIsGeneratingPDF(true);
-
-    try {
-      console.log('📄 Requesting PDF from server...');
-
-      // Prepare data for server-side PDF generation
-      const pdfData = {
-        simulation,
-        mortgageDetails,
-        clientName,
-        loanOfficerName: signatureName,
-        loanOfficerEmail: signatureEmail,
-        aiPitch,
-        components: components.map(c => ({ id: c.id, enabled: c.enabled })),
-      };
-
-      // Call the server endpoint
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/generate-pdf`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(pdfData),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
-        throw new Error(errorData.message || `Server error: ${response.status}`);
-      }
-
-      // Get the PDF blob
-      const blob = await response.blob();
-
-      // Generate filename
-      const dateStr = new Date().toISOString().split('T')[0];
-      const safeClientName = (clientName || 'Client').replace(/[^a-zA-Z0-9]/g, '-');
-      const filename = `${safeClientName}-AIO-Proposal-${dateStr}.pdf`;
-
-      // Create download link and trigger download
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = filename;
-      document.body.appendChild(link);
-      link.click();
-
-      // Cleanup
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-
-      console.log('✅ PDF generated and downloaded successfully!');
-    } catch (error) {
-      console.error('❌ Error generating PDF:', error);
-      alert('Failed to generate PDF. Please try again.\n\nError: ' + (error instanceof Error ? error.message : 'Unknown error'));
-    } finally {
-      setIsGeneratingPDF(false);
-    }
+  const handleGeneratePDF = () => {
+    // Use browser's native print dialog to save as PDF
+    // Users can select "Save as PDF" as their printer destination
+    window.print();
   };
 
   const formatCurrency = (amount: number): string => {
@@ -1728,24 +1673,27 @@ export default function ProposalBuilder({
             </div>
 
             <div className="download-actions">
+              <p style={{
+                textAlign: 'center',
+                color: '#64748b',
+                fontSize: '0.95rem',
+                marginBottom: '1rem',
+                padding: '0.75rem',
+                background: '#f1f5f9',
+                borderRadius: '8px',
+                lineHeight: '1.6'
+              }}>
+                💡 <strong>Tip:</strong> Click the button below to open your browser's print dialog, then select "Save as PDF" or "Microsoft Print to PDF" as your destination.
+              </p>
               <button
                 className="btn-primary btn-large"
                 onClick={handleGeneratePDF}
-                disabled={isGeneratingPDF}
+                title="Opens print dialog - select 'Save as PDF' to download"
               >
-                {isGeneratingPDF ? (
-                  <>
-                    <div className="spinner-small"></div>
-                    Generating PDF...
-                  </>
-                ) : (
-                  <>
-                    <svg className="btn-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                    Download PDF Proposal
-                  </>
-                )}
+                <svg className="btn-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                </svg>
+                Print / Save as PDF
               </button>
             </div>
           </div>
@@ -1808,6 +1756,19 @@ export default function ProposalBuilder({
           </div>
         );
       })()}
+
+
+      {/* Add CSS animations */}
+      <style>{`
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+        @keyframes fadeIn {
+          from { opacity: 0; transform: scale(0.95); }
+          to { opacity: 1; transform: scale(1); }
+        }
+      `}</style>
     </div>
   );
 }

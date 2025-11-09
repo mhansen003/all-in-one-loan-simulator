@@ -643,17 +643,13 @@ export default function MortgageDetailsForm({
               This total is used to exclude all housing costs from your cash flow analysis
             </span>
             </div>
-          </div>
-        </div>
 
-        {/* AIO Interest Rate - Full Width Section */}
-        <div className="form-section" style={{
-          gridColumn: '1 / -1',
-          border: '3px solid #9bc53d',
-          background: 'linear-gradient(135deg, #f0fdf4 0%, #e8f5e9 100%)',
-          marginTop: '2rem',
-          marginBottom: '1.5rem'
-        }}>
+            {/* AIO Interest Rate - Moved to Right Column */}
+            <div className="form-section" style={{
+              border: '3px solid #9bc53d',
+              background: 'linear-gradient(135deg, #f0fdf4 0%, #e8f5e9 100%)',
+              marginTop: '1.5rem'
+            }}>
           <div className="form-section-title" style={{ color: '#2f855a', marginBottom: '1rem' }}>
             📊 Calculate All-In-One Interest Rate
           </div>
@@ -905,6 +901,8 @@ export default function MortgageDetailsForm({
               </div>
             </div>
           )}
+        </div>
+          </div>
         </div>
 
         <div className="form-actions" style={{

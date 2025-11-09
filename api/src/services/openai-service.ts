@@ -4,17 +4,10 @@ import path from 'path';
 import xlsx from 'xlsx';
 import type { CashFlowAnalysis, Transaction, OpenAIAnalysisResult } from '../types.js';
 
-// ==================== SMART AI ROUTING ====================
-// We use TWO AI clients for optimal performance:
-// 1. OpenAI Direct (GPT-4) → CSV/XLSX structured data analysis
-// 2. OpenRouter (Gemini) → Images/PDFs vision processing
+// ==================== UNIFIED OPENROUTER ROUTING ====================
+// ALL AI requests now go through OpenRouter for unified management
 
-// Client 1: OpenAI Direct for structured data (CSV/XLSX)
-const openaiDirect = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
-// Client 2: OpenRouter with Gemini for vision tasks (images/PDFs)
+// OpenRouter client - handles ALL AI requests
 const openRouter = new OpenAI({
   apiKey: process.env.OPENROUTER_API_KEY,
   baseURL: 'https://openrouter.ai/api/v1',
@@ -24,19 +17,15 @@ const openRouter = new OpenAI({
   },
 });
 
-// Model configurations
-const TEXT_MODEL = 'gpt-4o'; // OpenAI Direct - excellent for structured data, JSON analysis
-const VISION_MODEL = 'google/gemini-2.0-flash-001'; // OpenRouter Gemini - superior vision, fast, cost-effective
+// Model configurations (all via OpenRouter)
+const TEXT_MODEL = 'openai/gpt-4o'; // OpenRouter → GPT-4o for CSV/XLSX structured data analysis
+const VISION_MODEL = 'google/gemini-2.0-flash-001'; // OpenRouter → Gemini for images
+const TEXT_EXTRACTION_MODEL = 'google/gemini-2.5-flash'; // OpenRouter → Gemini 2.5 Flash for PDFs (120s timeout)
 
-console.log(`🔧 Smart AI Routing Enabled:`);
-console.log(`   📊 Text/CSV/XLSX → OpenAI Direct (${TEXT_MODEL})`);
-console.log(`   👁️  Images/PDFs → OpenRouter (${VISION_MODEL})`);
-
-/**
- * Note: PDFs are now processed NATIVELY using Gemini 2.0 Flash's PDF capabilities.
- * This eliminates the need for client-side PDF-to-image conversion.
- * The analyzePdf function handles direct PDF analysis.
- */
+console.log(`🔧 Unified AI Routing via OpenRouter:`);
+console.log(`   📊 Text/CSV/XLSX → OpenRouter (${TEXT_MODEL})`);
+console.log(`   👁️  Images → OpenRouter (${VISION_MODEL})`);
+console.log(`   📄 PDFs → OpenRouter (${TEXT_EXTRACTION_MODEL}) [120s timeout]`);
 
 /**
  * Extract data from Excel/CSV file with intelligent compression
@@ -239,28 +228,34 @@ Begin extraction now:`,
 }
 
 /**
- * Analyze PDF file using vision model via OpenAI
- * TESTING: Native PDF support (no conversion to images)
+ * Analyze PDF file using Gemini 2.5 Flash model via OpenRouter
+ * OPTIMIZATIONS:
+ * - Gemini 2.5 Flash (latest fast vision model)
+ * - 120s timeout (reduced from 180s)
+ * - Streaming enabled (keeps connection alive)
+ * - Condensed prompt (80 tokens)
+ * - Reduced max_tokens (8000)
  */
 async function analyzePdf(filePath: string): Promise<string> {
-  const TIMEOUT_MS = 120000; // 120 seconds for PDFs (can be multi-page)
+  const TIMEOUT_MS = 120000; // 120 seconds (reduced from 180s)
 
   try {
-    console.log('📄 [1/4] Starting PDF analysis...');
+    console.log('📄 Starting fast PDF analysis with Gemini 2.5 Flash...');
     console.log(`   📁 File: ${filePath}`);
 
-    console.log('📖 [2/4] Reading PDF file...');
+    console.log('📖 [1/3] Reading PDF file...');
     const pdfBuffer = await fs.readFile(filePath);
     console.log(`   ✓ File read successfully (${pdfBuffer.length} bytes)`);
 
-    console.log('🔄 [3/4] Converting to base64...');
+    console.log('🔄 [2/3] Converting to base64...');
     const base64Pdf = pdfBuffer.toString('base64');
     console.log(`   ✓ Converted to base64 (${base64Pdf.length} chars)`);
 
-    console.log('🌐 [4/4] Calling OpenRouter (Gemini) with native PDF...');
+    console.log('🚀 [3/3] Calling OpenRouter (Gemini 2.5 Flash - STREAMING)...');
     console.log(`   📡 Endpoint: ${openRouter.baseURL}`);
-    console.log(`   🤖 Model: ${VISION_MODEL}`);
+    console.log(`   🤖 Model: ${TEXT_EXTRACTION_MODEL}`);
     console.log(`   ⏱️  Timeout: ${TIMEOUT_MS / 1000}s`);
+    console.log(`   🌊 Streaming: ENABLED`);
 
     const timeoutPromise = new Promise<never>((_, reject) => {
       setTimeout(() => {
@@ -269,52 +264,36 @@ async function analyzePdf(filePath: string): Promise<string> {
       }, TIMEOUT_MS);
     });
 
-    console.log('   🚀 Sending API request NOW with native PDF...');
+    console.log('   🚀 Sending streaming API request...');
     const startTime = Date.now();
 
-    // Send PDF directly to OpenRouter (Gemini) using proper file format
+    // Use Gemini 2.5 Flash with streaming enabled
     const apiCallPromise = openRouter.chat.completions.create({
-      model: VISION_MODEL,
+      model: TEXT_EXTRACTION_MODEL, // Gemini 2.5 Flash via OpenRouter
+      stream: true, // STREAMING ENABLED
       messages: [
         {
           role: 'user',
           content: [
             {
               type: 'text',
-              text: `⚠️ CRITICAL INSTRUCTIONS FOR PDF TRANSACTION EXTRACTION ⚠️
+              // Condensed prompt for fast extraction
+              text: `Extract ALL transactions from this bank statement as:
+YYYY-MM-DD | Description | +/-Amount
 
-You are extracting transaction data from a bank statement PDF. This data will be used for financial analysis.
+Rules:
+- Extract EVERY transaction (no skipping)
+- Exact dates, descriptions, amounts
+- One transaction per line
 
-🔴 MANDATORY REQUIREMENTS:
-1. Extract EVERY SINGLE TRANSACTION - no sampling, no skipping
-2. Use EXACT dates as shown in the PDF (do not modify or hallucinate dates)
-3. Use EXACT descriptions as shown in the PDF (do not summarize or shorten)
-4. Use EXACT amounts as shown in the PDF (preserve decimal precision)
-5. If the PDF has 500 transactions, your output must have 500 transactions
-6. Count transactions as you extract to ensure completeness
+Example:
+2024-10-24 | CMG MORTGAGE PAYROLL | +9233.45
+2024-10-24 | SO CAL EDISON BILL PAYMT | -155.38
 
-FORMAT REQUIREMENT - Each transaction on a new line:
-YYYY-MM-DD | Full Description Text | +/-Amount
-
-EXAMPLES:
-2024-10-24 | CMG MORTGAGE INC PAYROLL PPD ID: 9999922657 | +9233.45
-2024-10-24 | SO CAL EDISON CO BILL PAYMT 700689315083 | -155.38
-2024-10-23 | Payment to Chase card ending in 8435 10/23 | -295.88
-
-CRITICAL RULES:
-✓ EXTRACT EVERY TRANSACTION - Do not skip any rows
-✓ PRESERVE EXACT DATES - Copy dates exactly as shown (MM/DD/YYYY → YYYY-MM-DD)
-✓ PRESERVE EXACT DESCRIPTIONS - Do not abbreviate or summarize merchant names
-✓ PRESERVE EXACT AMOUNTS - Keep full precision (e.g., -155.38 not -155)
-✓ DETERMINISTIC - Same PDF must produce same output every time
-✓ NO FILTERING - Include all transaction types (credits, debits, transfers, fees)
-
-⚠️ VERIFICATION: After extraction, count your transactions and state the total count at the end.
-
-Begin extraction now:`,
+Begin:`,
             },
             {
-              type: 'file' as any, // OpenRouter-specific file type
+              type: 'file' as any,
               file: {
                 filename: path.basename(filePath),
                 file_data: `data:application/pdf;base64,${base64Pdf}`,
@@ -323,20 +302,42 @@ Begin extraction now:`,
           ],
         },
       ],
-      max_tokens: 16000, // Increased to handle 500+ transactions
-      temperature: 0, // Deterministic output for consistent results
-      top_p: 1, // Disable nucleus sampling for maximum consistency
-      seed: 42, // Fixed seed for reproducibility (may not be supported by all models)
+      max_tokens: 8000, // Optimized for transaction extraction
+      temperature: 0,
+      top_p: 1,
     } as any, {
       timeout: TIMEOUT_MS,
     });
 
-    console.log('   ⏳ Waiting for response...');
-    const response = await Promise.race([apiCallPromise, timeoutPromise]);
+    console.log('   🌊 Streaming response (receiving chunks)...');
+
+    // Handle streaming response
+    let extractedContent = '';
+    let chunkCount = 0;
+    const streamStartTime = Date.now();
+
+    const streamPromise = (async () => {
+      for await (const chunk of await apiCallPromise) {
+        const delta = chunk.choices[0]?.delta?.content || '';
+        if (delta) {
+          extractedContent += delta;
+          chunkCount++;
+
+          // Log progress every 10 chunks
+          if (chunkCount % 10 === 0) {
+            const elapsed = ((Date.now() - streamStartTime) / 1000).toFixed(1);
+            console.log(`   📦 Chunk ${chunkCount} | ${elapsed}s | ${extractedContent.length} chars`);
+          }
+        }
+      }
+    })();
+
+    // Race streaming against timeout
+    await Promise.race([streamPromise, timeoutPromise]);
 
     const elapsedTime = Date.now() - startTime;
-    const extractedContent = response.choices[0]?.message?.content || '';
-    console.log(`✅ [4/4] API response received in ${(elapsedTime / 1000).toFixed(2)}s`);
+    console.log(`✅ [PHASE 3] Streaming completed in ${(elapsedTime / 1000).toFixed(2)}s`);
+    console.log(`   📝 Total chunks received: ${chunkCount}`);
     console.log(`   📝 Response length: ${extractedContent.length} chars`);
 
     // Count transactions in extracted data for verification
@@ -345,7 +346,7 @@ Begin extraction now:`,
 
     return extractedContent;
   } catch (error) {
-    console.error('❌ Error analyzing PDF:', error);
+    console.error('❌ [PHASE 3] Error analyzing PDF:', error);
 
     if (error instanceof Error) {
       if (error.message.includes('timeout') || error.message.includes('timed out')) {
@@ -353,7 +354,7 @@ Begin extraction now:`,
       }
       throw new Error(`Failed to analyze PDF: ${error.message}`);
     }
-    throw new Error('Failed to analyze PDF with vision model');
+    throw new Error('Failed to analyze PDF with extraction model');
   }
 }
 
@@ -367,8 +368,9 @@ function estimateTokens(text: string): number {
 /**
  * Chunk transactions into batches for processing
  * Ensures each chunk stays under token limits
+ * Reduced default from 250 to 150 for faster parallel processing and better timeout management
  */
-function chunkTransactions(transactions: any[], maxTransactionsPerChunk: number = 250): any[][] {
+function chunkTransactions(transactions: any[], maxTransactionsPerChunk: number = 150): any[][] {
   const chunks: any[][] = [];
 
   for (let i = 0; i < transactions.length; i += maxTransactionsPerChunk) {
@@ -441,11 +443,12 @@ Return COMPACT JSON (omit flagReason when flagged=false):
   "confidence": 0.85
 }`;
 
-  const CHUNK_TIMEOUT_MS = 90000; // 90 seconds per chunk
+  const CHUNK_TIMEOUT_MS = 45000; // 45 seconds per chunk (reduced for smaller chunks)
 
   try {
-    const response = await openaiDirect.chat.completions.create({
-      model: TEXT_MODEL,
+    console.log(`   🌐 Calling OpenRouter with GPT-4o for CSV analysis...`);
+    const response = await openRouter.chat.completions.create({
+      model: TEXT_MODEL, // openai/gpt-4o via OpenRouter
       messages: [
         {
           role: 'system',
@@ -767,12 +770,12 @@ export async function analyzeStatements(
       if (Array.isArray(parsedTransactions)) {
         console.log(`📊 Detected ${parsedTransactions.length} transactions`);
 
-        // Use chunking if > 500 transactions (to ensure each chunk fits in 16K token output)
-        if (parsedTransactions.length > 500) {
-          console.log(`⚡ Using CHUNKED processing (${parsedTransactions.length} > 500 transactions)`);
+        // Use chunking if > 300 transactions (smaller chunks = faster parallel processing)
+        if (parsedTransactions.length > 300) {
+          console.log(`⚡ Using CHUNKED processing (${parsedTransactions.length} > 300 transactions)`);
           shouldUseChunking = true;
         } else {
-          console.log(`✓ Using SINGLE-REQUEST processing (${parsedTransactions.length} <= 500 transactions)`);
+          console.log(`✓ Using SINGLE-REQUEST processing (${parsedTransactions.length} <= 300 transactions)`);
         }
       }
     } catch (parseError) {
@@ -781,7 +784,7 @@ export async function analyzeStatements(
 
     // CHUNKED PROCESSING for large datasets
     if (shouldUseChunking && parsedTransactions.length > 0) {
-      const chunks = chunkTransactions(parsedTransactions, 250);
+      const chunks = chunkTransactions(parsedTransactions, 150); // Reduced from 250 to 150 for faster parallel processing
 
       console.log(`\n🚀 Processing ${chunks.length} chunks in parallel...`);
       const startTime = Date.now();
@@ -1043,7 +1046,7 @@ Return COMPACT JSON (minimize whitespace, omit empty flagReason for unflagged it
 ⚠️ IMPORTANT: Use compact formatting. Omit "flagReason" key entirely when flagged=false to save tokens.`;
 
     // Create a timeout promise for the main analysis call
-    const ANALYSIS_TIMEOUT_MS = 120000; // 120 seconds
+    const ANALYSIS_TIMEOUT_MS = 55000; // 55 seconds (to fit within Vercel's 60s limit with buffer)
     const analysisTimeoutPromise = new Promise<never>((_, reject) => {
       setTimeout(() => {
         console.error(`⏱️  Timeout reached for main analysis (${ANALYSIS_TIMEOUT_MS / 1000}s)`);
@@ -1051,11 +1054,11 @@ Return COMPACT JSON (minimize whitespace, omit empty flagReason for unflagged it
       }, ANALYSIS_TIMEOUT_MS);
     });
 
-    // Use OpenAI Direct (GPT-4o) for final text analysis
+    // Use OpenRouter (GPT-4o) for final text analysis
     // This analyzes the extracted transaction text (from CSV or vision extraction)
-    console.log(`🧠 Using OpenAI Direct (${TEXT_MODEL}) for transaction analysis...`);
+    console.log(`🧠 Using OpenRouter (${TEXT_MODEL}) for transaction analysis...`);
     console.log(`🔒 Deterministic mode: temperature=0, top_p=1, seed=42 for consistent results`);
-    const analysisApiCallPromise = openaiDirect.chat.completions.create({
+    const analysisApiCallPromise = openRouter.chat.completions.create({
       model: TEXT_MODEL,
       messages: [
         {

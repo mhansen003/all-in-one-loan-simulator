@@ -703,3 +703,102 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ============================================
+   PRINT STYLES FOR PDF GENERATION
+   ============================================ */
+@media print {
+  /* Hide non-printable elements */
+  .proposal-header,
+  .wizard-progress,
+  .wizard-actions,
+  .section-header-with-action button,
+  .btn-icon-only,
+  .download-actions,
+  .sortable-handle,
+  .component-preview-btn,
+  nav,
+  header,
+  footer {
+    display: none !important;
+  }
+
+  /* Show only the preview content */
+  .proposal-builder {
+    max-width: 100%;
+    padding: 0;
+    margin: 0;
+  }
+
+  .section-card {
+    border: none !important;
+    box-shadow: none !important;
+    page-break-inside: avoid;
+  }
+
+  /* Optimize the preview for printing */
+  .proposal-preview {
+    border: none !important;
+    box-shadow: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .preview-content {
+    border: none !important;
+    background: white !important;
+    padding: 1.5rem !important;
+  }
+
+  /* Ensure proper page breaks */
+  .preview-section {
+    page-break-inside: avoid;
+    margin-bottom: 1.5rem;
+  }
+
+  .preview-header {
+    page-break-after: avoid;
+  }
+
+  /* Table styles for print */
+  .preview-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .preview-table th,
+  .preview-table td {
+    padding: 0.75rem;
+    border: 1px solid #e2e8f0;
+  }
+
+  /* Ensure colors print correctly */
+  .savings-section,
+  .pitch-section {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    color-adjust: exact;
+  }
+
+  /* Footer stays at bottom of last page */
+  .preview-footer {
+    page-break-inside: avoid;
+    margin-top: 2rem;
+  }
+
+  /* Remove backgrounds that waste ink */
+  body {
+    background: white !important;
+  }
+
+  /* Ensure links are visible */
+  a {
+    color: #3b82f6 !important;
+    text-decoration: underline;
+  }
+
+  /* Hide scrollbars */
+  ::-webkit-scrollbar {
+    display: none;
+  }
+}
