@@ -68,13 +68,15 @@ export function simulateLoan(
   };
 
   // Run accurate AIO simulation
+  // CRITICAL: cashFlow contains the correct MONTHLY values (monthlyDeposits/monthlyExpenses)
+  // DO NOT use totalIncome/totalExpenses as those are TOTALS across all statement months!
   const accurateInput: AccurateCalculationInput = {
     startingBalance: loanBalance,
     interestRate: aioRate,
     propertyValue: mortgageDetails.propertyValue || loanBalance / 0.8,
     loanToValue: 0.80,
-    monthlyIncome: cashFlow.totalIncome || cashFlow.monthlyDeposits || 0,
-    monthlyExpenses: cashFlow.totalExpenses || cashFlow.monthlyExpenses || 0,
+    monthlyIncome: cashFlow.monthlyDeposits || cashFlow.totalIncome || 0,
+    monthlyExpenses: cashFlow.monthlyExpenses || cashFlow.totalExpenses || 0,
     depositFrequency: (cashFlow.depositFrequency as any) || 'monthly',
     startDate: new Date(),
   };

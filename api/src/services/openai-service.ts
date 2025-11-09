@@ -18,12 +18,12 @@ const openRouter = new OpenAI({
 });
 
 // Model configurations (all via OpenRouter)
-const TEXT_MODEL = 'openai/gpt-4o'; // OpenRouter → GPT-4o for CSV/XLSX structured data analysis
+const TEXT_MODEL = 'google/gemini-2.5-flash'; // OpenRouter → Gemini 2.5 Flash for analysis (reliable performance)
 const VISION_MODEL = 'google/gemini-2.0-flash-001'; // OpenRouter → Gemini for images
 const TEXT_EXTRACTION_MODEL = 'google/gemini-2.5-flash'; // OpenRouter → Gemini 2.5 Flash for PDFs (120s timeout)
 
 console.log(`🔧 Unified AI Routing via OpenRouter:`);
-console.log(`   📊 Text/CSV/XLSX → OpenRouter (${TEXT_MODEL})`);
+console.log(`   📊 Text/CSV/XLSX → OpenRouter (${TEXT_MODEL}) [Reliable: Gemini 2.5 Flash]`);
 console.log(`   👁️  Images → OpenRouter (${VISION_MODEL})`);
 console.log(`   📄 PDFs → OpenRouter (${TEXT_EXTRACTION_MODEL}) [120s timeout]`);
 
@@ -755,8 +755,21 @@ export async function analyzeStatements(
 
     const combinedData = extractedData.join('\n\n---NEW DOCUMENT---\n\n');
 
-    console.log('🔍 Analyzing combined transaction data with AI...');
-    console.log(`📊 Combined data length: ${combinedData.length} characters (~${estimateTokens(combinedData)} tokens)`);
+    console.log('\n════════════════════════════════════════════════════════════');
+    console.log('✅ PHASE 1 COMPLETE: DATA EXTRACTION');
+    console.log('════════════════════════════════════════════════════════════');
+    console.log(`📊 Extracted data length: ${combinedData.length} characters (~${estimateTokens(combinedData)} tokens)`);
+    console.log(`📦 Successfully extracted from ${extractedData.length} file(s)`);
+    console.log('🔄 Preparing for fresh analysis phase...\n');
+
+    // Small delay to ensure complete separation between extraction and analysis
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    console.log('════════════════════════════════════════════════════════════');
+    console.log('🚀 PHASE 2 STARTING: TRANSACTION ANALYSIS');
+    console.log('════════════════════════════════════════════════════════════');
+    console.log('🔍 Starting fresh AI analysis with extracted data...');
+    console.log(`📊 Data to analyze: ${combinedData.length} characters (~${estimateTokens(combinedData)} tokens)`);
 
     // DECISION POINT: Use chunking for large datasets
     // Try to parse as JSON to count transactions
@@ -823,6 +836,14 @@ export async function analyzeStatements(
         }
       }
 
+      // Calculate number of months from monthly breakdown for averaging
+      const numberOfMonths = Math.max(1, (result.monthlyBreakdown || []).length);
+
+      // Calculate MONTHLY averages (not totals!)
+      const monthlyIncome = (result.totalIncome || 0) / numberOfMonths;
+      const monthlyExpenses = (result.totalExpenses || 0) / numberOfMonths;
+      const monthlyNet = (result.netCashFlow || 0) / numberOfMonths;
+
       return {
         totalIncome: result.totalIncome || 0,
         totalExpenses: result.totalExpenses || 0,
@@ -833,6 +854,11 @@ export async function analyzeStatements(
         flaggedTransactions,
         duplicateTransactions,
         confidence: result.confidence || 0.7,
+        // MONTHLY AVERAGES (critical for simulation accuracy!)
+        monthlyDeposits: monthlyIncome,
+        monthlyExpenses: monthlyExpenses,
+        monthlyLeftover: monthlyNet,
+        depositFrequency: result.depositFrequency || 'monthly',
       };
     }
 
@@ -1043,27 +1069,53 @@ Return COMPACT JSON (minimize whitespace, omit empty flagReason for unflagged it
   "confidence": 0.85
 }
 
-⚠️ IMPORTANT: Use compact formatting. Omit "flagReason" key entirely when flagged=false to save tokens.`;
+⚠️ CRITICAL OUTPUT REQUIREMENTS:
+1. Use ULTRA-COMPACT formatting - no whitespace, no line breaks
+2. OMIT "flagReason" entirely when flagged=false
+3. OMIT "monthYear" - we don't need it
+4. Use shortest possible descriptions (max 50 chars)
+5. Round amounts to 2 decimals only
+6. If response would exceed 35000 characters, prioritize recent transactions and summarize older ones
+
+EXAMPLE COMPACT FORMAT:
+{"transactions":[{"date":"2024-08-01","description":"Paycheck","amount":5000,"category":"income","flagged":false}],"monthlyBreakdown":[{"month":"2024-08","income":5000,"expenses":2500,"netCashFlow":2500,"transactionCount":45}],"totalIncome":5000,"totalExpenses":2500,"netCashFlow":2500,"confidence":0.85}`;
 
     // Create a timeout promise for the main analysis call
-    const ANALYSIS_TIMEOUT_MS = 55000; // 55 seconds (to fit within Vercel's 60s limit with buffer)
+    const ANALYSIS_TIMEOUT_MS = 90000; // 90 seconds (increased for complex JSON analysis with categorization)
+    const analysisStartTime = Date.now();
+
+    // Track elapsed time during analysis
+    const progressInterval = setInterval(() => {
+      const elapsed = ((Date.now() - analysisStartTime) / 1000).toFixed(1);
+      console.log(`⏳ Analysis in progress... ${elapsed}s elapsed (timeout at ${ANALYSIS_TIMEOUT_MS / 1000}s)`);
+    }, 10000); // Log every 10 seconds
+
     const analysisTimeoutPromise = new Promise<never>((_, reject) => {
       setTimeout(() => {
-        console.error(`⏱️  Timeout reached for main analysis (${ANALYSIS_TIMEOUT_MS / 1000}s)`);
+        clearInterval(progressInterval);
+        const actualElapsed = ((Date.now() - analysisStartTime) / 1000).toFixed(2);
+        console.error(`⏱️  TIMEOUT: Analysis exceeded ${ANALYSIS_TIMEOUT_MS / 1000}s limit (actual: ${actualElapsed}s)`);
+        console.error(`❌ Server-side timeout triggered - OpenRouter may still be processing`);
         reject(new Error(`Transaction analysis timed out after ${ANALYSIS_TIMEOUT_MS / 1000} seconds`));
       }, ANALYSIS_TIMEOUT_MS);
     });
 
-    // Use OpenRouter (GPT-4o) for final text analysis
+    // Use OpenRouter (Gemini 2.5 Flash) for final text analysis
     // This analyzes the extracted transaction text (from CSV or vision extraction)
     console.log(`🧠 Using OpenRouter (${TEXT_MODEL}) for transaction analysis...`);
     console.log(`🔒 Deterministic mode: temperature=0, top_p=1, seed=42 for consistent results`);
+    console.log(`📊 Request details:`);
+    console.log(`   - Prompt length: ${prompt.length} chars (~${Math.ceil(prompt.length / 4)} tokens)`);
+    console.log(`   - Max output tokens: 16384`);
+    console.log(`   - Timeout configured: ${ANALYSIS_TIMEOUT_MS / 1000}s`);
+    console.log(`⏱️  API call starting at: ${new Date().toISOString()}`);
+
     const analysisApiCallPromise = openRouter.chat.completions.create({
       model: TEXT_MODEL,
       messages: [
         {
           role: 'system',
-          content: 'You are a financial analyst specialized in cash flow analysis. You must be consistent and deterministic. Always respond with valid JSON. Extract the same transactions from the same data every time.',
+          content: 'You are a financial analyst specialized in cash flow analysis. You must be consistent and deterministic. Always respond with valid JSON. Extract the same transactions from the same data every time.\n\nCRITICAL: Return ONLY pure JSON. Do NOT wrap your response in markdown code blocks (```json). Do NOT include any text before or after the JSON object. Start your response with { and end with }.',
         },
         {
           role: 'user',
@@ -1074,15 +1126,30 @@ Return COMPACT JSON (minimize whitespace, omit empty flagReason for unflagged it
       temperature: 0, // Fully deterministic for consistent JSON formatting
       top_p: 1, // Disable nucleus sampling for maximum determinism
       seed: 42, // Fixed seed for reproducible results across identical inputs
-      max_tokens: 16384, // GPT-4o's maximum output token limit
+      max_tokens: 32000, // Increased to handle large transaction sets without truncation
     }, {
       timeout: ANALYSIS_TIMEOUT_MS,
+    }).then(response => {
+      clearInterval(progressInterval);
+      const elapsedTime = ((Date.now() - analysisStartTime) / 1000).toFixed(2);
+      console.log(`✅ API response received after ${elapsedTime}s`);
+      return response;
+    }).catch(error => {
+      clearInterval(progressInterval);
+      const elapsedTime = ((Date.now() - analysisStartTime) / 1000).toFixed(2);
+      console.error(`❌ API call failed after ${elapsedTime}s`);
+      console.error(`🔍 Error type: ${error.name || 'Unknown'}`);
+      console.error(`🔍 Error message: ${error.message || 'No message'}`);
+      if (error.code) console.error(`🔍 Error code: ${error.code}`);
+      if (error.status) console.error(`🔍 HTTP status: ${error.status}`);
+      throw error;
     });
 
     console.log(`🏁 Racing main analysis against ${ANALYSIS_TIMEOUT_MS / 1000}s timeout...`);
     // Race the API call against the timeout
     const response = await Promise.race([analysisApiCallPromise, analysisTimeoutPromise]);
-    console.log('✅ AI analysis completed successfully');
+    const totalElapsed = ((Date.now() - analysisStartTime) / 1000).toFixed(2);
+    console.log(`✅ AI analysis completed successfully in ${totalElapsed}s`);
 
     // Log system fingerprint for reproducibility verification
     if (response.system_fingerprint) {
@@ -1093,23 +1160,53 @@ Return COMPACT JSON (minimize whitespace, omit empty flagReason for unflagged it
     const rawContent = response.choices[0]?.message?.content || '{}';
     console.log(`📝 Raw response length: ${rawContent.length} chars`);
 
+    // Check if response was truncated (finish_reason should be 'stop', not 'length')
+    const finishReason = response.choices[0]?.finish_reason;
+    if (finishReason === 'length') {
+      console.error('⚠️  WARNING: Response was truncated due to max_tokens limit!');
+      console.error('💡 This may result in incomplete JSON. Consider reducing transaction count or increasing max_tokens.');
+    }
+    console.log(`🏁 Finish reason: ${finishReason}`);
+
     let result;
     try {
       result = JSON.parse(rawContent);
+      console.log('✅ JSON parsed successfully on first attempt');
     } catch (parseError) {
-      console.error('❌ JSON Parse Error:', parseError);
-      console.log('🔍 Attempting to extract JSON from response...');
+      console.warn('⚠️  Initial JSON parse failed - response may be wrapped in markdown');
+      console.log('🔍 Attempting to extract JSON from markdown code blocks...');
 
-      // Try to find JSON in markdown code blocks
+      // Try to find JSON in markdown code blocks with improved regex
       const jsonMatch = rawContent.match(/```(?:json)?\s*(\{[\s\S]*\})\s*```/);
       if (jsonMatch) {
-        console.log('✓ Found JSON in markdown code block, retrying parse...');
-        result = JSON.parse(jsonMatch[1]);
+        console.log('✅ Successfully extracted JSON from markdown code block');
+        try {
+          result = JSON.parse(jsonMatch[1]);
+        } catch (innerParseError) {
+          console.error('❌ Failed to parse extracted JSON:', innerParseError);
+          console.error('Extracted content (first 500 chars):', jsonMatch[1].substring(0, 500));
+          throw innerParseError;
+        }
       } else {
-        // Log first and last 500 chars for debugging
-        console.error('First 500 chars:', rawContent.substring(0, 500));
-        console.error('Last 500 chars:', rawContent.substring(rawContent.length - 500));
-        throw parseError;
+        // Final attempt: try to find JSON object without code blocks
+        const jsonObjectMatch = rawContent.match(/\{[\s\S]*\}/);
+        if (jsonObjectMatch) {
+          console.log('🔍 Found JSON-like content, attempting to parse...');
+          try {
+            result = JSON.parse(jsonObjectMatch[0]);
+            console.log('✅ Successfully parsed JSON after extraction');
+          } catch (finalParseError) {
+            console.error('❌ All parsing attempts failed');
+            console.error('First 500 chars:', rawContent.substring(0, 500));
+            console.error('Last 500 chars:', rawContent.substring(rawContent.length - 500));
+            throw parseError;
+          }
+        } else {
+          console.error('❌ No JSON content found in response');
+          console.error('First 500 chars:', rawContent.substring(0, 500));
+          console.error('Last 500 chars:', rawContent.substring(rawContent.length - 500));
+          throw parseError;
+        }
       }
     }
 
@@ -1174,16 +1271,34 @@ Return COMPACT JSON (minimize whitespace, omit empty flagReason for unflagged it
     console.log(`  ✓ Net cash flow: $${result.netCashFlow || 0}`);
     console.log(`  ✓ Confidence: ${(dynamicConfidence * 100).toFixed(0)}% (AI: ${((result.confidence || 0) * 100).toFixed(0)}%)`);
 
+    console.log('\n════════════════════════════════════════════════════════════');
+    console.log('✅ PHASE 2 COMPLETE: TRANSACTION ANALYSIS');
+    console.log('════════════════════════════════════════════════════════════');
+    console.log('🎉 All phases completed successfully!\n');
+
+    // Calculate number of months from monthly breakdown for averaging
+    const numberOfMonths = Math.max(1, (result.monthlyBreakdown || []).length);
+
+    // Calculate MONTHLY averages (not totals!)
+    const monthlyIncome = (result.totalIncome || 0) / numberOfMonths;
+    const monthlyExpenses = (result.totalExpenses || 0) / numberOfMonths;
+    const monthlyNet = (result.netCashFlow || 0) / numberOfMonths;
+
     return {
-      totalIncome: result.totalIncome || 0,           // Sum of all income (frontend divides by months)
-      totalExpenses: result.totalExpenses || 0,       // Sum of all expenses (frontend divides by months)
-      netCashFlow: result.netCashFlow || 0,           // Total net (frontend divides by months)
+      totalIncome: result.totalIncome || 0,           // Sum of all income (for reference)
+      totalExpenses: result.totalExpenses || 0,       // Sum of all expenses (for reference)
+      netCashFlow: result.netCashFlow || 0,           // Total net (for reference)
       averageMonthlyBalance,
       transactions: uniqueTransactions,
       monthlyBreakdown: result.monthlyBreakdown || [],
       flaggedTransactions,
       duplicateTransactions,
       confidence: dynamicConfidence,
+      // MONTHLY AVERAGES (critical for simulation accuracy!)
+      monthlyDeposits: monthlyIncome,
+      monthlyExpenses: monthlyExpenses,
+      monthlyLeftover: monthlyNet,
+      depositFrequency: result.depositFrequency || 'monthly',
     };
   } catch (error) {
     console.error('Error in analyzeStatements:', error);

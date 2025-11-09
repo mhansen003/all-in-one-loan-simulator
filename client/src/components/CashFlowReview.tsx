@@ -456,27 +456,28 @@ export default function CashFlowReview({
               <p>Review the AI-generated analysis of your bank statements</p>
             </div>
 
-          {/* Two Column Layout: Analysis Left, Totals Stacked Right */}
+          {/* Four Column Layout: Compact Summary Cards */}
           <div style={{
             display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
+            gridTemplateColumns: 'repeat(4, 1fr)',
             gap: '1rem',
-            marginBottom: '1rem'
+            marginBottom: '1.5rem'
           }}>
-            {/* LEFT: Confidence & Suitability Card */}
+            {/* Card 1: Analysis Confidence */}
             <div style={{
               background: 'white',
-              border: '2px solid #e2e8f0',
+              border: '1px solid #e2e8f0',
               borderRadius: '12px',
               padding: '1.5rem',
-              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+              boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
               display: 'flex',
-              flexDirection: 'column'
+              flexDirection: 'column',
+              gap: '1rem'
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem' }}>
                 <div style={{
-                  width: '36px',
-                  height: '36px',
+                  width: '48px',
+                  height: '48px',
                   borderRadius: '50%',
                   background: confidenceColor,
                   display: 'flex',
@@ -484,107 +485,153 @@ export default function CashFlowReview({
                   justifyContent: 'center',
                   flexShrink: 0
                 }}>
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="white" style={{ width: '20px', height: '20px' }}>
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="white" style={{ width: '24px', height: '24px' }}>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </div>
-                <div>
-                  <div style={{ fontSize: '0.875rem', fontWeight: '600', color: '#1a202c' }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: '0.875rem', fontWeight: '600', color: '#1a202c', marginBottom: '0.25rem' }}>
                     Analysis Confidence: {confidenceLabel}
                   </div>
-                  <div style={{ fontSize: '0.75rem', color: '#718096' }}>
+                  <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
                     AI score: {(cashFlow.confidence * 100).toFixed(0)}%
                   </div>
                 </div>
               </div>
-              <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '0.75rem', marginTop: 'auto' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
-                  <span style={{
-                    fontSize: '1.5rem',
-                    filter: temperatureRating.glow !== 'none' ? `drop-shadow(${temperatureRating.glow.split(',')[0]})` : 'none',
-                    transition: 'all 0.3s ease'
-                  }}>
-                    {temperatureRating.icon}
-                  </span>
-                  <div>
-                    <div style={{
-                      fontSize: '0.95rem',
-                      fontWeight: '700',
-                      color: temperatureRating.color,
-                      textShadow: temperatureRating.glow,
-                      transition: 'all 0.3s ease'
-                    }}>
-                      {temperatureRating.rating}
-                    </div>
-                    <div style={{ fontSize: '0.75rem', color: '#718096' }}>
-                      AIO Loan Suitability
-                    </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', paddingTop: '1rem', borderTop: '1px solid #f1f5f9' }}>
+                <span style={{ fontSize: '1.75rem' }}>{temperatureRating.icon}</span>
+                <div>
+                  <div style={{ fontSize: '1rem', fontWeight: '700', color: temperatureRating.color }}>
+                    {temperatureRating.rating}
                   </div>
-                </div>
-                <div style={{ fontSize: '0.875rem', color: '#1a202c', fontWeight: '600', textAlign: 'center', padding: '0.75rem', background: '#f7fafc', borderRadius: '6px', marginTop: '0.5rem' }}>
-                  {formatCurrency(displayNetCashFlow)}/month cash flow
-                  <div style={{ fontSize: '0.7rem', color: '#94a3b8', marginTop: '0.25rem', fontWeight: 'normal' }}>
-                    ({Math.round((displayNetCashFlow / 3000) * 100)}% of optimal)
+                  <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+                    AIO Loan Suitability
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* RIGHT: Stacked Total Cards */}
+            {/* Card 2: Monthly Income */}
             <div style={{
+              background: 'white',
+              border: '1px solid #e2e8f0',
+              borderRadius: '12px',
+              padding: '1.5rem',
+              boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
               display: 'flex',
-              flexDirection: 'column',
-              gap: '1rem'
+              flexDirection: 'column'
             }}>
-              {/* Income Card */}
-              <div className="summary-card income-card" style={{ minHeight: 'auto' }}>
-              <div className="card-icon">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <div className="card-content">
-                <div className="card-label">Total Monthly Income</div>
-                <div className="card-value">{formatCurrency(displayTotalIncome)}</div>
-                <div className="card-description">
-                  Avg from {actualMonths} month{actualMonths !== 1 ? 's' : ''} of statements
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
+                <div style={{
+                  width: '48px',
+                  height: '48px',
+                  borderRadius: '50%',
+                  background: '#d1fae5',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0
+                }}>
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="#059669" style={{ width: '24px', height: '24px' }}>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
                 </div>
+                <div>
+                  <div style={{ fontSize: '0.75rem', fontWeight: '600', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    TOTAL MONTHLY
+                  </div>
+                  <div style={{ fontSize: '0.75rem', fontWeight: '600', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    INCOME
+                  </div>
+                </div>
+              </div>
+              <div style={{ fontSize: '2rem', fontWeight: '700', color: '#059669', marginBottom: '0.5rem' }}>
+                {formatCurrency(displayTotalIncome)}
+              </div>
+              <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+                Average across {actualMonths} month{actualMonths !== 1 ? 's' : ''}
               </div>
             </div>
 
-              {/* Expense Card */}
-              <div className="summary-card expense-card" style={{ minHeight: 'auto' }}>
-              <div className="card-icon">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                </svg>
-              </div>
-              <div className="card-content">
-                <div className="card-label">Total Monthly Expenses</div>
-                <div className="card-value">{formatCurrency(displayTotalExpenses)}</div>
-                <div className="card-description">
-                  Avg from {actualMonths} month{actualMonths !== 1 ? 's' : ''} of statements
+            {/* Card 3: Monthly Expenses */}
+            <div style={{
+              background: 'white',
+              border: '1px solid #e2e8f0',
+              borderRadius: '12px',
+              padding: '1.5rem',
+              boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+              display: 'flex',
+              flexDirection: 'column'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
+                <div style={{
+                  width: '48px',
+                  height: '48px',
+                  borderRadius: '50%',
+                  background: '#fed7aa',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0
+                }}>
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="#ea580c" style={{ width: '24px', height: '24px' }}>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                  </svg>
                 </div>
+                <div>
+                  <div style={{ fontSize: '0.75rem', fontWeight: '600', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    TOTAL MONTHLY
+                  </div>
+                  <div style={{ fontSize: '0.75rem', fontWeight: '600', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    EXPENSES
+                  </div>
+                </div>
+              </div>
+              <div style={{ fontSize: '2rem', fontWeight: '700', color: '#1a202c', marginBottom: '0.5rem' }}>
+                {formatCurrency(displayTotalExpenses)}
+              </div>
+              <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+                Recurring expenses only
               </div>
             </div>
 
-              {/* Net Cash Flow Card */}
-              <div className="summary-card cashflow-card" style={{ minHeight: 'auto' }}>
-              <div className="card-icon">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                </svg>
-              </div>
-              <div className="card-content">
-                <div className="card-label">Net Cash Flow</div>
-                <div className={`card-value ${displayNetCashFlow >= 0 ? 'positive' : 'negative'}`}>
-                  {formatCurrency(displayNetCashFlow)}
+            {/* Card 4: Net Cash Flow */}
+            <div style={{
+              background: 'white',
+              border: '1px solid #e2e8f0',
+              borderRadius: '12px',
+              padding: '1.5rem',
+              boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+              display: 'flex',
+              flexDirection: 'column'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
+                <div style={{
+                  width: '48px',
+                  height: '48px',
+                  borderRadius: '50%',
+                  background: displayNetCashFlow >= 0 ? '#dbeafe' : '#fee2e2',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0
+                }}>
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke={displayNetCashFlow >= 0 ? '#3b82f6' : '#ef4444'} style={{ width: '24px', height: '24px' }}>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                  </svg>
                 </div>
-                <div className="card-description">
-                  {displayNetCashFlow >= 0 ? 'Net Monthly Average Cash Flow' : 'Negative - Not suitable for AIO'}
+                <div>
+                  <div style={{ fontSize: '0.75rem', fontWeight: '600', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    NET CASH FLOW
+                  </div>
                 </div>
               </div>
-            </div>
+              <div style={{ fontSize: '2rem', fontWeight: '700', color: displayNetCashFlow >= 0 ? '#059669' : '#ef4444', marginBottom: '0.5rem' }}>
+                {formatCurrency(displayNetCashFlow)}
+              </div>
+              <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+                {displayNetCashFlow >= 0 ? 'Available for loan offset' : 'Not suitable for AIO'}
+              </div>
             </div>
           </div>
 
