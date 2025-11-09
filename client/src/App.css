@@ -341,6 +341,7 @@ body {
   margin-bottom: 1.75rem;
 }
 
+/* Support .section-header as container div */
 .section-header h2 {
   color: #2d3748;
   font-size: 2rem;
@@ -354,6 +355,15 @@ body {
   line-height: 1.6;
   max-width: 800px;
   margin: 0 auto;
+}
+
+/* Support .section-header applied directly to h2 */
+h2.section-header {
+  color: #2d3748;
+  font-size: 2rem;
+  margin-bottom: 2rem;
+  font-weight: 600;
+  text-align: left;
 }
 
 /* ==================== INFO CARDS ==================== */

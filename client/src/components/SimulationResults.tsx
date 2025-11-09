@@ -382,7 +382,7 @@ export default function SimulationResults({
 
       {/* Comparison Cards */}
       <div className="comparison-section">
-        <h2>Side-by-Side Comparison</h2>
+        <h2 className="section-header">Side-by-Side Comparison</h2>
 
         <div className="comparison-cards">
           {/* Traditional Loan Card */}
@@ -486,7 +486,7 @@ export default function SimulationResults({
       {/* Rate & Paydown Table Tab */}
       {activeTab === 'paydown' && (
         <div className="paydown-tab-content" style={{ padding: '2rem', background: 'white', borderRadius: '12px', border: '2px solid #e2e8f0' }}>
-          <h2 style={{ textAlign: 'center', marginBottom: '2rem', color: '#1e293b' }}>📊 Rate & Paydown Analysis</h2>
+          <h2 className="section-header" style={{ textAlign: 'center' }}>📊 Rate & Paydown Analysis</h2>
 
           {/* Rate Comparison Section */}
           <div style={{ marginBottom: '3rem', padding: '2rem', background: '#f8fafc', borderRadius: '8px' }}>
@@ -838,7 +838,7 @@ export default function SimulationResults({
       {/* Charts Tab */}
       {activeTab === 'charts' && (
         <div className="charts-tab-content">
-          <h2 style={{ textAlign: 'center', marginBottom: '2rem', color: '#1e293b' }}>📈 Visual Analysis</h2>
+          <h2 className="section-header" style={{ textAlign: 'center' }}>📈 Visual Analysis</h2>
 
           {/* Balance Over Time Chart */}
           <div className="chart-section" style={{ marginBottom: '3rem', padding: '2rem', background: 'white', borderRadius: '12px', border: '2px solid #e2e8f0' }}>
@@ -1233,7 +1233,7 @@ export default function SimulationResults({
       {/* Math Tab */}
       {activeTab === 'math' && (
         <div className="math-tab-content" style={{ padding: '2rem', background: 'white', borderRadius: '12px', border: '2px solid #e2e8f0' }}>
-          <h2 style={{ textAlign: 'center', marginBottom: '2rem', color: '#1e293b' }}>🧮 Calculation Details & Formulas</h2>
+          <h2 className="section-header" style={{ textAlign: 'center' }}>🧮 Calculation Details & Formulas</h2>
 
           {/* Input Values Section */}
           <div style={{ marginBottom: '3rem', padding: '2rem', background: '#f8fafc', borderRadius: '8px' }}>
