@@ -389,27 +389,8 @@ export default function CashFlowReview({
   );
 
   // Get temperature rating based on net cash flow
-  // Calculate minimum net cash flow needed for AIO to work
-  const calculateMinimumCashFlow = () => {
-    if (!mortgageDetails) return null;
-
-    const balance = mortgageDetails.currentBalance || 0;
-    const rate = mortgageDetails.aioInterestRate || mortgageDetails.interestRate || 0;
-
-    // Monthly interest (what balance growth would be with $0 payment)
-    const monthlyInterest = (balance * (rate / 100)) / 12;
-
-    return {
-      monthlyInterest: Math.ceil(monthlyInterest),
-      // Absolute minimum: monthly interest (below this, balance grows forever)
-      absoluteMinimum: Math.ceil(monthlyInterest),
-      // Break-even: monthly interest * 1.3 (need 30% more to make meaningful progress)
-      // Below this, AIO might take longer than traditional mortgage
-      breakEvenMinimum: Math.ceil(monthlyInterest * 1.3)
-    };
-  };
-
-  const minCashFlow = calculateMinimumCashFlow();
+  // NOTE: Warning banners removed from this page - they now only appear on Simulation Results
+  // after actual simulation runs, to avoid false positives
 
   const getTemperatureRating = (netCashFlow: number): {
     rating: string;
@@ -417,21 +398,7 @@ export default function CashFlowReview({
     description: string;
     icon: string;
     glow: string;
-    showMinimum?: boolean;
-    minimumNeeded?: number;
   } => {
-    // Check if cash flow is below minimum needed
-    if (minCashFlow && netCashFlow < minCashFlow.breakEvenMinimum) {
-      return {
-        rating: 'TOO LOW',
-        color: '#ef4444',
-        description: `Net cash flow is barely above monthly interest ($${minCashFlow.monthlyInterest.toLocaleString()}). At this rate, AIO loan may take longer than ${mortgageDetails?.remainingTermMonths ? Math.floor(mortgageDetails.remainingTermMonths / 12) : 30} years to pay off, resulting in MORE total interest.`,
-        icon: '🚫',
-        glow: 'none',
-        showMinimum: true,
-        minimumNeeded: minCashFlow.breakEvenMinimum
-      };
-    }
     if (netCashFlow >= 8000) {
       return {
         rating: 'EXCELLENT',
@@ -735,67 +702,8 @@ export default function CashFlowReview({
             </div>
           </div>
 
-          {/* Warning Banner: Cash Flow Too Low */}
-          {temperatureRating.showMinimum && minCashFlow && (
-            <div style={{
-              background: 'linear-gradient(135deg, #fee2e2 0%, #fecaca 100%)',
-              border: '2px solid #ef4444',
-              borderRadius: '8px',
-              padding: '0.75rem',
-              marginTop: '0.75rem',
-              marginBottom: '0.75rem',
-              boxShadow: '0 2px 6px rgba(239, 68, 68, 0.15)'
-            }}>
-              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'start' }}>
-                <div style={{
-                  width: '32px',
-                  height: '32px',
-                  borderRadius: '50%',
-                  background: '#ef4444',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0
-                }}>
-                  <span style={{ fontSize: '18px' }}>🚫</span>
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: '1.1rem', fontWeight: '700', color: '#991b1b', marginBottom: '0.25rem' }}>
-                    ⚠️ Cash Flow Insufficient for AIO Loan
-                  </div>
-                  <div style={{ fontSize: '0.9rem', color: '#7f1d1d', marginBottom: '0.5rem', lineHeight: '1.4' }}>
-                    {temperatureRating.description}
-                  </div>
-                  <div style={{
-                    background: 'white',
-                    border: '1px solid #fca5a5',
-                    borderRadius: '6px',
-                    padding: '0.5rem',
-                    marginBottom: '0.5rem'
-                  }}>
-                    <div style={{ fontSize: '0.8rem', color: '#7f1d1d', marginBottom: '0.3rem' }}>
-                      <strong>Current Net Cash Flow:</strong> ${displayNetCashFlow.toLocaleString()}/month
-                    </div>
-                    <div style={{ fontSize: '0.8rem', color: '#7f1d1d', marginBottom: '0.3rem' }}>
-                      <strong>Minimum Needed:</strong> ${minCashFlow.breakEvenMinimum.toLocaleString()}/month
-                    </div>
-                    <div style={{ fontSize: '0.8rem', color: '#991b1b', fontWeight: '600' }}>
-                      <strong>Shortfall:</strong> ${(minCashFlow.breakEvenMinimum - displayNetCashFlow).toLocaleString()}/month
-                    </div>
-                  </div>
-                  <div style={{ fontSize: '0.8rem', color: '#7f1d1d', fontWeight: '600', marginBottom: '0.25rem' }}>
-                    💡 Recommendations:
-                  </div>
-                  <ul style={{ margin: 0, paddingLeft: '1.25rem', color: '#7f1d1d', fontSize: '0.8rem', lineHeight: '1.4' }}>
-                    <li>Include additional income sources in the analysis</li>
-                    <li>Review and reduce monthly expenses where possible</li>
-                    <li>Consider making additional principal payments to the AIO loan</li>
-                    <li>Explore refinancing to a lower interest rate</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-          )}
+          {/* Warning Banner Removed: Moved to Simulation Results page for accuracy */}
+          {/* We show warnings only AFTER running actual simulation to avoid false positives */}
 
           {/* Main Tabs: Chart vs Transactions */}
           <div className="tabs" style={{ marginTop: '1rem' }}>
