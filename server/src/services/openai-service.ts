@@ -12,12 +12,14 @@ import type { CashFlowAnalysis, Transaction, OpenAIAnalysisResult } from '../typ
 // Client 1: OpenAI Direct for structured data (CSV/XLSX)
 const openaiDirect = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
+  timeout: 180000, // 3 minutes timeout for large file analysis
 });
 
 // Client 2: OpenRouter with Gemini for vision tasks (images/PDFs)
 const openRouter = new OpenAI({
   apiKey: process.env.OPENROUTER_API_KEY,
   baseURL: 'https://openrouter.ai/api/v1',
+  timeout: 180000, // 3 minutes timeout for PDF/image processing
   defaultHeaders: {
     'HTTP-Referer': process.env.YOUR_SITE_URL || 'https://aio-simulator.cmgfinancial.ai',
     'X-Title': 'All-In-One Look Back Simulator',
