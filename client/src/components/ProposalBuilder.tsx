@@ -169,6 +169,11 @@ export default function ProposalBuilder({
   const [signatureTwitter, setSignatureTwitter] = useState('');
   const [signatureInstagram, setSignatureInstagram] = useState('');
 
+  // Shareable link state
+  const [shareableUrl, setShareableUrl] = useState<string | null>(null);
+  const [isSavingProposal, setIsSavingProposal] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
+
   // Available components (pitch is mandatory and always at top)
   const [components, setComponents] = useState<ProposalComponent[]>([
     {
@@ -841,6 +846,72 @@ export default function ProposalBuilder({
         console.log('Document height:', printWindow.document.body.scrollHeight, 'px');
       });
     });
+  };
+
+  const handleShareProposal = async () => {
+    try {
+      setIsSavingProposal(true);
+
+      const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
+
+      // Prepare proposal data
+      const proposalData = {
+        simulation,
+        mortgageDetails,
+        cashFlow,
+        clientName,
+        aiPitch,
+        components,
+        signatureName,
+        signatureTitle,
+        signatureEmail,
+        signaturePhone,
+        signatureCompany,
+        signatureNMLS,
+        signatureWebsite,
+        signatureAddress,
+        signatureTagline,
+        signaturePhotoURL,
+        signatureLinkedIn,
+        signatureFacebook,
+        signatureTwitter,
+        signatureInstagram,
+      };
+
+      // Save to backend
+      const response = await fetch(`${API_BASE}/api/save-proposal`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(proposalData),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to save proposal');
+      }
+
+      // Set the shareable URL and show modal
+      setShareableUrl(data.shareableUrl);
+      setShowShareModal(true);
+
+      console.log('✅ Proposal saved:', data.proposalId);
+      console.log('🔗 Shareable URL:', data.shareableUrl);
+    } catch (error: any) {
+      console.error('Error sharing proposal:', error);
+      alert(`Failed to generate share link: ${error.message}`);
+    } finally {
+      setIsSavingProposal(false);
+    }
+  };
+
+  const handleCopyShareUrl = () => {
+    if (shareableUrl) {
+      navigator.clipboard.writeText(shareableUrl);
+      alert('Link copied to clipboard!');
+    }
   };
 
   const formatCurrency = (amount: number): string => {
@@ -2476,6 +2547,31 @@ export default function ProposalBuilder({
                   Open for Printing
                 </button>
                 <button
+                  className="btn-success"
+                  onClick={handleShareProposal}
+                  disabled={isSavingProposal}
+                  title="Generate shareable link for this proposal"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    fontSize: '1.05rem',
+                    padding: '0.875rem 2rem',
+                    background: '#9bc53d',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor: isSavingProposal ? 'not-allowed' : 'pointer',
+                    opacity: isSavingProposal ? 0.7 : 1,
+                    fontWeight: 600
+                  }}
+                >
+                  <svg className="btn-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '20px', height: '20px' }}>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                  </svg>
+                  {isSavingProposal ? 'Saving...' : 'Share Proposal'}
+                </button>
+                <button
                   className="btn-primary"
                   onClick={handleGeneratePDF}
                   title="Download proposal as PDF file (may have rendering issues)"
@@ -2532,6 +2628,98 @@ export default function ProposalBuilder({
           </div>
         );
       })()}
+
+      {/* Share Proposal Modal */}
+      {showShareModal && shareableUrl && (
+        <div onClick={() => setShowShareModal(false)} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '2rem' }}>
+          <div onClick={(e) => e.stopPropagation()} style={{ background: 'white', borderRadius: '16px', maxWidth: '600px', width: '100%', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
+            <div style={{ padding: '2rem', borderBottom: '2px solid #e2e8f0', background: 'linear-gradient(135deg, #9bc53d 0%, #7ba32a 100%)', color: 'white', borderRadius: '16px 16px 0 0' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div>
+                  <h2 style={{ margin: 0, fontSize: '1.75rem', color: 'white' }}>🔗 Proposal Link Ready!</h2>
+                  <p style={{ margin: '0.5rem 0 0', color: 'white', fontSize: '1rem', opacity: 0.95 }}>Share this link with your client</p>
+                </div>
+                <button onClick={() => setShowShareModal(false)} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: '8px', padding: '0.5rem', cursor: 'pointer' }}>
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="white" style={{ width: '24px', height: '24px' }}>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <div style={{ padding: '2rem' }}>
+              <div style={{ marginBottom: '1.5rem' }}>
+                <label style={{ display: 'block', fontWeight: 600, color: '#475569', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Shareable URL</label>
+                <div style={{ display: 'flex', gap: '0.75rem' }}>
+                  <input
+                    type="text"
+                    value={shareableUrl}
+                    readOnly
+                    style={{
+                      flex: 1,
+                      padding: '0.875rem 1rem',
+                      border: '2px solid #e2e8f0',
+                      borderRadius: '8px',
+                      fontSize: '0.95rem',
+                      background: '#f8fafc',
+                      color: '#1e293b'
+                    }}
+                  />
+                  <button
+                    onClick={handleCopyShareUrl}
+                    style={{
+                      padding: '0.875rem 1.5rem',
+                      background: '#3b82f6',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '8px',
+                      fontSize: '0.95rem',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      whiteSpace: 'nowrap',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem'
+                    }}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '18px', height: '18px' }}>
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    </svg>
+                    Copy
+                  </button>
+                </div>
+              </div>
+              <div style={{ background: '#f0fdf4', border: '2px solid #86efac', borderRadius: '8px', padding: '1rem' }}>
+                <div style={{ display: 'flex', gap: '0.75rem' }}>
+                  <div style={{ fontSize: '1.5rem' }}>✅</div>
+                  <div>
+                    <div style={{ fontWeight: 600, color: '#16a34a', marginBottom: '0.25rem' }}>Proposal Saved Successfully</div>
+                    <div style={{ fontSize: '0.9rem', color: '#15803d', lineHeight: 1.5 }}>
+                      Your client can view this proposal anytime using the link above. It will be available for 90 days. They can also print or save it as a PDF directly from their browser.
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div style={{ marginTop: '1.5rem', display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+                <button
+                  onClick={() => setShowShareModal(false)}
+                  style={{
+                    padding: '0.875rem 2rem',
+                    background: '#f1f5f9',
+                    color: '#475569',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontSize: '1rem',
+                    fontWeight: 600,
+                    cursor: 'pointer'
+                  }}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Add CSS animations */}
       <style>{`

@@ -6,6 +6,8 @@ import { analyzeStatements } from '../services/openai-service.js';
 import { calculateEligibility } from '../services/eligibility-checker.js';
 import { simulateLoan } from '../services/loan-calculator-v3.js';
 import type { MortgageDetails, CashFlowAnalysis } from '../types.js';
+import { nanoid } from 'nanoid';
+import { kv } from '@vercel/kv';
 
 const router = express.Router();
 
@@ -651,6 +653,88 @@ router.get('/current-mortgage-rate', async (req, res) => {
       success: false,
       error: 'Rate fetch failed',
       message: error.message || 'Failed to fetch current mortgage rate',
+    });
+  }
+});
+
+// Save a proposal and generate a shareable link
+router.post('/save-proposal', async (req, res) => {
+  try {
+    const proposalData = req.body;
+
+    if (!proposalData.simulation || !proposalData.mortgageDetails) {
+      return res.status(400).json({
+        error: 'Missing required data',
+        message: 'Please provide simulation and mortgage details',
+      });
+    }
+
+    // Generate unique ID for the proposal (10 characters, URL-safe)
+    const proposalId = nanoid(10);
+
+    // Store the proposal in Vercel KV with 90-day expiration
+    await kv.set(`proposal:${proposalId}`, proposalData, {
+      ex: 90 * 24 * 60 * 60, // 90 days in seconds
+    });
+
+    // Generate the shareable URL
+    const baseUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+    const shareableUrl = `${baseUrl}/proposal/${proposalId}`;
+
+    console.log(`📎 Proposal saved: ${proposalId}`);
+
+    res.json({
+      success: true,
+      proposalId,
+      shareableUrl,
+      expiresIn: '90 days',
+      message: 'Proposal saved successfully',
+    });
+  } catch (error: any) {
+    console.error('Error saving proposal:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Save failed',
+      message: error.message || 'Failed to save proposal',
+    });
+  }
+});
+
+// Retrieve a proposal by ID (public endpoint)
+router.get('/proposals/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!id || id.length !== 10) {
+      return res.status(400).json({
+        error: 'Invalid proposal ID',
+        message: 'Proposal ID must be 10 characters',
+      });
+    }
+
+    // Retrieve the proposal from Vercel KV
+    const proposalData = await kv.get(`proposal:${id}`);
+
+    if (!proposalData) {
+      return res.status(404).json({
+        error: 'Proposal not found',
+        message: 'This proposal does not exist or has expired',
+      });
+    }
+
+    console.log(`📖 Proposal retrieved: ${id}`);
+
+    res.json({
+      success: true,
+      proposal: proposalData,
+      message: 'Proposal retrieved successfully',
+    });
+  } catch (error: any) {
+    console.error('Error retrieving proposal:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Retrieval failed',
+      message: error.message || 'Failed to retrieve proposal',
     });
   }
 });
