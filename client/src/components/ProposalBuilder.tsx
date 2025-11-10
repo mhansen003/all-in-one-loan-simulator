@@ -414,16 +414,22 @@ export default function ProposalBuilder({
         saveSignatureToStorage(loanOfficerEmail);
       }
       setCurrentStep((currentStep + 1) as WizardStep);
-      // Scroll to top of main content area
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      // Scroll to top of main content area (the scrollable container, not window)
+      const mainContent = document.querySelector('.main-content');
+      if (mainContent) {
+        mainContent.scrollTo({ top: 0, behavior: 'smooth' });
+      }
     }
   };
 
   const handlePreviousStep = () => {
     if (currentStep > 1) {
       setCurrentStep((currentStep - 1) as WizardStep);
-      // Scroll to top of main content area
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      // Scroll to top of main content area (the scrollable container, not window)
+      const mainContent = document.querySelector('.main-content');
+      if (mainContent) {
+        mainContent.scrollTo({ top: 0, behavior: 'smooth' });
+      }
     }
   };
 

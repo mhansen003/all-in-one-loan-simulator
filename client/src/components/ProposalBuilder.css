@@ -77,17 +77,24 @@
 
 .form-input {
   width: 100%;
-  padding: 0.75rem 1rem;
+  padding: 0.875rem 1.125rem;
   border: 2px solid #e2e8f0;
-  border-radius: 8px;
+  border-radius: 10px;
   font-size: 1rem;
   transition: all 0.2s;
+  background: #fafbfc;
+}
+
+.form-input:hover {
+  border-color: #cbd5e1;
+  background: white;
 }
 
 .form-input:focus {
   outline: none;
   border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  background: white;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.08);
 }
 
 /* AI Pitch Section */
@@ -295,6 +302,29 @@
 .btn-primary:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* Wizard Button Enhancements */
+.wizard-actions .btn-primary,
+.wizard-actions .btn-secondary {
+  font-size: 1rem;
+  font-weight: 600;
+  padding: 0.875rem 1.75rem;
+  border-radius: 10px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.wizard-actions .btn-primary:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
+}
+
+.wizard-actions .btn-secondary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .spinner-small {
@@ -602,15 +632,37 @@
 
 .main-content {
   flex: 1;
-  padding: 3rem;
-  padding-bottom: 120px; /* Space for fixed wizard buttons */
+  padding: 2.5rem 3rem;
+  padding-bottom: 140px; /* Increased space for fixed wizard buttons */
   overflow-y: auto;
-  background: white;
+  background: #fafbfc;
+  height: 100vh; /* Ensure main-content takes full viewport height */
 }
 
 .proposal-content {
-  max-width: 1000px;
+  max-width: 1100px;
   margin: 0 auto;
+}
+
+/* Section Card Styling for Wizard Steps */
+.section-card {
+  background: white;
+  border-radius: 16px;
+  padding: 2.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  border: 1px solid #e2e8f0;
+  margin-bottom: 2rem;
+  transition: all 0.3s ease;
+}
+
+.section-card:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
+.section-description {
+  color: #64748b;
+  line-height: 1.6;
+  margin-top: 0.5rem;
 }
 
 /* Back button in sidebar */
@@ -946,18 +998,30 @@
   }
 
   .main-content {
-    padding: 1.5rem 1rem;
-    padding-bottom: 100px; /* Adjust for mobile */
+    padding: 1rem;
+    padding-bottom: 120px; /* Space for fixed buttons on mobile */
   }
 
   .proposal-content {
+    padding: 0;
+  }
+
+  .section-card {
+    border-radius: 12px;
     padding: 1.5rem;
+    margin-bottom: 1rem;
   }
 
   /* Fixed wizard buttons need to span full width on mobile */
   .wizard-actions {
     left: 0 !important;
     padding: 1rem !important;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .wizard-actions button {
+    width: 100%;
   }
 }
 
