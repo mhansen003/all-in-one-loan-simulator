@@ -519,6 +519,206 @@ export default function ProposalBuilder({
     });
   };
 
+  const handleOpenForPrinting = () => {
+    const element = document.getElementById('proposal-content');
+    if (!element) {
+      console.error('Proposal content element not found');
+      return;
+    }
+
+    // Open new window
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      alert('Please allow pop-ups to open the print preview');
+      return;
+    }
+
+    // Get the proposal HTML content
+    const proposalHTML = element.innerHTML;
+
+    // Write a complete HTML document with all necessary styles
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>${clientName || 'Client'} - All-In-One Loan Proposal</title>
+        <style>
+          /* Reset and base styles */
+          * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+          }
+
+          body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+            line-height: 1.6;
+            color: #1e293b;
+            background: white;
+            padding: 2rem;
+          }
+
+          h1, h2, h3, h4, h5, h6 {
+            font-weight: 700;
+            line-height: 1.3;
+            color: #1e293b;
+          }
+
+          h1 { font-size: 2.5rem; margin-bottom: 1rem; }
+          h2 { font-size: 2rem; margin-bottom: 0.875rem; }
+          h3 { font-size: 1.5rem; margin-bottom: 0.75rem; }
+
+          /* Proposal sections */
+          .preview-section {
+            margin-bottom: 3rem;
+            page-break-inside: avoid;
+          }
+
+          .preview-header {
+            margin-bottom: 2.5rem;
+            text-align: center;
+            padding-bottom: 1.5rem;
+            border-bottom: 3px solid #3b82f6;
+          }
+
+          .savings-section {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            padding: 2.5rem;
+            border-radius: 12px;
+            color: white;
+            text-align: center;
+            margin-bottom: 2rem;
+            page-break-inside: avoid;
+          }
+
+          .pitch-section {
+            background: #f8fafc;
+            padding: 2rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            border-left: 4px solid #3b82f6;
+            page-break-inside: avoid;
+          }
+
+          /* Tables */
+          table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+            page-break-inside: avoid;
+          }
+
+          th, td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+          }
+
+          th {
+            background: #3b82f6;
+            color: white;
+            font-weight: 600;
+          }
+
+          tr:nth-child(even) {
+            background: #f8fafc;
+          }
+
+          /* Signature section */
+          .signature-section {
+            margin-top: 3rem;
+            padding-top: 2rem;
+            border-top: 2px solid #e2e8f0;
+            page-break-inside: avoid;
+          }
+
+          /* Print-specific styles */
+          @media print {
+            body {
+              padding: 0;
+              font-size: 11pt;
+            }
+
+            .preview-section {
+              page-break-inside: avoid;
+            }
+
+            h1 { font-size: 20pt; }
+            h2 { font-size: 16pt; }
+            h3 { font-size: 14pt; }
+
+            /* Ensure colors print */
+            * {
+              -webkit-print-color-adjust: exact;
+              print-color-adjust: exact;
+            }
+          }
+
+          /* Screen view helper */
+          @media screen {
+            body {
+              max-width: 8.5in;
+              margin: 0 auto;
+              box-shadow: 0 0 20px rgba(0,0,0,0.1);
+              padding: 1in;
+            }
+
+            .print-instructions {
+              position: fixed;
+              top: 1rem;
+              right: 1rem;
+              background: #3b82f6;
+              color: white;
+              padding: 1rem 1.5rem;
+              border-radius: 8px;
+              box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+              font-size: 0.9rem;
+              z-index: 1000;
+            }
+
+            .print-instructions button {
+              margin-top: 0.5rem;
+              background: white;
+              color: #3b82f6;
+              border: none;
+              padding: 0.5rem 1rem;
+              border-radius: 6px;
+              cursor: pointer;
+              font-weight: 600;
+              width: 100%;
+            }
+
+            .print-instructions button:hover {
+              background: #f1f5f9;
+            }
+          }
+
+          @media print {
+            .print-instructions {
+              display: none;
+            }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="print-instructions">
+          <div><strong>📄 Print to PDF</strong></div>
+          <div style="font-size: 0.85rem; margin-top: 0.5rem; opacity: 0.95;">
+            Press <strong>Ctrl+P</strong> (Windows) or <strong>Cmd+P</strong> (Mac) to print or save as PDF
+          </div>
+          <button onclick="window.print()">🖨️ Print Now</button>
+        </div>
+
+        ${proposalHTML}
+      </body>
+      </html>
+    `);
+
+    printWindow.document.close();
+  };
+
   const formatCurrency = (amount: number): string => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -2133,23 +2333,42 @@ export default function ProposalBuilder({
               </button>
             )}
             {currentStep === 5 && (
-              <button
-                className="btn-primary"
-                onClick={handleGeneratePDF}
-                title="Download proposal as PDF file"
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                  fontSize: '1.05rem',
-                  padding: '0.875rem 2rem'
-                }}
-              >
-                <svg className="btn-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '20px', height: '20px' }}>
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                Download as PDF
-              </button>
+              <>
+                <button
+                  className="btn-secondary"
+                  onClick={handleOpenForPrinting}
+                  title="Open proposal in new window for printing"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    fontSize: '1rem',
+                    padding: '0.875rem 1.5rem'
+                  }}
+                >
+                  <svg className="btn-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '20px', height: '20px' }}>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                  </svg>
+                  Open for Printing
+                </button>
+                <button
+                  className="btn-primary"
+                  onClick={handleGeneratePDF}
+                  title="Download proposal as PDF file (may have rendering issues)"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    fontSize: '1.05rem',
+                    padding: '0.875rem 2rem'
+                  }}
+                >
+                  <svg className="btn-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '20px', height: '20px' }}>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  Download as PDF
+                </button>
+              </>
             )}
           </div>
         </div>
