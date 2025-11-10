@@ -1915,49 +1915,66 @@ export default function ProposalBuilder({
                   </div>
                 )}
 
-                {/* Payoff Timeline Chart */}
+                {/* Payoff Timeline Comparison - Table format for PDF compatibility */}
                 {components.find((c) => c.id === 'amortization-chart')?.enabled && (
                   <div className="preview-section" style={{ pageBreakInside: 'avoid' }}>
                     <h3>Payoff Timeline Comparison</h3>
-                    <div style={{ background: '#f7fafc', padding: '2rem', borderRadius: '12px', textAlign: 'center' }}>
-                      <p style={{ marginBottom: '1rem', color: '#64748b' }}>Visual timeline showing accelerated payoff</p>
-                      <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', alignItems: 'flex-end' }}>
-                        <div style={{ flex: 1, maxWidth: '200px' }}>
-                          <div style={{
-                            height: `${(simulation.traditionalLoan.payoffMonths / simulation.traditionalLoan.payoffMonths) * 200}px`,
-                            background: '#3b82f6',
-                            borderRadius: '8px 8px 0 0',
-                            marginBottom: '0.5rem',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            color: 'white',
-                            fontWeight: '700'
-                          }}>
-                            {yearsMonthsFromMonths(simulation.traditionalLoan.payoffMonths)}
-                          </div>
-                          <div style={{ fontWeight: '600', color: '#475569' }}>Traditional</div>
-                        </div>
-                        <div style={{ flex: 1, maxWidth: '200px' }}>
-                          <div style={{
-                            height: `${(simulation.allInOneLoan.payoffMonths / simulation.traditionalLoan.payoffMonths) * 200}px`,
-                            background: '#9bc53d',
-                            borderRadius: '8px 8px 0 0',
-                            marginBottom: '0.5rem',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            color: 'white',
-                            fontWeight: '700'
-                          }}>
-                            {yearsMonthsFromMonths(simulation.allInOneLoan.payoffMonths)}
-                          </div>
-                          <div style={{ fontWeight: '600', color: '#475569' }}>All-In-One</div>
-                        </div>
+                    <div style={{ background: '#f7fafc', padding: '2rem', borderRadius: '12px' }}>
+                      <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '20px' }}>
+                        <tbody>
+                          <tr>
+                            <td style={{ width: '50%', textAlign: 'center', verticalAlign: 'middle' }}>
+                              <div style={{
+                                background: 'linear-gradient(180deg, #3b82f6 0%, #2563eb 100%)',
+                                borderRadius: '12px',
+                                padding: '2rem 1rem',
+                                color: 'white',
+                                minHeight: '120px',
+                                display: 'table',
+                                width: '100%'
+                              }}>
+                                <div style={{ display: 'table-cell', verticalAlign: 'middle' }}>
+                                  <div style={{ fontSize: '0.9rem', marginBottom: '0.5rem', opacity: 0.9 }}>Traditional Loan</div>
+                                  <div style={{ fontSize: '1.75rem', fontWeight: '700' }}>
+                                    {yearsMonthsFromMonths(simulation.traditionalLoan.payoffMonths)}
+                                  </div>
+                                </div>
+                              </div>
+                            </td>
+                            <td style={{ width: '50%', textAlign: 'center', verticalAlign: 'middle' }}>
+                              <div style={{
+                                background: 'linear-gradient(180deg, #9bc53d 0%, #8ab62f 100%)',
+                                borderRadius: '12px',
+                                padding: '2rem 1rem',
+                                color: 'white',
+                                minHeight: '120px',
+                                display: 'table',
+                                width: '100%'
+                              }}>
+                                <div style={{ display: 'table-cell', verticalAlign: 'middle' }}>
+                                  <div style={{ fontSize: '0.9rem', marginBottom: '0.5rem', opacity: 0.9 }}>All-In-One Loan</div>
+                                  <div style={{ fontSize: '1.75rem', fontWeight: '700' }}>
+                                    {yearsMonthsFromMonths(simulation.allInOneLoan.payoffMonths)}
+                                  </div>
+                                </div>
+                              </div>
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                      <div style={{
+                        marginTop: '1.5rem',
+                        color: '#16a34a',
+                        fontWeight: '700',
+                        fontSize: '1.2rem',
+                        background: '#f0fdf4',
+                        padding: '1.25rem',
+                        borderRadius: '8px',
+                        border: '2px solid #86efac',
+                        textAlign: 'center'
+                      }}>
+                        💰 Pay off {yearsMonthsFromMonths(simulation.comparison.timeSavedMonths)} faster!
                       </div>
-                      <p style={{ marginTop: '1.5rem', color: '#16a34a', fontWeight: '600', fontSize: '1.1rem' }}>
-                        Pay off {yearsMonthsFromMonths(simulation.comparison.timeSavedMonths)} faster!
-                      </p>
                     </div>
                   </div>
                 )}
