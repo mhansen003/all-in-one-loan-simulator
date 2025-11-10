@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { SimulationResult, MortgageDetails, CashFlowAnalysis } from '../types';
+import PageNavigation from './PageNavigation';
 import './SimulationResults.css';
 import CashFlowSummaryCards from './CashFlowSummaryCards';
 
@@ -145,69 +146,20 @@ export default function SimulationResults({
 
   return (
     <div className="simulation-results">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '2rem', gap: '1rem' }}>
-        <div className="form-header" style={{ margin: 0, flex: 1, textAlign: 'left' }}>
-          <h2>Simulation Results</h2>
-          <p>Compare traditional mortgage vs All-In-One loan with cash flow offset</p>
-        </div>
-        <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
-          <button
-            className="btn-secondary"
-            onClick={onBackToCFA}
-            style={{
-              border: '2px solid #9bc53d',
-              boxShadow: '0 3px 10px rgba(155, 197, 61, 0.25)',
-              background: 'linear-gradient(135deg, #ffffff 0%, #f0f9e8 100%)',
-              transition: 'all 0.3s ease',
-              fontWeight: '600',
-              whiteSpace: 'nowrap',
-              color: '#2d3748'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.boxShadow = '0 6px 16px rgba(155, 197, 61, 0.35)';
-              e.currentTarget.style.transform = 'translateY(-2px)';
-              e.currentTarget.style.borderColor = '#8ab82e';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.boxShadow = '0 3px 10px rgba(155, 197, 61, 0.25)';
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.borderColor = '#9bc53d';
-            }}
-          >
-            <svg className="btn-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-            </svg>
-            Edit Cash Flow
-          </button>
-          <button
-            className="btn-primary"
-            onClick={onCreateProposal}
-            style={{
-              border: '3px solid #3b82f6',
-              boxShadow: '0 0 20px rgba(59, 130, 246, 0.5), 0 0 40px rgba(59, 130, 246, 0.3)',
-              animation: 'pulse-glow 2s ease-in-out infinite',
-              position: 'relative',
-              background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
-              whiteSpace: 'nowrap'
-            }}
-          >
-            <svg className="btn-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-            Create Proposal
-            <style>{`
-              @keyframes pulse-glow {
-                0%, 100% {
-                  box-shadow: 0 0 20px rgba(59, 130, 246, 0.5), 0 0 40px rgba(59, 130, 246, 0.3);
-                }
-                50% {
-                  box-shadow: 0 0 30px rgba(59, 130, 246, 0.8), 0 0 60px rgba(59, 130, 246, 0.5);
-                }
-              }
-            `}</style>
-          </button>
-        </div>
+      <div className="form-header" style={{ margin: 0, marginBottom: '1rem', textAlign: 'left' }}>
+        <h2>Simulation Results</h2>
+        <p>Compare traditional mortgage vs All-In-One loan with cash flow offset</p>
       </div>
+
+      {/* Top Navigation */}
+      <PageNavigation
+        onBack={onBackToCFA}
+        backLabel="Edit Cash Flow"
+        showBack={!!onBackToCFA}
+        onNext={onCreateProposal}
+        nextLabel="Create Proposal"
+        showNext={!!onCreateProposal}
+      />
 
       {/* Compact 4-Column Header: Confidence + Summary Cards */}
       {cashFlow && (
@@ -733,7 +685,7 @@ export default function SimulationResults({
 
                             {/* Balance Delta */}
                             <td style={{ padding: '0.75rem', textAlign: 'right', fontWeight: '700', color: balanceDelta > 0 ? '#10b981' : '#64748b' }}>
-                              {balanceDelta > 0 ? `▼ ${formatCurrency(balanceDelta)}` : '-'}
+                              {balanceDelta > 0 ? `▲ ${formatCurrency(balanceDelta)}` : '-'}
                             </td>
 
                             {/* Traditional Principal */}
@@ -817,7 +769,7 @@ export default function SimulationResults({
 
                             {/* Balance Delta */}
                             <td style={{ padding: '0.75rem', textAlign: 'right', fontWeight: '700', color: balanceDelta > 0 ? '#10b981' : '#64748b' }}>
-                              {balanceDelta > 0 ? `▼ ${formatCurrency(balanceDelta)}` : '-'}
+                              {balanceDelta > 0 ? `▲ ${formatCurrency(balanceDelta)}` : '-'}
                             </td>
 
                             {/* Traditional Principal */}

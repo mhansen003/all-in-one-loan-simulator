@@ -2,6 +2,7 @@ import { useCallback, useState, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
 import Papa from 'papaparse';
 import type { CashFlowAnalysis } from '../types';
+import PageNavigation from './PageNavigation';
 import './FileUpload.css';
 
 interface FileWithData {
@@ -235,6 +236,17 @@ export default function FileUpload({
         </p>
       </div>
 
+      {/* Top Navigation */}
+      <PageNavigation
+        onBack={onBack}
+        showBack={!!onBack}
+        onNext={selectedFiles.length > 0 ? onSubmit : undefined}
+        nextLabel={`Analyze ${selectedFiles.length > 0 ? selectedFiles.length : ''} ${selectedFiles.length === 1 ? 'File' : 'Files'}`}
+        showNext={selectedFiles.length > 0}
+        nextDisabled={isAnalyzing || isProcessingPdf}
+        nextLoading={isAnalyzing || isProcessingPdf}
+      />
+
       {/* Existing Analysis Banner */}
       {existingAnalysis && onSkipToReview && (
         <div className="existing-analysis-banner">
@@ -464,25 +476,6 @@ export default function FileUpload({
           </ul>
         </div>
       </div>
-
-      {onBack && (
-        <div className="form-actions" style={{
-          position: 'sticky',
-          bottom: 0,
-          zIndex: 99,
-          background: 'white',
-          padding: '1rem 0',
-          boxShadow: '0 -2px 10px rgba(0, 0, 0, 0.1)',
-          marginTop: '2rem'
-        }}>
-          <button type="button" className="btn-secondary" onClick={onBack} disabled={isAnalyzing || isProcessingPdf}>
-            <svg className="btn-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-            Back
-          </button>
-        </div>
-      )}
 
       {/* Manual Entry Redirect Button */}
       <div style={{ textAlign: 'center', marginTop: '1.5rem' }}>

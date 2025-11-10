@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import type { CashFlowAnalysis, Transaction, MortgageDetails } from '../types';
 import { ComposedChart, Area, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import PageNavigation from './PageNavigation';
 import './CashFlowReview.css';
 import CashFlowSummaryCards from './CashFlowSummaryCards';
 
@@ -576,6 +577,16 @@ export default function CashFlowReview({
               <h2>Cash Flow Analysis Complete</h2>
               <p>Review the AI-generated analysis of your bank statements</p>
             </div>
+
+            {/* Top Navigation */}
+            <PageNavigation
+              onBack={onBack}
+              showBack={!!onBack}
+              onNext={onContinue}
+              nextLabel="Continue to Simulation"
+              showNext={true}
+              nextDisabled={displayNetCashFlow <= 300}
+            />
 
           {/* Four Column Layout: Compact Summary Cards */}
           <CashFlowSummaryCards
@@ -1361,43 +1372,6 @@ export default function CashFlowReview({
           </div>
         </div>
       )}
-
-      {/* Sticky Bottom Actions */}
-      <div className="form-actions" style={{
-        position: 'sticky',
-        bottom: 0,
-        backgroundColor: 'white',
-        padding: '1rem',
-        borderTop: '2px solid #e2e8f0',
-        marginTop: '2rem',
-        zIndex: 10,
-        boxShadow: '0 -4px 12px rgba(0, 0, 0, 0.05)'
-      }}>
-        {onBack && (
-          <button type="button" className="btn-secondary" onClick={onBack}>
-            <svg className="btn-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-            Back
-          </button>
-        )}
-        <button
-          type="button"
-          className="btn-primary"
-          onClick={onContinue}
-          disabled={displayNetCashFlow <= 300}
-          style={{
-            opacity: displayNetCashFlow <= 300 ? 0.5 : 1,
-            cursor: displayNetCashFlow <= 300 ? 'not-allowed' : 'pointer'
-          }}
-          title={displayNetCashFlow <= 300 ? 'Cash flow must exceed $300/month to continue' : ''}
-        >
-          Continue to Simulation
-          <svg className="btn-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-          </svg>
-        </button>
-      </div>
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { MortgageDetails } from '../types';
+import PageNavigation from './PageNavigation';
 import './MortgageDetailsForm.css';
 
 interface MortgageDetailsFormProps {
@@ -222,6 +223,19 @@ export default function MortgageDetailsForm({
             🔧 Fill Test Data
           </button>
       </div>
+
+      {/* Top Navigation */}
+      <PageNavigation
+        onBack={onBack}
+        showBack={!!onBack}
+        onNext={() => {
+          // Trigger form submission by dispatching a submit event
+          const form = document.querySelector('.mortgage-form') as HTMLFormElement;
+          if (form) form.requestSubmit();
+        }}
+        nextLabel="Continue to Bank Statements"
+        showNext={true}
+      />
 
       <form onSubmit={handleSubmit} className="mortgage-form">
         <div className="form-grid">
@@ -786,31 +800,6 @@ export default function MortgageDetailsForm({
           )}
         </div>
           </div>
-        </div>
-
-        <div className="form-actions" style={{
-          position: 'sticky',
-          bottom: 0,
-          zIndex: 99,
-          background: 'white',
-          padding: '1rem 0',
-          boxShadow: '0 -2px 10px rgba(0, 0, 0, 0.1)',
-          marginTop: '2rem'
-        }}>
-          {onBack && (
-            <button type="button" className="btn-secondary" onClick={onBack}>
-              <svg className="btn-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-              Back
-            </button>
-          )}
-          <button type="submit" className="btn-primary">
-            Continue to Bank Statements
-            <svg className="btn-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-          </button>
         </div>
       </form>
 
