@@ -1387,7 +1387,7 @@ export default function SimulationResults({
                 borderRadius: '8px 8px 0 0'
               }}
             >
-              📅 Samples
+              📅 First & Last Month
             </button>
           </div>
 
