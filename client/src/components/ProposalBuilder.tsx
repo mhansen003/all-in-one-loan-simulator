@@ -545,40 +545,6 @@ export default function ProposalBuilder({
             </button>
           ))}
         </nav>
-
-        <button
-          className="btn-back"
-          onClick={onBack}
-          style={{
-            marginTop: 'auto',
-            width: '100%',
-            padding: '0.75rem',
-            background: '#f1f5f9',
-            border: '1px solid #cbd5e1',
-            borderRadius: '8px',
-            color: '#475569',
-            fontWeight: '600',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '0.5rem',
-            transition: 'all 0.2s'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = '#e2e8f0';
-            e.currentTarget.style.borderColor = '#94a3b8';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = '#f1f5f9';
-            e.currentTarget.style.borderColor = '#cbd5e1';
-          }}
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '18px', height: '18px' }}>
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-          </svg>
-          Back to Results
-        </button>
       </aside>
 
       {/* Main Content Area */}
