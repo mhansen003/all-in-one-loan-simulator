@@ -352,60 +352,6 @@ export default function MortgageDetailsForm({
             {errors.currentBalance && <span className="error-text">{errors.currentBalance}</span>}
           </div>
 
-          {/* Property Value */}
-          <div className="form-group">
-            <label htmlFor="propertyValue" className="form-label required">
-              Property Value
-            </label>
-            <div className="input-wrapper">
-              <span className="input-prefix">$</span>
-              <input
-                type="text"
-                inputMode="decimal"
-                id="propertyValue"
-                className={`form-input ${errors.propertyValue ? 'input-error' : ''}`}
-                placeholder="500,000.00"
-                value={propertyValueInput}
-                onChange={(e) => {
-                  const value = e.target.value.replace(/[^0-9.]/g, '');
-                  // Allow only one decimal point
-                  const parts = value.split('.');
-                  const sanitized = parts.length > 2
-                    ? parts[0] + '.' + parts.slice(1).join('')
-                    : value;
-                  setPropertyValueInput(sanitized);
-
-                  // Update form data if we have a valid number
-                  const numValue = parseFloat(sanitized);
-                  if (!isNaN(numValue)) {
-                    setFormData((prev) => ({ ...prev, propertyValue: numValue }));
-                  }
-
-                  // Clear error for this field
-                  if (errors.propertyValue) {
-                    setErrors((prev) => ({ ...prev, propertyValue: undefined }));
-                  }
-                }}
-                onBlur={(e) => {
-                  const value = e.target.value.replace(/[^0-9.]/g, '');
-                  if (value) {
-                    const num = parseFloat(value);
-                    if (!isNaN(num)) {
-                      setFormData((prev) => ({ ...prev, propertyValue: num }));
-                      setPropertyValueInput(String(num));
-                    }
-                  }
-                }}
-              />
-            </div>
-            {errors.propertyValue && <span className="error-text">{errors.propertyValue}</span>}
-            {formData.propertyValue && formData.currentBalance && (
-              <span className="form-help-text">
-                LTV: {((formData.currentBalance / formData.propertyValue) * 100).toFixed(1)}%
-              </span>
-            )}
-          </div>
-
           {/* SECTION 2: Loan Terms */}
           {/* Interest Rate */}
           <div className="form-group">
@@ -499,6 +445,60 @@ export default function MortgageDetailsForm({
 
           {/* RIGHT COLUMN: Payment Information */}
           <div className="form-column">
+          {/* Property Value */}
+          <div className="form-group">
+            <label htmlFor="propertyValue" className="form-label required">
+              Property Value
+            </label>
+            <div className="input-wrapper">
+              <span className="input-prefix">$</span>
+              <input
+                type="text"
+                inputMode="decimal"
+                id="propertyValue"
+                className={`form-input ${errors.propertyValue ? 'input-error' : ''}`}
+                placeholder="500,000.00"
+                value={propertyValueInput}
+                onChange={(e) => {
+                  const value = e.target.value.replace(/[^0-9.]/g, '');
+                  // Allow only one decimal point
+                  const parts = value.split('.');
+                  const sanitized = parts.length > 2
+                    ? parts[0] + '.' + parts.slice(1).join('')
+                    : value;
+                  setPropertyValueInput(sanitized);
+
+                  // Update form data if we have a valid number
+                  const numValue = parseFloat(sanitized);
+                  if (!isNaN(numValue)) {
+                    setFormData((prev) => ({ ...prev, propertyValue: numValue }));
+                  }
+
+                  // Clear error for this field
+                  if (errors.propertyValue) {
+                    setErrors((prev) => ({ ...prev, propertyValue: undefined }));
+                  }
+                }}
+                onBlur={(e) => {
+                  const value = e.target.value.replace(/[^0-9.]/g, '');
+                  if (value) {
+                    const num = parseFloat(value);
+                    if (!isNaN(num)) {
+                      setFormData((prev) => ({ ...prev, propertyValue: num }));
+                      setPropertyValueInput(String(num));
+                    }
+                  }
+                }}
+              />
+            </div>
+            {errors.propertyValue && <span className="error-text">{errors.propertyValue}</span>}
+            {formData.propertyValue && formData.currentBalance && (
+              <span className="form-help-text">
+                LTV: {((formData.currentBalance / formData.propertyValue) * 100).toFixed(1)}%
+              </span>
+            )}
+          </div>
+
             {/* Monthly Payment */}
             <div className="form-group">
             <label htmlFor="monthlyPayment" className="form-label required">
@@ -549,6 +549,8 @@ export default function MortgageDetailsForm({
             <span className="form-help-text">Principal & Interest only (exclude taxes, insurance, HOA)</span>
           </div>
 
+          {/* Total Housing Payment Breakdown - COMMENTED OUT: Will be imported from bank statements */}
+          {/*
           {/* Total Housing Payment Breakdown */}
           <div className="form-group">
             <label className="form-label required">
@@ -652,6 +654,7 @@ export default function MortgageDetailsForm({
               </span>
             </div>
             </div>
+          */}
 
             {/* AIO Interest Rate - Moved to Right Column */}
             <div className="form-section" style={{

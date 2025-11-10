@@ -36,6 +36,7 @@ export default function CashFlowReview({
   );
   const aiRecommendedFrequency = (cashFlow.depositFrequency as 'weekly' | 'biweekly' | 'semi-monthly' | 'monthly') || 'monthly';
   const [chartCollapsed, setChartCollapsed] = useState(false);
+  const [searchFilter, setSearchFilter] = useState('');
 
   // Manual transaction entry states
   const [showAddTransaction, setShowAddTransaction] = useState(false);
@@ -488,17 +489,45 @@ export default function CashFlowReview({
 
   // Filter transactions by active sub-tab
   const getFilteredTransactions = () => {
+    // First get base transactions by category
+    let grouped: Record<string, Transaction[]>;
     if (transactionSubTab === 'all') {
-      return sortedGroupedTransactions;
+      grouped = sortedGroupedTransactions;
+    } else {
+      const filtered = transactions.filter(t => {
+        if (transactionSubTab === 'income') return t.category === 'income';
+        if (transactionSubTab === 'expense') return t.category === 'expense' || t.category === 'recurring';
+        if (transactionSubTab === 'housing') return t.category === 'housing';
+        if (transactionSubTab === 'one-time') return t.category === 'one-time';
+        return true;
+      });
+      grouped = { [transactionSubTab]: filtered };
     }
-    const filtered = transactions.filter(t => {
-      if (transactionSubTab === 'income') return t.category === 'income';
-      if (transactionSubTab === 'expense') return t.category === 'expense' || t.category === 'recurring';
-      if (transactionSubTab === 'housing') return t.category === 'housing';
-      if (transactionSubTab === 'one-time') return t.category === 'one-time';
-      return true;
-    });
-    return { [transactionSubTab]: filtered };
+
+    // Then if searchFilter has a value, filter by search term
+    if (searchFilter.trim()) {
+      const searchLower = searchFilter.trim().toLowerCase();
+      const filteredGrouped: Record<string, Transaction[]> = {};
+
+      Object.entries(grouped).forEach(([category, categoryTransactions]) => {
+        const matchingTransactions = categoryTransactions.filter(t => {
+          // Match description (case insensitive)
+          const descriptionMatch = t.description.toLowerCase().includes(searchLower);
+          // Match amount (convert to string)
+          const amountMatch = Math.abs(t.amount).toString().includes(searchFilter.trim());
+          return descriptionMatch || amountMatch;
+        });
+
+        // Only include categories that have matching transactions
+        if (matchingTransactions.length > 0) {
+          filteredGrouped[category] = matchingTransactions;
+        }
+      });
+
+      return filteredGrouped;
+    }
+
+    return grouped;
   };
 
   // Calculate category totals - returns both included and excluded amounts
@@ -927,7 +956,7 @@ export default function CashFlowReview({
                           <div
                             style={{
                               backgroundColor: 'white',
-                              border: '2px solid ' + (scatterPoint.name === 'One-Time Income' ? '#10b981' : '#ef4444'),
+                              border: '2px solid ' + (data.isIncome ? '#10b981' : '#ef4444'),
                               borderRadius: '8px',
                               padding: '0.75rem',
                               boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
@@ -1047,20 +1076,20 @@ export default function CashFlowReview({
         <div style={{
           display: 'flex',
           alignItems: 'center',
-          gap: '1rem',
+          gap: '0.75rem',
           marginBottom: '0.5rem',
-          padding: '0.75rem 1rem',
+          padding: '0.5rem 0.75rem',
           background: '#f7fafc',
           border: '1px solid #e2e8f0',
           borderRadius: '8px',
           justifyContent: 'space-between'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: 1 }}>
-            <svg style={{ width: '20px', height: '20px', color: '#9bc53d', flexShrink: 0 }} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1 }}>
+            <svg style={{ width: '16px', height: '16px', color: '#9bc53d', flexShrink: 0 }} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
-            <label style={{ fontSize: '0.9rem', fontWeight: '600', color: '#2d3748', whiteSpace: 'nowrap' }}>
-              Deposit Frequency:
+            <label style={{ fontSize: '0.75rem', fontWeight: '600', color: '#2d3748', whiteSpace: 'nowrap' }}>
+              Frequency:
             </label>
             <select
               value={depositFrequency}
@@ -1070,10 +1099,10 @@ export default function CashFlowReview({
                 setDepositFrequency(newFreq);
               }}
               style={{
-                padding: '0.5rem 2rem 0.5rem 0.75rem',
+                padding: '0.35rem 1.5rem 0.35rem 0.5rem',
                 border: '2px solid #cbd5e0',
                 borderRadius: '6px',
-                fontSize: '0.875rem',
+                fontSize: '0.75rem',
                 fontWeight: '600',
                 color: '#2d3748',
                 background: 'white',
@@ -1084,29 +1113,72 @@ export default function CashFlowReview({
               onFocus={(e) => e.currentTarget.style.borderColor = '#9bc53d'}
               onBlur={(e) => e.currentTarget.style.borderColor = '#cbd5e0'}
             >
-              <option value="weekly">Weekly (Every 7 days)</option>
-              <option value="biweekly">Biweekly (Every 14 days)</option>
-              <option value="semi-monthly">Semi-Monthly (Twice per month)</option>
-              <option value="monthly">Monthly (Once per month)</option>
+              <option value="weekly">Weekly</option>
+              <option value="biweekly">Biweekly</option>
+              <option value="semi-monthly">Semi-Monthly</option>
+              <option value="monthly">Monthly</option>
             </select>
             <span style={{
-              fontSize: '0.8rem',
+              fontSize: '0.65rem',
               color: '#718096',
               fontStyle: 'italic'
             }}>
-              ✨ AI detected: <strong>{aiRecommendedFrequency}</strong>
+              ✨ AI: <strong>{aiRecommendedFrequency}</strong>
             </span>
+          </div>
+
+          {/* Search Filter */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1, maxWidth: '300px' }}>
+            <svg style={{ width: '16px', height: '16px', color: '#9bc53d', flexShrink: 0 }} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <input
+              type="text"
+              placeholder="Search transactions..."
+              value={searchFilter}
+              onChange={(e) => setSearchFilter(e.target.value)}
+              style={{
+                flex: 1,
+                padding: '0.35rem 0.5rem',
+                border: '1px solid #cbd5e0',
+                borderRadius: '6px',
+                fontSize: '0.75rem',
+                outline: 'none',
+                transition: 'border-color 0.2s'
+              }}
+              onFocus={(e) => e.currentTarget.style.borderColor = '#9bc53d'}
+              onBlur={(e) => e.currentTarget.style.borderColor = '#cbd5e0'}
+            />
+            {searchFilter && (
+              <button
+                onClick={() => setSearchFilter('')}
+                style={{
+                  padding: '0.25rem',
+                  background: 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                  color: '#718096',
+                  display: 'flex',
+                  alignItems: 'center'
+                }}
+                title="Clear search"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '16px', height: '16px' }}>
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            )}
           </div>
 
           {/* Add Transaction Button */}
           <button
             onClick={() => setShowAddTransaction(true)}
             style={{
-              padding: '0.5rem 0.75rem',
+              padding: '0.35rem 0.6rem',
               background: '#10b981',
               border: '2px solid #10b981',
               borderRadius: '8px',
-              fontSize: '0.8rem',
+              fontSize: '0.75rem',
               fontWeight: '600',
               color: 'white',
               cursor: 'pointer',
