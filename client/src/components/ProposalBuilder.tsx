@@ -1915,58 +1915,54 @@ export default function ProposalBuilder({
                   </div>
                 )}
 
-                {/* Payoff Timeline Comparison - Table format for PDF compatibility */}
+                {/* Payoff Timeline Comparison - Ultra-simplified for PDF rendering */}
                 {components.find((c) => c.id === 'amortization-chart')?.enabled && (
                   <div className="preview-section" style={{ pageBreakInside: 'avoid' }}>
                     <h3>Payoff Timeline Comparison</h3>
-                    <div style={{ background: '#f7fafc', padding: '2rem', borderRadius: '12px' }}>
-                      <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '20px' }}>
-                        <tbody>
-                          <tr>
-                            <td style={{ width: '50%', textAlign: 'center', verticalAlign: 'middle' }}>
-                              <div style={{
-                                background: 'linear-gradient(180deg, #3b82f6 0%, #2563eb 100%)',
-                                borderRadius: '12px',
-                                padding: '2rem 1rem',
-                                color: 'white',
-                                minHeight: '120px',
-                                display: 'table',
-                                width: '100%'
-                              }}>
-                                <div style={{ display: 'table-cell', verticalAlign: 'middle' }}>
-                                  <div style={{ fontSize: '0.9rem', marginBottom: '0.5rem', opacity: 0.9 }}>Traditional Loan</div>
-                                  <div style={{ fontSize: '1.75rem', fontWeight: '700' }}>
-                                    {yearsMonthsFromMonths(simulation.traditionalLoan.payoffMonths)}
-                                  </div>
-                                </div>
+                    <div style={{ background: '#f7fafc', padding: '2rem', borderRadius: '8px' }}>
+                      {/* Simple two-column layout */}
+                      <div style={{ marginBottom: '2rem' }}>
+                        <div style={{ overflow: 'hidden' }}>
+                          {/* Traditional Loan - Left */}
+                          <div style={{ float: 'left', width: '48%', marginRight: '4%' }}>
+                            <div style={{
+                              background: '#3b82f6',
+                              borderRadius: '8px',
+                              padding: '2rem 1rem',
+                              textAlign: 'center',
+                              color: 'white',
+                              minHeight: '100px'
+                            }}>
+                              <div style={{ fontSize: '0.85rem', marginBottom: '0.75rem', opacity: 0.95 }}>Traditional Loan</div>
+                              <div style={{ fontSize: '1.5rem', fontWeight: '700', lineHeight: '1.2' }}>
+                                {yearsMonthsFromMonths(simulation.traditionalLoan.payoffMonths)}
                               </div>
-                            </td>
-                            <td style={{ width: '50%', textAlign: 'center', verticalAlign: 'middle' }}>
-                              <div style={{
-                                background: 'linear-gradient(180deg, #9bc53d 0%, #8ab62f 100%)',
-                                borderRadius: '12px',
-                                padding: '2rem 1rem',
-                                color: 'white',
-                                minHeight: '120px',
-                                display: 'table',
-                                width: '100%'
-                              }}>
-                                <div style={{ display: 'table-cell', verticalAlign: 'middle' }}>
-                                  <div style={{ fontSize: '0.9rem', marginBottom: '0.5rem', opacity: 0.9 }}>All-In-One Loan</div>
-                                  <div style={{ fontSize: '1.75rem', fontWeight: '700' }}>
-                                    {yearsMonthsFromMonths(simulation.allInOneLoan.payoffMonths)}
-                                  </div>
-                                </div>
+                            </div>
+                          </div>
+                          {/* All-In-One Loan - Right */}
+                          <div style={{ float: 'left', width: '48%' }}>
+                            <div style={{
+                              background: '#9bc53d',
+                              borderRadius: '8px',
+                              padding: '2rem 1rem',
+                              textAlign: 'center',
+                              color: 'white',
+                              minHeight: '100px'
+                            }}>
+                              <div style={{ fontSize: '0.85rem', marginBottom: '0.75rem', opacity: 0.95 }}>All-In-One Loan</div>
+                              <div style={{ fontSize: '1.5rem', fontWeight: '700', lineHeight: '1.2' }}>
+                                {yearsMonthsFromMonths(simulation.allInOneLoan.payoffMonths)}
                               </div>
-                            </td>
-                          </tr>
-                        </tbody>
-                      </table>
+                            </div>
+                          </div>
+                        </div>
+                        <div style={{ clear: 'both' }}></div>
+                      </div>
+                      {/* Savings callout */}
                       <div style={{
-                        marginTop: '1.5rem',
                         color: '#16a34a',
                         fontWeight: '700',
-                        fontSize: '1.2rem',
+                        fontSize: '1.1rem',
                         background: '#f0fdf4',
                         padding: '1.25rem',
                         borderRadius: '8px',
