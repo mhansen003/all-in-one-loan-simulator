@@ -193,6 +193,40 @@ export default function SimulationResults({
         </div>
       </div>
 
+      {/* Compact 4-Column Header: Confidence + Summary Cards */}
+      {cashFlow && (
+        <div style={{
+          position: 'sticky',
+          top: 0,
+          zIndex: 100,
+          background: 'white',
+          paddingTop: '1rem',
+          paddingBottom: '1rem',
+          marginBottom: '2rem',
+          boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)'
+        }}>
+          <CashFlowSummaryCards
+            cashFlow={cashFlow}
+            displayTotalIncome={cashFlow.totalIncome}
+            displayTotalExpenses={cashFlow.totalExpenses}
+            displayNetCashFlow={cashFlow.netCashFlow}
+            confidenceLabel={(() => {
+              const conf = cashFlow.confidence;
+              if (conf >= 0.8) return 'High';
+              if (conf >= 0.6) return 'Moderate';
+              return 'Low';
+            })()}
+            confidenceColor={(() => {
+              const conf = cashFlow.confidence;
+              if (conf >= 0.8) return '#10b981';
+              if (conf >= 0.6) return '#f59e0b';
+              return '#ef4444';
+            })()}
+            temperatureRating={getTemperatureRating(cashFlow.netCashFlow)}
+          />
+        </div>
+      )}
+
       {/* Tab Navigation */}
       <div style={{
         display: 'flex',
@@ -266,40 +300,6 @@ export default function SimulationResults({
           🧮 Math
         </button>
       </div>
-
-      {/* Compact 4-Column Header: Confidence + Summary Cards */}
-      {cashFlow && activeTab === 'results' && (
-        <div style={{
-          position: 'sticky',
-          top: 0,
-          zIndex: 100,
-          background: 'white',
-          paddingTop: '1rem',
-          paddingBottom: '1rem',
-          marginBottom: '2rem',
-          boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)'
-        }}>
-          <CashFlowSummaryCards
-            cashFlow={cashFlow}
-            displayTotalIncome={cashFlow.totalIncome}
-            displayTotalExpenses={cashFlow.totalExpenses}
-            displayNetCashFlow={cashFlow.netCashFlow}
-            confidenceLabel={(() => {
-              const conf = cashFlow.confidence;
-              if (conf >= 0.8) return 'High';
-              if (conf >= 0.6) return 'Moderate';
-              return 'Low';
-            })()}
-            confidenceColor={(() => {
-              const conf = cashFlow.confidence;
-              if (conf >= 0.8) return '#10b981';
-              if (conf >= 0.6) return '#f59e0b';
-              return '#ef4444';
-            })()}
-            temperatureRating={getTemperatureRating(cashFlow.netCashFlow)}
-          />
-        </div>
-      )}
 
       {/* Tab Content */}
       {activeTab === 'results' && (
