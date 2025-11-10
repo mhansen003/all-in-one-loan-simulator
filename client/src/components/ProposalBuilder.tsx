@@ -726,17 +726,37 @@ export default function ProposalBuilder({
             }
 
             .preview-section {
+              page-break-inside: auto;
+              page-break-after: auto;
+            }
+
+            .preview-header, .savings-section, .pitch-section {
+              page-break-after: auto;
               page-break-inside: avoid;
             }
 
-            h1 { font-size: 20pt; }
-            h2 { font-size: 16pt; }
-            h3 { font-size: 14pt; }
+            h1 {
+              font-size: 20pt;
+              page-break-after: avoid;
+            }
+            h2 {
+              font-size: 16pt;
+              page-break-after: avoid;
+            }
+            h3 {
+              font-size: 14pt;
+              page-break-after: avoid;
+            }
 
             /* Ensure colors print */
             * {
               -webkit-print-color-adjust: exact;
               print-color-adjust: exact;
+            }
+
+            /* Allow sections to break if needed */
+            div[style*="pageBreakInside: 'avoid'"] {
+              page-break-inside: auto !important;
             }
           }
 
@@ -2143,7 +2163,7 @@ export default function ProposalBuilder({
 
                 {/* Payoff Timeline Comparison - Ultra-simplified for PDF rendering */}
                 {components.find((c) => c.id === 'amortization-chart')?.enabled && (
-                  <div className="preview-section" style={{ pageBreakInside: 'avoid' }}>
+                  <div className="preview-section">
                     <h3>Payoff Timeline Comparison</h3>
                     <div style={{ background: '#f7fafc', padding: '2rem', borderRadius: '8px' }}>
                       {/* Simple two-column layout */}
@@ -2203,7 +2223,7 @@ export default function ProposalBuilder({
 
                 {/* Email Signature - Redesigned with Photo */}
                 {components.find((c) => c.id === 'signature')?.enabled && (signatureName || signatureEmail) && (
-                  <div className="preview-section" style={{ marginTop: '3rem', pageBreakInside: 'avoid' }}>
+                  <div className="preview-section" style={{ marginTop: '3rem' }}>
                     <div style={{
                       fontFamily: 'Arial, sans-serif',
                       background: 'linear-gradient(135deg, #ffffff 0%, #f8fef0 100%)',
