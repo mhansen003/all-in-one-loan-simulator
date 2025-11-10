@@ -19,6 +19,7 @@ import { CSS } from '@dnd-kit/utilities';
 import type { SimulationResult, MortgageDetails, CashFlowAnalysis } from '../types';
 import PitchOptionsModal, { PitchOptions } from './PitchOptionsModal';
 import { CMG_BRANDING } from '../constants/cmgBranding';
+import html2pdf from 'html2pdf.js';
 import './ProposalBuilder.css';
 
 interface ProposalComponent {
@@ -413,8 +414,21 @@ export default function ProposalBuilder({
   };
 
   const handleGeneratePDF = () => {
-    // Simply print the current page - user is already on the preview
-    window.print();
+    const element = document.getElementById('proposal-content');
+    if (!element) {
+      console.error('Proposal content element not found');
+      return;
+    }
+
+    const options = {
+      margin: 0.5,
+      filename: ,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true },
+      jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+    };
+
+    html2pdf().set(options).from(element).save();
   };
 
   const formatCurrency = (amount: number): string => {
@@ -1516,7 +1530,7 @@ export default function ProposalBuilder({
             </p>
 
             <div className="proposal-preview">
-              <div className="preview-content">
+              <div id="proposal-content" className="preview-content">
                 {/* Header with CMG Logo */}
                 <div className="preview-header">
                   <img
@@ -1829,17 +1843,17 @@ export default function ProposalBuilder({
                 borderRadius: '8px',
                 lineHeight: '1.6'
               }}>
-                💡 <strong>Tip:</strong> Click the button below to open your browser's print dialog, then select "Save as PDF" or "Microsoft Print to PDF" as your destination.
+                💡 <strong>Tip:</strong> Click the button below to download your proposal as a PDF file. The PDF will be automatically generated and saved to your downloads folder.
               </p>
               <button
                 className="btn-primary btn-large"
                 onClick={handleGeneratePDF}
-                title="Opens print dialog - select 'Save as PDF' to download"
+                title="Download proposal as PDF file"
               >
                 <svg className="btn-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
                 </svg>
-                Print / Save as PDF
+                Download as PDF
               </button>
             </div>
           </div>
