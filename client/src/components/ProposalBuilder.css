@@ -438,7 +438,7 @@
 .proposal-builder-layout {
   display: flex;
   min-height: 100vh;
-  background: #f8fafc;
+  background: white;
 }
 
 .sidebar-nav {
@@ -602,18 +602,14 @@
 
 .main-content {
   flex: 1;
-  padding: 2rem 3rem;
+  padding: 3rem;
   overflow-y: auto;
-  background: #f8fafc;
+  background: white;
 }
 
 .proposal-content {
   max-width: 1000px;
   margin: 0 auto;
-  background: white;
-  border-radius: 12px;
-  padding: 2.5rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 /* Back button in sidebar */
