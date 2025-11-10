@@ -23,10 +23,10 @@
 
 /* Modal Card (large centered version) */
 .flip-card-modal {
-  width: 800px;
-  height: 650px;
-  max-width: 90vw;
-  max-height: 85vh;
+  width: 1000px;
+  height: 800px;
+  max-width: 95vw;
+  max-height: 90vh;
   cursor: default;
 }
 
