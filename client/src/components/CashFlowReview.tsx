@@ -905,7 +905,8 @@ export default function CashFlowReview({
                     name="One-Time Income"
                     shape="circle"
                     r={6}
-                    activeShape={{ r: 8, stroke: '#10b981', strokeWidth: 2 }}
+                    activeShape={{ r: 8, stroke: '#059669', strokeWidth: 2 }}
+                    isAnimationActive={false}
                   />
                   <Scatter
                     data={oneTimeExpenseData}
@@ -915,7 +916,8 @@ export default function CashFlowReview({
                     name="One-Time Expense"
                     shape="circle"
                     r={6}
-                    activeShape={{ r: 8, stroke: '#ef4444', strokeWidth: 2 }}
+                    activeShape={{ r: 8, stroke: '#dc2626', strokeWidth: 2 }}
+                    isAnimationActive={false}
                   />
                 </ComposedChart>
               </ResponsiveContainer>
