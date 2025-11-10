@@ -549,112 +549,11 @@ export default function MortgageDetailsForm({
             <span className="form-help-text">Principal & Interest only (exclude taxes, insurance, HOA)</span>
           </div>
 
-          {/* Total Housing Payment Breakdown - COMMENTED OUT: Will be imported from bank statements */}
-          {/*
-          Total Housing Payment Breakdown:
-          <div className="form-group">
-            <label className="form-label required">
-              Total Monthly Housing Expense
-            </label>
-
-            {/* Bordered Container */}
-            <div style={{
-              border: '2px solid #cbd5e0',
-              borderRadius: '12px',
-              padding: '1rem',
-              background: 'linear-gradient(135deg, #ffffff 0%, #f7fafc 100%)',
-              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)'
-            }}>
-              {/* P&I Display (from monthly payment field) */}
-              <div style={{
-                padding: '0.75rem',
-                backgroundColor: '#f8f9fa',
-                borderRadius: '0.375rem',
-                marginBottom: '0.75rem',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center'
-              }}>
-                <span style={{ color: '#6c757d', fontSize: '0.9rem' }}>Monthly Mortgage (P&amp;I)</span>
-                <span style={{ fontWeight: '600', fontSize: '1rem' }}>
-                  ${formData.monthlyPayment ? formData.monthlyPayment.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00'}
-                </span>
-              </div>
-
-              {/* Additional Expenses Input */}
-              <label htmlFor="additionalExpenses" style={{ fontSize: '0.9rem', color: '#6c757d', marginBottom: '0.5rem', display: 'block' }}>
-                + Additional Expenses (taxes, insurance, HOA, etc.)
-              </label>
-              <div className="input-wrapper" style={{ marginBottom: '0.75rem' }}>
-              <span className="input-prefix">$</span>
-              <input
-                type="text"
-                inputMode="decimal"
-                id="additionalExpenses"
-                className={`form-input ${errors.currentHousingPayment ? 'input-error' : ''}`}
-                placeholder="0.00"
-                value={additionalExpensesInput}
-                onChange={(e) => {
-                  const value = e.target.value.replace(/[^0-9.]/g, '');
-                  // Allow only one decimal point
-                  const parts = value.split('.');
-                  const sanitized = parts.length > 2
-                    ? parts[0] + '.' + parts.slice(1).join('')
-                    : value;
-                  setAdditionalExpensesInput(sanitized);
-
-                  // Update additional expenses if we have a valid number
-                  const numValue = parseFloat(sanitized);
-                  if (!isNaN(numValue)) {
-                    setAdditionalExpenses(numValue);
-                  } else {
-                    setAdditionalExpenses(0);
-                  }
-
-                  // Clear error for this field
-                  if (errors.currentHousingPayment) {
-                    setErrors((prev) => ({ ...prev, currentHousingPayment: undefined }));
-                  }
-                }}
-                onBlur={(e) => {
-                  const value = e.target.value.replace(/[^0-9.]/g, '');
-                  if (value) {
-                    const num = parseFloat(value);
-                    if (!isNaN(num)) {
-                      setAdditionalExpenses(num);
-                      setAdditionalExpensesInput(String(num));
-                    }
-                  } else {
-                    setAdditionalExpenses(0);
-                    setAdditionalExpensesInput('');
-                  }
-                }}
-              />
-            </div>
-
-              {/* Total Display */}
-              <div style={{
-                padding: '0.75rem',
-                backgroundColor: '#e7f3ff',
-                borderRadius: '0.375rem',
-                border: '2px solid #0066cc',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center'
-              }}>
-                <span style={{ fontWeight: '600', color: '#0066cc', fontSize: '1rem' }}>= Total Monthly Housing Expense</span>
-                <span style={{ fontWeight: '700', fontSize: '1.1rem', color: '#0066cc' }}>
-                  ${((formData.monthlyPayment || 0) + additionalExpenses).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </span>
-              </div>
-
-              {errors.currentHousingPayment && <span className="error-text">{errors.currentHousingPayment}</span>}
-              <span className="form-help-text" style={{ marginTop: '0.5rem', display: 'block' }}>
-                This total is used to exclude all housing costs from your cash flow analysis
-              </span>
-            </div>
-            </div>
+          {/* Total Housing Payment Breakdown - COMMENTED OUT
+              Will be imported from bank statements instead of manual entry
           */}
+
+
 
             {/* AIO Interest Rate - Moved to Right Column */}
             <div className="form-section" style={{
