@@ -334,6 +334,15 @@ export default function CashFlowReview({
     // Add 20% padding to ensure points don't touch the top
     const yAxisMax = Math.ceil(maxYValue * 1.2);
 
+    // Debug logging for scatter data
+    console.log('Chart data prepared:', {
+      months: chartArray.length,
+      oneTimeIncome: filteredIncomeScatter.length,
+      oneTimeExpense: filteredExpenseScatter.length,
+      incomePoints: filteredIncomeScatter.slice(0, 3),
+      expensePoints: filteredExpenseScatter.slice(0, 3)
+    });
+
     return {
       chartData: chartArray,
       oneTimeIncomeData: filteredIncomeScatter,
@@ -789,6 +798,15 @@ export default function CashFlowReview({
                         p.dataKey === 'amount' && p.payload?.description
                       );
 
+                      // Debug logging
+                      if (scatterPoint) {
+                        console.log('Scatter point detected:', {
+                          name: scatterPoint.name,
+                          amount: scatterPoint.payload?.amount,
+                          description: scatterPoint.payload?.description
+                        });
+                      }
+
                       if (scatterPoint && scatterPoint.payload) {
                         const data = scatterPoint.payload;
                         // Determine if income or expense based on the scatter series name
@@ -807,29 +825,31 @@ export default function CashFlowReview({
                               backgroundColor: 'white',
                               border: '2px solid ' + (isIncome ? '#10b981' : '#ef4444'),
                               borderRadius: '8px',
-                              padding: '0.75rem',
+                              padding: '0.75rem 1rem',
                               boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                              maxWidth: '250px',
+                              minWidth: '320px',
+                              maxWidth: '450px',
                               pointerEvents: 'none',
-                              zIndex: 1000
+                              zIndex: 1000,
+                              whiteSpace: 'nowrap'
                             }}
                           >
                             <div style={{
                               fontWeight: '700',
                               color: isIncome ? '#10b981' : '#ef4444',
                               marginBottom: '0.5rem',
-                              fontSize: '0.875rem'
+                              fontSize: '0.9rem'
                             }}>
                               {isIncome ? '💰 One-Time Income' : '💸 One-Time Expense'}
                             </div>
-                            <div style={{ fontSize: '0.85rem', color: '#4a5568', marginBottom: '0.25rem' }}>
-                              <strong>Date:</strong> {data.dayLabel || new Date(data.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' })}
+                            <div style={{ fontSize: '0.875rem', color: '#4a5568', marginBottom: '0.3rem', display: 'flex', gap: '0.5rem' }}>
+                              <strong>Date:</strong> <span>{data.dayLabel || new Date(data.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' })}</span>
                             </div>
-                            <div style={{ fontSize: '0.85rem', color: '#4a5568', marginBottom: '0.25rem' }}>
-                              <strong>Description:</strong> {data.description}
+                            <div style={{ fontSize: '0.875rem', color: '#4a5568', marginBottom: '0.3rem', display: 'flex', gap: '0.5rem', whiteSpace: 'normal', wordBreak: 'break-word' }}>
+                              <strong style={{ flexShrink: 0 }}>Description:</strong> <span>{data.description}</span>
                             </div>
-                            <div style={{ fontSize: '0.85rem', color: '#4a5568', marginBottom: '0.25rem' }}>
-                              <strong>Amount:</strong> ${Math.abs(data.amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            <div style={{ fontSize: '0.875rem', color: '#4a5568', display: 'flex', gap: '0.5rem' }}>
+                              <strong>Amount:</strong> <span style={{ color: isIncome ? '#10b981' : '#ef4444', fontWeight: '600' }}>${Math.abs(data.amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                             </div>
                             {data.excluded && (
                               <div style={{
