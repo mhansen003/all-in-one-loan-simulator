@@ -28,6 +28,7 @@ export default function SimulationResults({
   const [activeTab, setActiveTab] = useState<TabView>('results');
   const [paydownView, setPaydownView] = useState<PaydownView>('monthly');
   const [warningDismissed, setWarningDismissed] = useState(false);
+  const [mathSubTab, setMathSubTab] = useState<'aio' | 'traditional'>('aio');
   const formatCurrency = (amount: number): string => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -1288,6 +1289,52 @@ export default function SimulationResults({
         <div className="math-tab-content" style={{ padding: '2rem', background: 'white', borderRadius: '12px', border: '2px solid #e2e8f0' }}>
           <h2 className="section-header" style={{ textAlign: 'center' }}>🧮 Calculation Details & Formulas</h2>
 
+          {/* Math Sub-Tabs */}
+          <div style={{
+            display: 'flex',
+            gap: '0.5rem',
+            marginTop: '1.5rem',
+            marginBottom: '2rem',
+            justifyContent: 'center',
+            borderBottom: '2px solid #e2e8f0',
+            paddingBottom: '0.5rem'
+          }}>
+            <button
+              onClick={() => setMathSubTab('aio')}
+              style={{
+                padding: '0.75rem 2rem',
+                border: 'none',
+                borderBottom: mathSubTab === 'aio' ? '3px solid #9bc53d' : '3px solid transparent',
+                background: mathSubTab === 'aio' ? '#f0fdf4' : 'transparent',
+                color: mathSubTab === 'aio' ? '#15803d' : '#64748b',
+                fontWeight: '600',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                fontSize: '1rem',
+                borderRadius: '8px 8px 0 0'
+              }}
+            >
+              ✨ All-In-One Loan
+            </button>
+            <button
+              onClick={() => setMathSubTab('traditional')}
+              style={{
+                padding: '0.75rem 2rem',
+                border: 'none',
+                borderBottom: mathSubTab === 'traditional' ? '3px solid #3b82f6' : '3px solid transparent',
+                background: mathSubTab === 'traditional' ? '#eff6ff' : 'transparent',
+                color: mathSubTab === 'traditional' ? '#1e40af' : '#64748b',
+                fontWeight: '600',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                fontSize: '1rem',
+                borderRadius: '8px 8px 0 0'
+              }}
+            >
+              🏦 Traditional Mortgage
+            </button>
+          </div>
+
           {/* Input Values Section */}
           <div style={{ marginBottom: '3rem', padding: '2rem', background: '#f8fafc', borderRadius: '8px' }}>
             <h3 style={{ marginBottom: '1.5rem', color: '#334155', fontSize: '1.25rem' }}>📊 Input Values</h3>
@@ -1312,6 +1359,7 @@ export default function SimulationResults({
           </div>
 
           {/* Traditional Loan Math */}
+          {mathSubTab === 'traditional' && (
           <div style={{ marginBottom: '3rem', padding: '2rem', background: 'white', borderRadius: '8px', border: '2px solid #4299e1' }}>
             <h3 style={{ marginBottom: '1.5rem', color: '#2563eb', fontSize: '1.25rem' }}>🏦 Traditional Fixed-Rate Mortgage Math</h3>
 
@@ -1371,8 +1419,10 @@ export default function SimulationResults({
               </div>
             </div>
           </div>
+          )}
 
           {/* AIO Loan Math */}
+          {mathSubTab === 'aio' && (
           <div style={{ marginBottom: '3rem', padding: '2rem', background: 'white', borderRadius: '8px', border: '2px solid #9bc53d' }}>
             <h3 style={{ marginBottom: '1.5rem', color: '#7da62e', fontSize: '1.25rem' }}>✨ All-In-One Loan Math (Cash Flow Offset Method)</h3>
 
@@ -1476,6 +1526,7 @@ export default function SimulationResults({
               </div>
             </div>
           </div>
+          )}
 
           {/* Sample Month Calculations */}
           <div style={{ marginBottom: '2rem', padding: '2rem', background: '#fefce8', borderRadius: '8px', border: '2px solid #eab308' }}>
@@ -1531,6 +1582,91 @@ export default function SimulationResults({
                         <div>Principal Reduction: <strong>{formatCurrency(principal)}</strong></div>
                         <div style={{ marginTop: '0.5rem', paddingTop: '0.5rem', borderTop: '2px solid #e2e8f0' }}>
                           New Balance: <strong>{formatCurrency(newBalance)}</strong>
+                        </div>
+                      </>
+                    );
+                  })()}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Sample Final Month Calculation */}
+          <div style={{ marginBottom: '2rem', padding: '2rem', background: '#fef3c7', borderRadius: '8px', border: '2px solid #f59e0b' }}>
+            <h3 style={{ marginBottom: '1.5rem', color: '#92400e', fontSize: '1.25rem' }}>📅 Sample Month {simulation.allInOneLoan.payoffMonths} Calculation (AIO Final Payoff)</h3>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
+              {/* Traditional Loan at Final AIO Month */}
+              <div>
+                <h4 style={{ fontSize: '1rem', fontWeight: '600', color: '#334155', marginBottom: '1rem' }}>Traditional Loan (Still Paying)</h4>
+                <div style={{ padding: '1rem', background: 'white', borderRadius: '6px', fontSize: '0.9rem', lineHeight: '1.8' }}>
+                  {(() => {
+                    // Calculate balance after X months for traditional loan
+                    const monthlyRate = mortgageDetails.interestRate / 1200;
+                    const monthlyPayment = simulation.traditionalLoan.monthlyPayment;
+                    let balance = mortgageDetails.currentBalance;
+
+                    // Simulate to month X
+                    for (let i = 0; i < simulation.allInOneLoan.payoffMonths; i++) {
+                      const interest = balance * monthlyRate;
+                      const principal = monthlyPayment - interest;
+                      balance = balance - principal;
+                    }
+
+                    const interest = balance * monthlyRate;
+                    const principal = monthlyPayment - interest;
+                    const newBalance = balance - principal;
+
+                    return (
+                      <>
+                        <div>Remaining Balance: <strong>{formatCurrency(balance)}</strong></div>
+                        <div>Interest: {formatCurrency(balance)} × {(monthlyRate * 100).toFixed(6)}% = <strong>{formatCurrency(interest)}</strong></div>
+                        <div>Principal: {formatCurrency(monthlyPayment)} - {formatCurrency(interest)} = <strong>{formatCurrency(principal)}</strong></div>
+                        <div style={{ marginTop: '0.5rem', paddingTop: '0.5rem', borderTop: '2px solid #e2e8f0' }}>
+                          New Balance: <strong>{formatCurrency(newBalance)}</strong>
+                        </div>
+                        <div style={{ marginTop: '1rem', padding: '0.75rem', background: '#fee2e2', borderRadius: '6px', fontSize: '0.85rem', color: '#991b1b' }}>
+                          ⏳ Still <strong>{simulation.traditionalLoan.payoffMonths - simulation.allInOneLoan.payoffMonths} months</strong> left to pay off
+                        </div>
+                      </>
+                    );
+                  })()}
+                </div>
+              </div>
+
+              {/* AIO Loan Final Month */}
+              <div>
+                <h4 style={{ fontSize: '1rem', fontWeight: '600', color: '#334155', marginBottom: '1rem' }}>All-In-One Loan (Paid Off! 🎉)</h4>
+                <div style={{ padding: '1rem', background: 'white', borderRadius: '6px', fontSize: '0.9rem', lineHeight: '1.8' }}>
+                  {(() => {
+                    const monthlyDeposits = cashFlow?.monthlyDeposits || cashFlow?.totalIncome || 0;
+                    const netCashFlow = cashFlow?.netCashFlow || 0;
+                    const avgBalance = (monthlyDeposits + netCashFlow) / 2;
+                    const monthlyRate = mortgageDetails.aioInterestRate / 1200;
+
+                    // Calculate remaining balance in final month (should be small)
+                    let balance = mortgageDetails.currentBalance;
+                    for (let i = 0; i < simulation.allInOneLoan.payoffMonths - 1; i++) {
+                      const effectivePrincipal = Math.max(0, balance - avgBalance);
+                      const interest = effectivePrincipal * monthlyRate;
+                      balance = balance + interest - netCashFlow;
+                    }
+
+                    const effectivePrincipal = Math.max(0, balance - avgBalance);
+                    const interest = effectivePrincipal * monthlyRate;
+                    const principal = netCashFlow;
+
+                    return (
+                      <>
+                        <div>Final Balance: <strong>{formatCurrency(Math.max(0, balance))}</strong></div>
+                        <div>Effective Principal: {formatCurrency(Math.max(0, balance))} - {formatCurrency(avgBalance)} = <strong>{formatCurrency(Math.max(0, effectivePrincipal))}</strong></div>
+                        <div>Interest: {formatCurrency(Math.max(0, effectivePrincipal))} × {(monthlyRate * 100).toFixed(6)}% = <strong>{formatCurrency(Math.max(0, interest))}</strong></div>
+                        <div>Final Payment: <strong>{formatCurrency(Math.max(0, balance + interest))}</strong></div>
+                        <div style={{ marginTop: '0.5rem', paddingTop: '0.5rem', borderTop: '2px solid #e2e8f0' }}>
+                          New Balance: <strong>$0.00</strong>
+                        </div>
+                        <div style={{ marginTop: '1rem', padding: '0.75rem', background: '#d1fae5', borderRadius: '6px', fontSize: '0.85rem', color: '#065f46' }}>
+                          ✅ Loan <strong>PAID OFF</strong> in month {simulation.allInOneLoan.payoffMonths}!
                         </div>
                       </>
                     );
