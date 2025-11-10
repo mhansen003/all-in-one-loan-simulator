@@ -713,8 +713,8 @@
 
 .preview-content {
   padding: 3rem;
-  max-height: 600px;
-  overflow-y: auto;
+  /* Removed max-height and overflow-y to prevent double scrollbar */
+  /* The parent .main-content handles all scrolling */
 }
 
 .preview-header {
