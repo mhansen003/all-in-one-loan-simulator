@@ -603,6 +603,7 @@
 .main-content {
   flex: 1;
   padding: 3rem;
+  padding-bottom: 120px; /* Space for fixed wizard buttons */
   overflow-y: auto;
   background: white;
 }
@@ -946,10 +947,17 @@
 
   .main-content {
     padding: 1.5rem 1rem;
+    padding-bottom: 100px; /* Adjust for mobile */
   }
 
   .proposal-content {
     padding: 1.5rem;
+  }
+
+  /* Fixed wizard buttons need to span full width on mobile */
+  .wizard-actions {
+    left: 0 !important;
+    padding: 1rem !important;
   }
 }
 

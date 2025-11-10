@@ -2186,16 +2186,18 @@ export default function ProposalBuilder({
 
         {/* Wizard Navigation Buttons */}
         <div className="wizard-actions" style={{
-          position: 'sticky',
+          position: 'fixed',
           bottom: 0,
-          zIndex: 99,
+          left: '280px',
+          right: 0,
+          zIndex: 100,
           background: 'white',
-          padding: '1rem 0',
-          boxShadow: '0 -2px 10px rgba(0, 0, 0, 0.1)',
-          marginTop: '2rem',
+          padding: '1.5rem 3rem',
+          boxShadow: '0 -4px 12px rgba(0, 0, 0, 0.1)',
           display: 'flex',
           justifyContent: 'space-between',
-          alignItems: 'center'
+          alignItems: 'center',
+          borderTop: '2px solid #e2e8f0'
         }}>
           <button className="btn-secondary" onClick={onBack} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <svg className="btn-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
