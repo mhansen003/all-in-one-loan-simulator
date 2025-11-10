@@ -81,6 +81,65 @@ export default function CashFlowSummaryCards({
   const incomeBreakdown = getIncomeBreakdown();
   const expenseBreakdown = getExpenseBreakdown();
 
+  // Calculate data source context
+  const getDataSourceContext = () => {
+    if (!transactions || transactions.length === 0) {
+      return {
+        dateRange: 'No data',
+        totalTransactions: 0,
+        incomeTransactions: 0,
+        expenseTransactions: 0,
+        earliestDate: null,
+        latestDate: null
+      };
+    }
+
+    const validTransactions = transactions.filter(t => !t.excluded && t.date);
+    const dates = validTransactions.map(t => new Date(t.date)).sort((a, b) => a.getTime() - b.getTime());
+    const earliestDate = dates[0];
+    const latestDate = dates[dates.length - 1];
+
+    const incomeCount = transactions.filter(t => !t.excluded && (t.category === 'income' || (t.category === 'one-time' && t.amount > 0))).length;
+    const expenseCount = transactions.filter(t => !t.excluded && t.category !== 'income' && (t.category !== 'one-time' || t.amount < 0)).length;
+
+    const formatDate = (date: Date) => date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    const dateRange = earliestDate && latestDate ? `${formatDate(earliestDate)} - ${formatDate(latestDate)}` : 'Unknown';
+
+    return {
+      dateRange,
+      totalTransactions: validTransactions.length,
+      incomeTransactions: incomeCount,
+      expenseTransactions: expenseCount,
+      earliestDate,
+      latestDate
+    };
+  };
+
+  const dataSourceContext = getDataSourceContext();
+
+  // Calculate confidence factors
+  const getConfidenceFactors = () => {
+    const factors = [];
+
+    if (cashFlow.confidence >= 0.8) {
+      factors.push({ label: 'Pattern Recognition', status: 'Excellent', description: 'Clear, consistent transaction patterns identified' });
+      factors.push({ label: 'Categorization Accuracy', status: 'High', description: 'Strong confidence in expense/income categories' });
+      factors.push({ label: 'Data Completeness', status: 'Complete', description: `${dataSourceContext.totalTransactions} transactions analyzed` });
+    } else if (cashFlow.confidence >= 0.6) {
+      factors.push({ label: 'Pattern Recognition', status: 'Good', description: 'Most patterns identified, some irregularities' });
+      factors.push({ label: 'Categorization Accuracy', status: 'Moderate', description: 'Review flagged transactions for accuracy' });
+      factors.push({ label: 'Data Completeness', status: 'Adequate', description: `${dataSourceContext.totalTransactions} transactions - more data improves accuracy` });
+    } else {
+      factors.push({ label: 'Pattern Recognition', status: 'Limited', description: 'Irregular patterns or insufficient data' });
+      factors.push({ label: 'Categorization Accuracy', status: 'Uncertain', description: 'Please manually verify transaction categories' });
+      factors.push({ label: 'Data Completeness', status: 'Sparse', description: `Only ${dataSourceContext.totalTransactions} transactions - upload more statements` });
+    }
+
+    return factors;
+  };
+
+  const confidenceFactors = getConfidenceFactors();
+
   return (
     <div style={{
       display: 'grid',
@@ -140,31 +199,32 @@ export default function CashFlowSummaryCards({
         }
         backContent={
           <>
-            <h3>Confidence Score Breakdown</h3>
+            <h3>Data Quality Analysis</h3>
             <div className="detail-section">
-              <div className="detail-label">AI Analysis Score</div>
-              <div className="detail-value">{(cashFlow.confidence * 100).toFixed(0)}%</div>
+              <div className="detail-label">Data Source</div>
+              <div className="detail-value">{dataSourceContext.totalTransactions} Transactions</div>
               <div className="detail-description">
-                Based on transaction patterns, categorization accuracy, and data completeness
+                📅 Period: {dataSourceContext.dateRange}
+                <br />
+                📊 Coverage: {actualMonths} month{actualMonths !== 1 ? 's' : ''} of financial data
               </div>
             </div>
-            <div className="detail-section">
-              <div className="detail-label">Confidence Level</div>
-              <div className="detail-value">{confidenceLabel}</div>
-              <div className="detail-description">
-                {cashFlow.confidence >= 0.8 ? 'High confidence in transaction categorization' :
-                 cashFlow.confidence >= 0.6 ? 'Moderate confidence - review transactions for accuracy' :
-                 'Low confidence - please verify transaction categories'}
+            {confidenceFactors.map((factor, idx) => (
+              <div className="detail-section" key={idx}>
+                <div className="detail-label">{factor.label}</div>
+                <div className="detail-value">{factor.status}</div>
+                <div className="detail-description">{factor.description}</div>
               </div>
-            </div>
+            ))}
             <div className="detail-section">
-              <div className="detail-label">AIO Suitability</div>
-              <div className="detail-value">{temperatureRating.rating}</div>
+              <div className="detail-label">Why This Confidence Level?</div>
               <div className="detail-description">
-                {temperatureRating.rating === 'EXCELLENT' ? 'Outstanding cash flow for maximum AIO benefits' :
-                 temperatureRating.rating === 'GREAT' ? 'Strong cash flow position for AIO loan' :
-                 temperatureRating.rating === 'GOOD' ? 'Solid candidate with meaningful savings potential' :
-                 'Review cash flow to optimize AIO benefits'}
+                {cashFlow.confidence >= 0.8
+                  ? `With ${dataSourceContext.totalTransactions} transactions over ${actualMonths} month${actualMonths !== 1 ? 's' : ''}, we found consistent patterns with clear income/expense categories. This comprehensive data provides a reliable foundation for AIO loan analysis.`
+                  : cashFlow.confidence >= 0.6
+                  ? `Your ${dataSourceContext.totalTransactions} transactions show recognizable patterns, but some categories need verification. Consider reviewing flagged transactions or uploading additional months for improved accuracy.`
+                  : `Limited data (${dataSourceContext.totalTransactions} transactions) makes pattern recognition challenging. Upload 2-3 months of complete bank statements for more accurate AIO loan projections.`
+                }
               </div>
             </div>
           </>
@@ -217,56 +277,60 @@ export default function CashFlowSummaryCards({
         }
         backContent={
           <>
-            <h3>Income Calculation</h3>
+            <h3>Income Source Analysis</h3>
             <div className="detail-section">
-              <div className="detail-label">How This Was Calculated</div>
-              <div className="detail-description" style={{ marginBottom: '0.75rem' }}>
-                Monthly income = Total income ÷ {actualMonths} month{actualMonths !== 1 ? 's' : ''}
-              </div>
-              <div className="detail-value" style={{ fontSize: '1.25rem' }}>
-                {formatCurrency(displayTotalIncome * actualMonths)} ÷ {actualMonths} = {formatCurrency(displayTotalIncome)}
+              <div className="detail-label">Data Source</div>
+              <div className="detail-value">{dataSourceContext.incomeTransactions} Income Deposits</div>
+              <div className="detail-description">
+                📅 Analyzed: {dataSourceContext.dateRange}
+                <br />
+                💰 Found {dataSourceContext.incomeTransactions} income transactions across {actualMonths} month{actualMonths !== 1 ? 's' : ''} of bank statements
               </div>
             </div>
-            {incomeBreakdown.length > 0 ? (
-              <>
-                <div className="detail-section">
-                  <div className="detail-label">Income Sources</div>
-                  <ul>
-                    {incomeBreakdown.map((item, idx) => {
-                      const percentage = ((item.monthly / displayTotalIncome) * 100).toFixed(1);
-                      return (
-                        <li key={idx}>
-                          <div>
-                            <div style={{ fontWeight: 600 }}>{item.category}</div>
-                            <div style={{ fontSize: '0.85rem', opacity: 0.8 }}>{percentage}% of total</div>
-                          </div>
-                          <div>
-                            <div style={{ fontWeight: 700 }}>{formatCurrency(item.monthly)}/mo</div>
-                            <div style={{ fontSize: '0.85rem', opacity: 0.8 }}>{formatCurrency(item.total)} total</div>
-                          </div>
-                        </li>
-                      );
-                    })}
-                    <li className="total-row">
-                      <span>Average Monthly Income</span>
-                      <span>{formatCurrency(displayTotalIncome)}</span>
-                    </li>
-                  </ul>
-                </div>
-                <div className="detail-section">
-                  <div className="detail-label">Analysis Quality</div>
-                  <div className="detail-description">
-                    Based on {transactions?.filter(t => !t.excluded && (t.category === 'income' || (t.category === 'one-time' && t.amount > 0))).length || 0} income transactions over {actualMonths} month{actualMonths !== 1 ? 's' : ''}
-                  </div>
-                </div>
-              </>
-            ) : (
+            <div className="detail-section">
+              <div className="detail-label">Monthly Average</div>
+              <div className="detail-value" style={{ fontSize: '1.25rem' }}>{formatCurrency(displayTotalIncome)}</div>
+              <div className="detail-description">
+                From {formatCurrency(displayTotalIncome * actualMonths)} total income over {actualMonths} month{actualMonths !== 1 ? 's' : ''}
+              </div>
+            </div>
+            {incomeBreakdown.length > 0 && (
               <div className="detail-section">
-                <div className="detail-description">
-                  Total income calculated from all positive cash flows and income transactions
-                </div>
+                <div className="detail-label">Income Breakdown</div>
+                <ul>
+                  {incomeBreakdown.map((item, idx) => {
+                    const percentage = ((item.monthly / displayTotalIncome) * 100).toFixed(1);
+                    return (
+                      <li key={idx}>
+                        <div>
+                          <div style={{ fontWeight: 600 }}>{item.category}</div>
+                          <div style={{ fontSize: '0.85rem', opacity: 0.8 }}>{percentage}% of total</div>
+                        </div>
+                        <div>
+                          <div style={{ fontWeight: 700 }}>{formatCurrency(item.monthly)}/mo</div>
+                          <div style={{ fontSize: '0.85rem', opacity: 0.8 }}>{formatCurrency(item.total)} total</div>
+                        </div>
+                      </li>
+                    );
+                  })}
+                  <li className="total-row">
+                    <span>Average Monthly Income</span>
+                    <span>{formatCurrency(displayTotalIncome)}</span>
+                  </li>
+                </ul>
               </div>
             )}
+            <div className="detail-section">
+              <div className="detail-label">Pattern Insights</div>
+              <div className="detail-description">
+                {cashFlow.depositFrequency
+                  ? `Identified ${cashFlow.depositFrequency} deposit pattern. `
+                  : 'Regular deposit pattern identified. '}
+                {dataSourceContext.incomeTransactions >= actualMonths * 2
+                  ? 'Strong data coverage with consistent income tracking.'
+                  : 'Limited samples - upload more statements for better accuracy.'}
+              </div>
+            </div>
           </>
         }
       />
@@ -317,59 +381,61 @@ export default function CashFlowSummaryCards({
         }
         backContent={
           <>
-            <h3>Expense Calculation</h3>
+            <h3>Expense Analysis</h3>
             <div className="detail-section">
-              <div className="detail-label">How This Was Calculated</div>
-              <div className="detail-description" style={{ marginBottom: '0.75rem' }}>
-                Monthly expenses = Total expenses ÷ {actualMonths} month{actualMonths !== 1 ? 's' : ''}
-              </div>
-              <div className="detail-value" style={{ fontSize: '1.25rem' }}>
-                {formatCurrency(displayTotalExpenses * actualMonths)} ÷ {actualMonths} = {formatCurrency(displayTotalExpenses)}
-              </div>
-              <div className="detail-description" style={{ marginTop: '0.5rem', fontSize: '0.9rem', opacity: 0.9 }}>
-                ⓘ Excludes housing and one-time expenses by default
+              <div className="detail-label">Data Source</div>
+              <div className="detail-value">{dataSourceContext.expenseTransactions} Expense Transactions</div>
+              <div className="detail-description">
+                📅 Analyzed: {dataSourceContext.dateRange}
+                <br />
+                💳 Tracked {dataSourceContext.expenseTransactions} expenses across {actualMonths} month{actualMonths !== 1 ? 's' : ''} of statements
+                <br />
+                ⓘ Excludes housing and one-time expenses
               </div>
             </div>
-            {expenseBreakdown.length > 0 ? (
-              <>
-                <div className="detail-section">
-                  <div className="detail-label">Expense Categories</div>
-                  <ul>
-                    {expenseBreakdown.map((item, idx) => {
-                      const percentage = ((item.monthly / displayTotalExpenses) * 100).toFixed(1);
-                      return (
-                        <li key={idx}>
-                          <div>
-                            <div style={{ fontWeight: 600 }}>{item.category}</div>
-                            <div style={{ fontSize: '0.85rem', opacity: 0.8 }}>{percentage}% of total</div>
-                          </div>
-                          <div>
-                            <div style={{ fontWeight: 700 }}>{formatCurrency(item.monthly)}/mo</div>
-                            <div style={{ fontSize: '0.85rem', opacity: 0.8 }}>{formatCurrency(item.total)} total</div>
-                          </div>
-                        </li>
-                      );
-                    })}
-                    <li className="total-row">
-                      <span>Average Monthly Expenses</span>
-                      <span>{formatCurrency(displayTotalExpenses)}</span>
-                    </li>
-                  </ul>
-                </div>
-                <div className="detail-section">
-                  <div className="detail-label">Analysis Quality</div>
-                  <div className="detail-description">
-                    Based on {transactions?.filter(t => !t.excluded && t.category !== 'income' && (t.category !== 'one-time' || t.amount < 0)).length || 0} expense transactions over {actualMonths} month{actualMonths !== 1 ? 's' : ''}
-                  </div>
-                </div>
-              </>
-            ) : (
+            <div className="detail-section">
+              <div className="detail-label">Monthly Average</div>
+              <div className="detail-value" style={{ fontSize: '1.25rem' }}>{formatCurrency(displayTotalExpenses)}</div>
+              <div className="detail-description">
+                From {formatCurrency(displayTotalExpenses * actualMonths)} total recurring expenses over {actualMonths} month{actualMonths !== 1 ? 's' : ''}
+              </div>
+            </div>
+            {expenseBreakdown.length > 0 && (
               <div className="detail-section">
-                <div className="detail-description">
-                  Total expenses calculated from all negative cash flows excluding housing
-                </div>
+                <div className="detail-label">Expense Categories</div>
+                <ul>
+                  {expenseBreakdown.map((item, idx) => {
+                    const percentage = ((item.monthly / displayTotalExpenses) * 100).toFixed(1);
+                    return (
+                      <li key={idx}>
+                        <div>
+                          <div style={{ fontWeight: 600 }}>{item.category}</div>
+                          <div style={{ fontSize: '0.85rem', opacity: 0.8 }}>{percentage}% of total</div>
+                        </div>
+                        <div>
+                          <div style={{ fontWeight: 700 }}>{formatCurrency(item.monthly)}/mo</div>
+                          <div style={{ fontSize: '0.85rem', opacity: 0.8 }}>{formatCurrency(item.total)} total</div>
+                        </div>
+                      </li>
+                    );
+                  })}
+                  <li className="total-row">
+                    <span>Average Monthly Expenses</span>
+                    <span>{formatCurrency(displayTotalExpenses)}</span>
+                  </li>
+                </ul>
               </div>
             )}
+            <div className="detail-section">
+              <div className="detail-label">Spending Insights</div>
+              <div className="detail-description">
+                {dataSourceContext.expenseTransactions >= actualMonths * 10
+                  ? `Comprehensive tracking with ${Math.round(dataSourceContext.expenseTransactions / actualMonths)} expenses per month on average. This detailed view provides reliable expense patterns for AIO analysis.`
+                  : dataSourceContext.expenseTransactions >= actualMonths * 5
+                  ? `Moderate coverage with ${Math.round(dataSourceContext.expenseTransactions / actualMonths)} expenses per month. Consider uploading additional months for more complete analysis.`
+                  : `Limited data (${Math.round(dataSourceContext.expenseTransactions / actualMonths)} per month). Upload 2-3 months of complete statements for better accuracy.`}
+              </div>
+            </div>
           </>
         }
       />

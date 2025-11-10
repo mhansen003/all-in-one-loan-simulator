@@ -25,7 +25,7 @@ export default function SimulationResults({
   onCreateProposal,
   onBackToCFA,
 }: SimulationResultsProps) {
-  const [activeTab] = useState<TabView>('results');
+  const [activeTab, setActiveTab] = useState<TabView>('results');
   const [paydownView, setPaydownView] = useState<PaydownView>('monthly');
   const [warningDismissed, setWarningDismissed] = useState(false);
   const formatCurrency = (amount: number): string => {
@@ -193,8 +193,82 @@ export default function SimulationResults({
         </div>
       </div>
 
+      {/* Tab Navigation */}
+      <div style={{
+        display: 'flex',
+        gap: '0.5rem',
+        marginBottom: '2rem',
+        borderBottom: '2px solid #e2e8f0',
+        paddingBottom: '0.5rem'
+      }}>
+        <button
+          onClick={() => setActiveTab('results')}
+          style={{
+            padding: '0.75rem 1.5rem',
+            border: 'none',
+            borderBottom: activeTab === 'results' ? '3px solid #3b82f6' : '3px solid transparent',
+            background: activeTab === 'results' ? '#eff6ff' : 'transparent',
+            color: activeTab === 'results' ? '#1e40af' : '#64748b',
+            fontWeight: '600',
+            cursor: 'pointer',
+            transition: 'all 0.2s',
+            fontSize: '1rem'
+          }}
+        >
+          📊 Results
+        </button>
+        <button
+          onClick={() => setActiveTab('paydown')}
+          style={{
+            padding: '0.75rem 1.5rem',
+            border: 'none',
+            borderBottom: activeTab === 'paydown' ? '3px solid #3b82f6' : '3px solid transparent',
+            background: activeTab === 'paydown' ? '#eff6ff' : 'transparent',
+            color: activeTab === 'paydown' ? '#1e40af' : '#64748b',
+            fontWeight: '600',
+            cursor: 'pointer',
+            transition: 'all 0.2s',
+            fontSize: '1rem'
+          }}
+        >
+          📈 Rate & Paydown
+        </button>
+        <button
+          onClick={() => setActiveTab('charts')}
+          style={{
+            padding: '0.75rem 1.5rem',
+            border: 'none',
+            borderBottom: activeTab === 'charts' ? '3px solid #3b82f6' : '3px solid transparent',
+            background: activeTab === 'charts' ? '#eff6ff' : 'transparent',
+            color: activeTab === 'charts' ? '#1e40af' : '#64748b',
+            fontWeight: '600',
+            cursor: 'pointer',
+            transition: 'all 0.2s',
+            fontSize: '1rem'
+          }}
+        >
+          📉 Charts
+        </button>
+        <button
+          onClick={() => setActiveTab('math')}
+          style={{
+            padding: '0.75rem 1.5rem',
+            border: 'none',
+            borderBottom: activeTab === 'math' ? '3px solid #3b82f6' : '3px solid transparent',
+            background: activeTab === 'math' ? '#eff6ff' : 'transparent',
+            color: activeTab === 'math' ? '#1e40af' : '#64748b',
+            fontWeight: '600',
+            cursor: 'pointer',
+            transition: 'all 0.2s',
+            fontSize: '1rem'
+          }}
+        >
+          🧮 Math
+        </button>
+      </div>
+
       {/* Compact 4-Column Header: Confidence + Summary Cards */}
-      {cashFlow && (
+      {cashFlow && activeTab === 'results' && (
         <div style={{
           position: 'sticky',
           top: 0,

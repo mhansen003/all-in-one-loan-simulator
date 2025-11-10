@@ -787,11 +787,12 @@ export default function CashFlowReview({
 
                       if (scatterPoint && scatterPoint.payload) {
                         const data = scatterPoint.payload;
+                        const isIncome = scatterPoint.name === 'One-Time Income';
                         return (
                           <div
                             style={{
                               backgroundColor: 'white',
-                              border: '2px solid ' + (data.isIncome ? '#10b981' : '#ef4444'),
+                              border: '2px solid ' + (isIncome ? '#10b981' : '#ef4444'),
                               borderRadius: '8px',
                               padding: '0.75rem',
                               boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
@@ -800,7 +801,7 @@ export default function CashFlowReview({
                           >
                             <div style={{
                               fontWeight: '700',
-                              color: scatterPoint.name === 'One-Time Income' ? '#10b981' : '#ef4444',
+                              color: isIncome ? '#10b981' : '#ef4444',
                               marginBottom: '0.5rem',
                               fontSize: '0.875rem'
                             }}>
