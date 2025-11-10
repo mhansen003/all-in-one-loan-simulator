@@ -871,10 +871,10 @@ export default function ProposalBuilder({
         {/* Step 3: Component Selection & Ordering */}
         {currentStep === 3 && (
         <div className="section-card">
-          <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-            <h2 style={{ fontSize: '2rem', marginBottom: '0.5rem', color: '#1e293b' }}>Select Components</h2>
-            <p className="section-description" style={{ fontSize: '1.1rem' }}>
-              Choose which sections to include and drag to reorder them
+          <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+            <h2 style={{ fontSize: '1.75rem', marginBottom: '0.5rem', color: '#1e293b' }}>Select Components</h2>
+            <p className="section-description" style={{ fontSize: '1rem' }}>
+              Choose sections to include and drag to reorder
             </p>
           </div>
 
