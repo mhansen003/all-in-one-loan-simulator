@@ -69,8 +69,8 @@
 }
 
 .tab.active {
-  color: #9bc53d;
-  border-bottom-color: #9bc53d;
+  color: #3b82f6;
+  border-bottom-color: #3b82f6;
 }
 
 /* Summary View */
@@ -257,13 +257,13 @@
 }
 
 .sub-tab:hover {
-  border-color: #9bc53d;
+  border-color: #3b82f6;
   color: #2d3748;
 }
 
 .sub-tab.active {
-  background: #9bc53d;
-  border-color: #9bc53d;
+  background: #3b82f6;
+  border-color: #3b82f6;
   color: white;
 }
 
@@ -296,7 +296,7 @@
 .info-panel-header svg {
   width: 24px;
   height: 24px;
-  color: #9bc53d;
+  color: #3b82f6;
   flex-shrink: 0;
 }
 
@@ -481,7 +481,7 @@
 
 .transaction-amount-input {
   padding: 0.25rem 0.5rem;
-  border: 2px solid #9bc53d;
+  border: 2px solid #3b82f6;
   border-radius: 4px;
   font-size: 0.95rem;
   font-weight: 600;
@@ -523,7 +523,7 @@
 
   .tab.active {
     border-bottom-color: #e2e8f0;
-    border-left-color: #9bc53d;
+    border-left-color: #3b82f6;
   }
 
   .frequency-options {

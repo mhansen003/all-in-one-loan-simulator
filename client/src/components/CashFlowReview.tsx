@@ -562,7 +562,7 @@ export default function CashFlowReview({
             marginTop: '-1rem'
           }}>
             {/* Header */}
-            <div className="form-header" style={{ margin: 0, marginBottom: '1.5rem' }}>
+            <div className="form-header" style={{ margin: 0, marginBottom: '1.5rem', textAlign: 'left' }}>
               <h2>Cash Flow Analysis Complete</h2>
               <p>Review the AI-generated analysis of your bank statements</p>
             </div>
