@@ -1059,13 +1059,49 @@ export default function ProposalBuilder({
                     <h3 style={{ margin: '0 0 1.5rem 0', fontSize: '1.2rem', color: '#2d3748', fontWeight: '700', textAlign: 'center' }}>Your Professional Signature</h3>
                     <div style={{
                       fontFamily: 'Arial, sans-serif',
-                      borderLeft: '5px solid #9bc53d',
-                      paddingLeft: '1.5rem',
                       background: 'white',
                       padding: '1.5rem',
                       borderRadius: '8px',
-                      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)'
+                      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)',
+                      display: 'flex',
+                      gap: '1.5rem',
+                      alignItems: 'flex-start'
                     }}>
+                      {/* Photo Section */}
+                      {signaturePhotoURL ? (
+                        <div style={{ flexShrink: 0 }}>
+                          <img
+                            src={signaturePhotoURL}
+                            alt={signatureName || 'Loan Officer'}
+                            style={{
+                              width: '100px',
+                              height: '100px',
+                              borderRadius: '50%',
+                              objectFit: 'cover',
+                              border: '4px solid #9bc53d',
+                              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
+                            }}
+                          />
+                        </div>
+                      ) : (
+                        <div style={{
+                          flexShrink: 0,
+                          width: '100px',
+                          height: '100px',
+                          borderRadius: '50%',
+                          background: 'linear-gradient(135deg, #e8f5e0 0%, #d1ead1 100%)',
+                          border: '3px dashed #9bc53d',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '2.5rem'
+                        }}>
+                          👤
+                        </div>
+                      )}
+
+                      {/* Contact Info Section */}
+                      <div style={{ flex: 1, borderLeft: '5px solid #9bc53d', paddingLeft: '1.5rem' }}>
                       {signatureName && (
                         <div style={{ fontSize: '1.35rem', fontWeight: '700', color: '#1e293b', marginBottom: '0.25rem' }}>
                           {signatureName}
