@@ -28,7 +28,7 @@ export default function SimulationResults({
   const [activeTab, setActiveTab] = useState<TabView>('results');
   const [paydownView, setPaydownView] = useState<PaydownView>('monthly');
   const [warningDismissed, setWarningDismissed] = useState(false);
-  const [mathSubTab, setMathSubTab] = useState<'aio' | 'traditional'>('aio');
+  const [mathSubTab, setMathSubTab] = useState<'aio' | 'traditional' | 'samples'>('aio');
 
   // Calculate actual months from transaction data
   const calculateActualMonths = (transactions: any[]): number => {
@@ -1372,6 +1372,23 @@ export default function SimulationResults({
             >
               🏦 Traditional Mortgage
             </button>
+            <button
+              onClick={() => setMathSubTab('samples')}
+              style={{
+                padding: '0.75rem 2rem',
+                border: 'none',
+                borderBottom: mathSubTab === 'samples' ? '3px solid #eab308' : '3px solid transparent',
+                background: mathSubTab === 'samples' ? '#fefce8' : 'transparent',
+                color: mathSubTab === 'samples' ? '#854d0e' : '#64748b',
+                fontWeight: '600',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                fontSize: '1rem',
+                borderRadius: '8px 8px 0 0'
+              }}
+            >
+              📅 Samples
+            </button>
           </div>
 
           {/* Traditional Loan Math */}
@@ -1544,6 +1561,9 @@ export default function SimulationResults({
           </div>
           )}
 
+          {/* Samples Tab */}
+          {mathSubTab === 'samples' && (
+          <>
           {/* Sample Month Calculations */}
           <div style={{ marginBottom: '2rem', padding: '2rem', background: '#fefce8', borderRadius: '8px', border: '2px solid #eab308' }}>
             <h3 style={{ marginBottom: '1.5rem', color: '#92400e', fontSize: '1.25rem' }}>📅 Sample Month 1 Calculation</h3>
@@ -1690,8 +1710,10 @@ export default function SimulationResults({
               </div>
             </div>
           </div>
+          </>
+          )}
 
-          {/* Comparison Summary */}
+          {/* Comparison Summary - Shows across all tabs */}
           <div style={{ padding: '2rem', background: 'linear-gradient(135deg, #e8f5e9 0%, #f1f8e9 100%)', borderRadius: '12px', border: '3px solid #9bc53d' }}>
             <h3 style={{ textAlign: 'center', marginBottom: '1.5rem', color: '#1e293b', fontSize: '1.5rem' }}>💰 The Bottom Line</h3>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1.5rem', textAlign: 'center' }}>
