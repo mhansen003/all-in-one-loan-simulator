@@ -212,7 +212,10 @@ export default function MortgageDetailsForm({
             style={{
               fontSize: '0.85rem',
               padding: '0.5rem 1rem',
-              whiteSpace: 'nowrap'
+              whiteSpace: 'nowrap',
+              backgroundColor: '#f97316',
+              borderColor: '#f97316',
+              color: 'white'
             }}
             title="Fill with test data for quick testing"
           >

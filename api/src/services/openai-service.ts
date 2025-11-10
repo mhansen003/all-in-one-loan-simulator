@@ -943,8 +943,19 @@ Your task is to CATEGORIZE and ANALYZE the above transactions:
    - "One-Time Income: Large irregular deposit"
    - "One-Time Income: Wire transfer in"
 
-   STEP 2 - Check if HOUSING (if not income or one-time income):
-   - Housing payment MUST be within $50 OR 2% of $${currentHousingPayment} (whichever is larger)
+   STEP 2 - Check if RECURRING PATTERN (if not income or one-time income):
+   ⚠️ CRITICAL: Before checking one-time, detect RECURRING patterns across months
+
+   If you see the SAME EXACT AMOUNT appearing 2+ times (especially monthly):
+   - Check if the description contains housing keywords: "MORTGAGE", "RENT", "CHASE", "JPMORGAN", "WELLS FARGO", "LOAN", "PROPERTY"
+   - If YES and amount is significant (>$500) → Category: "housing"
+   - If NO housing keywords but recurring → Category: "expense" (skip one-time check)
+
+   Example: "$5,308 on 10/1, 11/3, 12/1 from JPMORGAN CHASE" = housing (recurring mortgage)
+   Example: "$150 on 10/5, 11/5, 12/5 from UTILITY CO" = expense (recurring utility)
+
+   STEP 2B - Check if HOUSING by expected amount (if not recurring):
+   - Housing payment MUST be within $50 OR 2% of ${currentHousingPayment} (whichever is larger)
    - Example: If housing = $2000, accept $1960-$2040 OR $1900-$2100 (use wider range)
    - Look for descriptions containing: "MORTGAGE", "RENT", "PROPERTY MGMT", "LANDLORD", "HOUSING"
    - If amount matches AND description suggests housing → Category: "housing"
