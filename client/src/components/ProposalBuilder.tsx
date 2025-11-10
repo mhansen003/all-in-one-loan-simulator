@@ -1448,95 +1448,169 @@ export default function ProposalBuilder({
                 </div>
               </div>
 
-              {/* Preview of Signature */}
+              {/* Preview of Signature - Updated Design */}
               {(signatureName || signatureTitle || signatureEmail || signaturePhone) && (
                 <div style={{
                   marginTop: '2rem',
                   padding: '2rem',
-                  background: 'linear-gradient(135deg, #ffffff 0%, #f0f9e8 100%)',
+                  background: 'linear-gradient(135deg, #ffffff 0%, #f8fef0 100%)',
                   border: '3px solid #9bc53d',
                   borderRadius: '12px',
                   boxShadow: '0 6px 16px rgba(155, 197, 61, 0.2)'
                 }}>
-                  <h3 style={{ margin: '0 0 1.5rem 0', fontSize: '1.2rem', color: '#2d3748', fontWeight: '700', textAlign: 'center' }}>Signature Preview</h3>
+                  <h3 style={{ margin: '0 0 1.5rem 0', fontSize: '1.2rem', color: '#2d3748', fontWeight: '700', textAlign: 'center' }}>✨ Signature Preview</h3>
                   <div style={{
                     fontFamily: 'Arial, sans-serif',
-                    borderLeft: '5px solid #9bc53d',
-                    paddingLeft: '1.5rem',
                     background: 'white',
-                    padding: '1.5rem',
-                    borderRadius: '8px',
-                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)'
+                    padding: '2rem',
+                    borderRadius: '12px',
+                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08)',
+                    border: '2px solid #e8f5e0'
                   }}>
-                    {signatureName && (
-                      <div style={{ fontSize: '1.35rem', fontWeight: '700', color: '#1e293b', marginBottom: '0.25rem' }}>
-                        {signatureName}
+                    <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'flex-start' }}>
+                      {/* Photo Section */}
+                      {signaturePhotoURL ? (
+                        <div style={{ flexShrink: 0 }}>
+                          <img
+                            src={signaturePhotoURL}
+                            alt={signatureName || 'Loan Officer'}
+                            style={{
+                              width: '100px',
+                              height: '100px',
+                              borderRadius: '50%',
+                              objectFit: 'cover',
+                              border: '4px solid #9bc53d',
+                              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
+                            }}
+                          />
+                        </div>
+                      ) : (
+                        <div style={{
+                          flexShrink: 0,
+                          width: '100px',
+                          height: '100px',
+                          borderRadius: '50%',
+                          background: 'linear-gradient(135deg, #e8f5e0 0%, #d1ead1 100%)',
+                          border: '3px dashed #9bc53d',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '2.5rem'
+                        }}>
+                          👤
+                        </div>
+                      )}
+
+                      {/* Contact Info Section */}
+                      <div style={{ flex: 1 }}>
+                        {signatureName && (
+                          <div style={{ fontSize: '1.4rem', fontWeight: '700', color: '#1e293b', marginBottom: '0.25rem' }}>
+                            {signatureName}
+                          </div>
+                        )}
+                        {signatureTitle && (
+                          <div style={{ fontSize: '1rem', color: '#64748b', marginBottom: '0.5rem', fontStyle: 'italic' }}>
+                            {signatureTitle}
+                          </div>
+                        )}
+                        {signatureCompany && (
+                          <div style={{ fontSize: '1.1rem', fontWeight: '700', color: '#9bc53d', marginBottom: '1rem' }}>
+                            {signatureCompany}
+                          </div>
+                        )}
+
+                        <div style={{ fontSize: '0.9rem', color: '#475569', lineHeight: '1.7' }}>
+                          {signatureEmail && (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.3rem' }}>
+                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '16px', height: '16px', color: '#9bc53d' }}>
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                              </svg>
+                              <span style={{ color: '#9bc53d', fontWeight: '600' }}>{signatureEmail}</span>
+                            </div>
+                          )}
+                          {signaturePhone && (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.3rem' }}>
+                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '16px', height: '16px', color: '#9bc53d' }}>
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                              </svg>
+                              <span style={{ fontWeight: '600' }}>{signaturePhone}</span>
+                            </div>
+                          )}
+                          {signatureAddress && (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.3rem' }}>
+                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '16px', height: '16px', color: '#9bc53d' }}>
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                              </svg>
+                              <span>{signatureAddress}</span>
+                            </div>
+                          )}
+                          {signatureNMLS && (
+                            <div style={{ marginTop: '0.5rem', fontSize: '0.8rem', color: '#94a3b8', fontWeight: '500' }}>
+                              NMLS# {signatureNMLS}
+                            </div>
+                          )}
+                        </div>
+
+                        {signatureTagline && (
+                          <div style={{
+                            marginTop: '0.75rem',
+                            paddingTop: '0.75rem',
+                            borderTop: '2px solid #e8f5e0',
+                            fontSize: '0.85rem',
+                            fontWeight: '700',
+                            color: '#9bc53d',
+                            letterSpacing: '0.1em',
+                            textTransform: 'uppercase'
+                          }}>
+                            {signatureTagline}
+                          </div>
+                        )}
+
+                        {(signatureLinkedIn || signatureFacebook || signatureTwitter || signatureInstagram) && (
+                          <div style={{ marginTop: '0.75rem', display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+                            {signatureLinkedIn && (
+                              <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: '#0077b5', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '14px' }}>
+                                in
+                              </div>
+                            )}
+                            {signatureFacebook && (
+                              <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: '#1877f2', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '14px', fontWeight: '700' }}>
+                                f
+                              </div>
+                            )}
+                            {signatureTwitter && (
+                              <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: '#1da1f2', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '14px', fontWeight: '700' }}>
+                                𝕏
+                              </div>
+                            )}
+                            {signatureInstagram && (
+                              <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'linear-gradient(45deg, #f09433 0%,#e6683c 25%,#dc2743 50%,#cc2366 75%,#bc1888 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '16px', fontWeight: '700' }}>
+                                ⓘ
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
-                    )}
-                    {signatureTitle && (
-                      <div style={{ fontSize: '1rem', color: '#475569', marginBottom: '0.5rem', fontStyle: 'italic' }}>
-                        {signatureTitle}
-                      </div>
-                    )}
-                    {signatureCompany && (
-                      <div style={{ fontSize: '1.1rem', fontWeight: '700', color: '#9bc53d', marginBottom: '0.75rem' }}>
-                        {signatureCompany}
-                      </div>
-                    )}
-                    <div style={{ fontSize: '0.95rem', color: '#64748b', lineHeight: '1.6' }}>
-                      {signatureEmail && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
-                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '16px', height: '16px', color: '#9bc53d' }}>
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                          </svg>
-                          <a href={`mailto:${signatureEmail}`} style={{ color: '#9bc53d', textDecoration: 'none', fontWeight: '500' }}>{signatureEmail}</a>
-                        </div>
-                      )}
-                      {signaturePhone && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
-                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '16px', height: '16px', color: '#9bc53d' }}>
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                          </svg>
-                          <span>{signaturePhone}</span>
-                        </div>
-                      )}
-                      {signatureWebsite && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
-                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '16px', height: '16px', color: '#9bc53d' }}>
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
-                          </svg>
-                          <a href={`https://${signatureWebsite.replace(/^https?:\/\//, '')}`} style={{ color: '#9bc53d', textDecoration: 'none', fontWeight: '500' }}>{signatureWebsite.replace(/^https?:\/\//, '')}</a>
-                        </div>
-                      )}
-                      {signatureAddress && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
-                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '16px', height: '16px', color: '#9bc53d' }}>
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                          </svg>
-                          <span>{signatureAddress}</span>
-                        </div>
-                      )}
-                      {signatureNMLS && (
-                        <div style={{ marginTop: '0.5rem', fontSize: '0.85rem', color: '#94a3b8' }}>
-                          NMLS# {signatureNMLS}
-                        </div>
-                      )}
-                      {signatureTagline && (
-                        <div style={{ marginTop: '0.75rem', fontSize: '0.9rem', fontWeight: '700', color: '#9bc53d', letterSpacing: '0.05em' }}>
-                          {signatureTagline}
-                        </div>
-                      )}
-                      {(signatureLinkedIn || signatureFacebook || signatureTwitter || signatureInstagram) && (
-                        <div style={{ marginTop: '1rem', display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-                          {signatureLinkedIn && <span style={{ fontSize: '1.25rem' }}>💼</span>}
-                          {signatureFacebook && <span style={{ fontSize: '1.25rem' }}>📘</span>}
-                          {signatureTwitter && <span style={{ fontSize: '1.25rem' }}>🐦</span>}
-                          {signatureInstagram && <span style={{ fontSize: '1.25rem' }}>📷</span>}
-                        </div>
-                      )}
                     </div>
                   </div>
+                  {!signaturePhotoURL && (
+                    <div style={{
+                      marginTop: '1rem',
+                      padding: '0.75rem',
+                      background: '#fff7ed',
+                      border: '1px solid #fed7aa',
+                      borderRadius: '8px',
+                      fontSize: '0.85rem',
+                      color: '#c2410c',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem'
+                    }}>
+                      <span style={{ fontSize: '1.1rem' }}>💡</span>
+                      <span><strong>Tip:</strong> Add a professional headshot photo URL above for a more personal touch!</span>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -1738,85 +1812,139 @@ export default function ProposalBuilder({
                   </div>
                 )}
 
-                {/* Email Signature */}
+                {/* Email Signature - Redesigned with Photo */}
                 {components.find((c) => c.id === 'signature')?.enabled && (signatureName || signatureEmail) && (
-                  <div className="preview-section">
+                  <div className="preview-section" style={{ marginTop: '3rem', pageBreakInside: 'avoid' }}>
                     <div style={{
                       fontFamily: 'Arial, sans-serif',
-                      borderLeft: '5px solid #9bc53d',
-                      paddingLeft: '1.5rem',
-                      marginTop: '3rem'
+                      background: 'linear-gradient(135deg, #ffffff 0%, #f8fef0 100%)',
+                      border: '2px solid #9bc53d',
+                      borderRadius: '12px',
+                      padding: '2rem',
+                      boxShadow: '0 4px 12px rgba(155, 197, 61, 0.15)'
                     }}>
-                      <div style={{ marginBottom: '0.5rem', color: '#94a3b8', fontSize: '0.9rem', fontStyle: 'italic' }}>
+                      <div style={{ marginBottom: '1rem', color: '#64748b', fontSize: '0.95rem', fontStyle: 'italic' }}>
                         Best regards,
                       </div>
-                      {signatureName && (
-                        <div style={{ fontSize: '1.35rem', fontWeight: '700', color: '#1e293b', marginBottom: '0.25rem' }}>
-                          {signatureName}
+
+                      <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'flex-start' }}>
+                        {/* Photo Section */}
+                        {signaturePhotoURL && (
+                          <div style={{ flexShrink: 0 }}>
+                            <img
+                              src={signaturePhotoURL}
+                              alt={signatureName || 'Loan Officer'}
+                              style={{
+                                width: '120px',
+                                height: '120px',
+                                borderRadius: '50%',
+                                objectFit: 'cover',
+                                border: '4px solid #9bc53d',
+                                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
+                              }}
+                            />
+                          </div>
+                        )}
+
+                        {/* Contact Info Section */}
+                        <div style={{ flex: 1 }}>
+                          {signatureName && (
+                            <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#1e293b', marginBottom: '0.25rem' }}>
+                              {signatureName}
+                            </div>
+                          )}
+                          {signatureTitle && (
+                            <div style={{ fontSize: '1.05rem', color: '#64748b', marginBottom: '0.5rem', fontStyle: 'italic' }}>
+                              {signatureTitle}
+                            </div>
+                          )}
+                          {signatureCompany && (
+                            <div style={{ fontSize: '1.15rem', fontWeight: '700', color: '#9bc53d', marginBottom: '1rem' }}>
+                              {signatureCompany}
+                            </div>
+                          )}
+
+                          <div style={{ fontSize: '0.95rem', color: '#475569', lineHeight: '1.8' }}>
+                            {signatureEmail && (
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.35rem' }}>
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '18px', height: '18px', color: '#9bc53d', flexShrink: 0 }}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                </svg>
+                                <span style={{ color: '#9bc53d', fontWeight: '600' }}>{signatureEmail}</span>
+                              </div>
+                            )}
+                            {signaturePhone && (
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.35rem' }}>
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '18px', height: '18px', color: '#9bc53d', flexShrink: 0 }}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                                </svg>
+                                <span style={{ fontWeight: '600' }}>{signaturePhone}</span>
+                              </div>
+                            )}
+                            {signatureAddress && (
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.35rem' }}>
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '18px', height: '18px', color: '#9bc53d', flexShrink: 0 }}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                </svg>
+                                <span>{signatureAddress}</span>
+                              </div>
+                            )}
+                            {signatureNMLS && (
+                              <div style={{ marginTop: '0.75rem', fontSize: '0.85rem', color: '#94a3b8', fontWeight: '500' }}>
+                                NMLS# {signatureNMLS}
+                              </div>
+                            )}
+                          </div>
+
+                          {signatureTagline && (
+                            <div style={{
+                              marginTop: '1rem',
+                              paddingTop: '1rem',
+                              borderTop: '2px solid #e8f5e0',
+                              fontSize: '0.9rem',
+                              fontWeight: '700',
+                              color: '#9bc53d',
+                              letterSpacing: '0.1em',
+                              textTransform: 'uppercase'
+                            }}>
+                              {signatureTagline}
+                            </div>
+                          )}
+
+                          {(signatureLinkedIn || signatureFacebook || signatureTwitter || signatureInstagram) && (
+                            <div style={{ marginTop: '1rem', display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                              {signatureLinkedIn && (
+                                <a href={signatureLinkedIn} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>
+                                  <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#0077b5', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '16px' }}>
+                                    in
+                                  </div>
+                                </a>
+                              )}
+                              {signatureFacebook && (
+                                <a href={signatureFacebook} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>
+                                  <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#1877f2', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '16px', fontWeight: '700' }}>
+                                    f
+                                  </div>
+                                </a>
+                              )}
+                              {signatureTwitter && (
+                                <a href={signatureTwitter} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>
+                                  <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#1da1f2', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '16px', fontWeight: '700' }}>
+                                    𝕏
+                                  </div>
+                                </a>
+                              )}
+                              {signatureInstagram && (
+                                <a href={signatureInstagram} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>
+                                  <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'linear-gradient(45deg, #f09433 0%,#e6683c 25%,#dc2743 50%,#cc2366 75%,#bc1888 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '18px', fontWeight: '700' }}>
+                                    ⓘ
+                                  </div>
+                                </a>
+                              )}
+                            </div>
+                          )}
                         </div>
-                      )}
-                      {signatureTitle && (
-                        <div style={{ fontSize: '1rem', color: '#475569', marginBottom: '0.5rem', fontStyle: 'italic' }}>
-                          {signatureTitle}
-                        </div>
-                      )}
-                      {signatureCompany && (
-                        <div style={{ fontSize: '1.1rem', fontWeight: '700', color: '#9bc53d', marginBottom: '0.75rem' }}>
-                          {signatureCompany}
-                        </div>
-                      )}
-                      <div style={{ fontSize: '0.95rem', color: '#64748b', lineHeight: '1.6' }}>
-                        {signatureEmail && (
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '16px', height: '16px', color: '#9bc53d' }}>
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                            </svg>
-                            <a href={`mailto:${signatureEmail}`} style={{ color: '#9bc53d', textDecoration: 'none', fontWeight: '500' }}>{signatureEmail}</a>
-                          </div>
-                        )}
-                        {signaturePhone && (
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '16px', height: '16px', color: '#9bc53d' }}>
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                            </svg>
-                            <span>{signaturePhone}</span>
-                          </div>
-                        )}
-                        {signatureWebsite && (
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '16px', height: '16px', color: '#9bc53d' }}>
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
-                            </svg>
-                            <a href={`https://${signatureWebsite.replace(/^https?:\/\//, '')}`} style={{ color: '#9bc53d', textDecoration: 'none', fontWeight: '500' }}>{signatureWebsite.replace(/^https?:\/\//, '')}</a>
-                          </div>
-                        )}
-                        {signatureAddress && (
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '16px', height: '16px', color: '#9bc53d' }}>
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                            </svg>
-                            <span>{signatureAddress}</span>
-                          </div>
-                        )}
-                        {signatureNMLS && (
-                          <div style={{ marginTop: '0.5rem', fontSize: '0.85rem', color: '#94a3b8' }}>
-                            NMLS# {signatureNMLS}
-                          </div>
-                        )}
-                        {signatureTagline && (
-                          <div style={{ marginTop: '0.75rem', fontSize: '0.9rem', fontWeight: '700', color: '#9bc53d', letterSpacing: '0.05em' }}>
-                            {signatureTagline}
-                          </div>
-                        )}
-                        {(signatureLinkedIn || signatureFacebook || signatureTwitter || signatureInstagram) && (
-                          <div style={{ marginTop: '1rem', display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-                            {signatureLinkedIn && <span style={{ fontSize: '1.25rem' }}>💼</span>}
-                            {signatureFacebook && <span style={{ fontSize: '1.25rem' }}>📘</span>}
-                            {signatureTwitter && <span style={{ fontSize: '1.25rem' }}>🐦</span>}
-                            {signatureInstagram && <span style={{ fontSize: '1.25rem' }}>📷</span>}
-                          </div>
-                        )}
                       </div>
                     </div>
                   </div>
