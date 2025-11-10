@@ -441,7 +441,7 @@ export default function ProposalBuilder({
     element.style.height = 'auto';
 
     const options = {
-      margin: [0.75, 0.5, 0.75, 0.5], // [top, left, bottom, right] in inches
+      margin: [0.75, 0.5, 0.75, 0.5] as [number, number, number, number], // [top, left, bottom, right] in inches
       filename: `${clientName ? clientName.replace(/[^a-zA-Z0-9]/g, '_') + '_' : ''}AIO_Proposal_${new Date().toISOString().split('T')[0]}.pdf`,
       image: { type: 'jpeg' as const, quality: 0.98 },
       html2canvas: {

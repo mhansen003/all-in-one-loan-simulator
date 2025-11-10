@@ -793,7 +793,6 @@ export default function CashFlowReview({
                         const data = scatterPoint.payload;
                         // Determine if income or expense based on the scatter series name
                         const isIncome = scatterPoint.name === 'One-Time Income';
-                        const isExpense = scatterPoint.name === 'One-Time Expense';
 
                         // Calculate position relative to cursor
                         const tooltipX = coordinate?.x || 0;
