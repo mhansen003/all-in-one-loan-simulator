@@ -632,31 +632,26 @@
 
 .main-content {
   flex: 1;
-  padding: 2.5rem 3rem;
+  padding: 2rem;
   padding-bottom: 140px; /* Increased space for fixed wizard buttons */
   overflow-y: auto;
-  background: #fafbfc;
+  background: white;
   height: 100vh; /* Ensure main-content takes full viewport height */
 }
 
 .proposal-content {
-  max-width: 1100px;
+  max-width: 900px;
   margin: 0 auto;
 }
 
-/* Section Card Styling for Wizard Steps */
+/* Section Card Styling for Wizard Steps - Simplified */
 .section-card {
-  background: white;
-  border-radius: 16px;
-  padding: 2.5rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-  border: 1px solid #e2e8f0;
-  margin-bottom: 2rem;
-  transition: all 0.3s ease;
-}
-
-.section-card:hover {
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  background: transparent;
+  border-radius: 0;
+  padding: 0;
+  box-shadow: none;
+  border: none;
+  margin-bottom: 0;
 }
 
 .section-description {

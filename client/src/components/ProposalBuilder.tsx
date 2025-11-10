@@ -580,27 +580,10 @@ export default function ProposalBuilder({
         {/* Step 1: Client Information & Loan Officer Email */}
         {currentStep === 1 && (
           <div className="section-card">
-            <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-              <div style={{
-                width: '80px',
-                height: '80px',
-                margin: '0 auto 1.5rem',
-                background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: '0 8px 20px rgba(59, 130, 246, 0.3)'
-              }}>
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="white" style={{ width: '40px', height: '40px' }}>
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
-              </div>
-              <h2 style={{ fontSize: '2rem', marginBottom: '0.5rem', color: '#1e293b' }}>Let's Get Started</h2>
-              <p className="section-description" style={{ fontSize: '1.1rem' }}>First, enter your email to look up your signature</p>
+            <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
+              <h2 style={{ fontSize: '2rem', marginBottom: '0.75rem', color: '#1e293b' }}>Let's Get Started</h2>
+              <p className="section-description" style={{ fontSize: '1.05rem' }}>First, enter your email to look up your signature</p>
             </div>
-
-            <div style={{ maxWidth: '600px', margin: '0 auto' }}>
               {/* Loan Officer Email - First */}
               <div className="form-group" style={{ marginBottom: '2rem' }}>
                 <label htmlFor="loanOfficerEmail" style={{
@@ -770,31 +753,15 @@ export default function ProposalBuilder({
                   <span>Please enter a client name to continue</span>
                 </div>
               )}
-            </div>
           </div>
         )}
 
         {/* Step 2: AI Pitch Generation */}
         {currentStep === 2 && (
         <div className="section-card">
-          <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-            <div style={{
-              width: '80px',
-              height: '80px',
-              margin: '0 auto 1.5rem',
-              background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-              borderRadius: '50%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 8px 20px rgba(16, 185, 129, 0.3)'
-            }}>
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="white" style={{ width: '40px', height: '40px' }}>
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-              </svg>
-            </div>
-            <h2 style={{ fontSize: '2rem', marginBottom: '0.5rem', color: '#1e293b' }}>AI-Generated Sales Pitch</h2>
-            <p className="section-description" style={{ fontSize: '1.1rem' }}>
+          <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
+            <h2 style={{ fontSize: '2rem', marginBottom: '0.75rem', color: '#1e293b' }}>AI-Generated Sales Pitch</h2>
+            <p className="section-description" style={{ fontSize: '1.05rem' }}>
               {aiPitch
                 ? 'Personalized pitch generated - this will appear at the top of your proposal'
                 : 'Generate a personalized pitch highlighting the key benefits for this client'}
@@ -905,28 +872,13 @@ export default function ProposalBuilder({
         {currentStep === 3 && (
         <div className="section-card">
           <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-            <div style={{
-              width: '80px',
-              height: '80px',
-              margin: '0 auto 1.5rem',
-              background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-              borderRadius: '50%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 8px 20px rgba(245, 158, 11, 0.3)'
-            }}>
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="white" style={{ width: '40px', height: '40px' }}>
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-              </svg>
-            </div>
             <h2 style={{ fontSize: '2rem', marginBottom: '0.5rem', color: '#1e293b' }}>Select Components</h2>
             <p className="section-description" style={{ fontSize: '1.1rem' }}>
               Choose which sections to include and drag to reorder them
             </p>
           </div>
 
-          <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+          <div>
           <DndContext
             sensors={sensors}
             collisionDetection={closestCenter}
@@ -968,26 +920,11 @@ export default function ProposalBuilder({
         {currentStep === 4 && (
           <div className="section-card">
             <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-              <div style={{
-                width: '80px',
-                height: '80px',
-                margin: '0 auto 1.5rem',
-                background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: '0 8px 20px rgba(139, 92, 246, 0.3)'
-              }}>
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="white" style={{ width: '40px', height: '40px' }}>
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                </svg>
-              </div>
               <h2 style={{ fontSize: '2rem', marginBottom: '0.5rem', color: '#1e293b' }}>Add Your Signature</h2>
               <p className="section-description" style={{ fontSize: '1.1rem' }}>Customize your professional email signature</p>
             </div>
 
-            <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+            <div>
               {/* Show signature preview only (with edit button) if signature exists and user is not editing */}
               {signatureFound && !isEditingSignature && (signatureName || signatureTitle || signatureEmail || signaturePhone) ? (
                 <div>
@@ -1773,21 +1710,6 @@ export default function ProposalBuilder({
         {currentStep === 5 && (
           <div className="section-card">
             <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-              <div style={{
-                width: '80px',
-                height: '80px',
-                margin: '0 auto 1.5rem',
-                background: 'linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)',
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: '0 8px 20px rgba(6, 182, 212, 0.3)'
-              }}>
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="white" style={{ width: '40px', height: '40px' }}>
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-              </div>
               <h2 style={{ fontSize: '2rem', marginBottom: '0.5rem', color: '#1e293b' }}>Preview Your Proposal</h2>
               <p className="section-description" style={{ fontSize: '1.1rem' }}>
                 Review the proposal below, then download as PDF
