@@ -837,19 +837,37 @@ export async function analyzeStatements(
       }
 
       // Calculate number of COMPLETE months from monthly breakdown for averaging
+      // We need to exclude partial months to avoid underestimating monthly income
       const monthlyBreakdown = result.monthlyBreakdown || [];
       const getCompleteMonths = (breakdown) => {
         if (breakdown.length <= 1) return breakdown;
+
+        // Use transaction count as proxy for data completeness
         const counts = breakdown.map(m => m.transactionCount || 0);
         const avgCount = counts.reduce((a, b) => a + b, 0) / counts.length;
-        const threshold = avgCount * 0.5;
+        const threshold = avgCount * 0.5; // Month needs at least 50% of average transactions
+
         let filtered = [...breakdown];
-        if (counts[0] < threshold) filtered.shift();
-        if (filtered.length > 1 && counts[counts.length - 1] < threshold) filtered.pop();
+
+        // Check first month
+        if (counts[0] < threshold) {
+          console.log(`⚠️  Excluding first month (${breakdown[0].month}) - partial data (${counts[0]} txns vs ${avgCount.toFixed(0)} avg)`);
+          filtered.shift();
+        }
+
+        // Check last month
+        const lastIdx = counts.length - 1;
+        if (filtered.length > 1 && counts[lastIdx] < threshold) {
+          console.log(`⚠️  Excluding last month (${breakdown[lastIdx].month}) - partial data (${counts[lastIdx]} txns vs ${avgCount.toFixed(0)} avg)`);
+          filtered.pop();
+        }
+
         return filtered.length > 0 ? filtered : breakdown;
       };
       const completeMonths = getCompleteMonths(monthlyBreakdown);
       const numberOfMonths = Math.max(1, completeMonths.length);
+
+      console.log(`📊 Monthly averaging: Using ${numberOfMonths} complete month(s) out of ${monthlyBreakdown.length} calendar month(s)`);
 
       // Calculate MONTHLY averages (not totals!)
       const monthlyIncome = (result.totalIncome || 0) / numberOfMonths;
@@ -1338,9 +1356,10 @@ EXAMPLE COMPACT FORMAT:
       }
 
       // Filter out last month if partial
-      if (filteredBreakdown.length > 1 && counts[counts.length - 1] < threshold) {
+      const lastIdx = counts.length - 1;
+      if (filteredBreakdown.length > 1 && counts[lastIdx] < threshold) {
         const lastMonth = filteredBreakdown[filteredBreakdown.length - 1];
-        console.log(`⚠️  Excluding last month (${lastMonth.month}) - partial data (${counts[counts.length - 1]} txns vs ${avgCount.toFixed(0)} avg)`);
+        console.log(`⚠️  Excluding last month (${lastMonth.month}) - partial data (${counts[lastIdx]} txns vs ${avgCount.toFixed(0)} avg)`);
         filteredBreakdown.pop();
       }
 
@@ -1350,7 +1369,7 @@ EXAMPLE COMPACT FORMAT:
     const completeMonths = getCompleteMonths(monthlyBreakdown);
     const numberOfMonths = Math.max(1, completeMonths.length);
 
-    console.log(`📊 Monthly averaging: Using ${numberOfMonths} complete month(s) out of ${monthlyBreakdown.length} total`);
+    console.log(`📊 Monthly averaging: Using ${numberOfMonths} complete month(s) out of ${monthlyBreakdown.length} calendar month(s)`);
 
     // Calculate MONTHLY averages based on COMPLETE months only
     const monthlyIncome = (result.totalIncome || 0) / numberOfMonths;

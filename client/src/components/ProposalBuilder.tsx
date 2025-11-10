@@ -455,18 +455,21 @@ export default function ProposalBuilder({
       jsPDF: { unit: 'in' as const, format: 'letter' as const, orientation: 'portrait' as const }
     };
 
-    // Generate PDF and restore original styles after completion
-    html2pdf().set(options).from(element).save().then(() => {
+    // Wait 500ms for DOM to fully reflow and render expanded content before capturing
+    setTimeout(() => {
+      // Generate PDF and restore original styles after completion
+      html2pdf().set(options).from(element).save().then(() => {
       element.style.maxHeight = originalMaxHeight;
       element.style.overflow = originalOverflow;
       element.style.height = originalHeight;
-    }).catch((error: Error) => {
-      console.error('PDF generation failed:', error);
-      // Restore styles even on error
-      element.style.maxHeight = originalMaxHeight;
-      element.style.overflow = originalOverflow;
-      element.style.height = originalHeight;
-    });
+      }).catch((error: Error) => {
+        console.error('PDF generation failed:', error);
+        // Restore styles even on error
+        element.style.maxHeight = originalMaxHeight;
+        element.style.overflow = originalOverflow;
+        element.style.height = originalHeight;
+      });
+    }, 500);
   };
 
   const formatCurrency = (amount: number): string => {

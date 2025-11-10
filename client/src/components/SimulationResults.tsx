@@ -25,7 +25,7 @@ export default function SimulationResults({
   onBackToCFA,
 }: SimulationResultsProps) {
   const [activeTab, setActiveTab] = useState<TabView>('results');
-  const [paydownView, setPaydownView] = useState<PaydownView>('yearly');
+  const [paydownView, setPaydownView] = useState<PaydownView>('monthly');
   const [warningDismissed, setWarningDismissed] = useState(false);
   const formatCurrency = (amount: number): string => {
     return new Intl.NumberFormat('en-US', {
