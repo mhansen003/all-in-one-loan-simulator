@@ -441,27 +441,42 @@ export default function ProposalBuilder({
     element.style.height = 'auto';
 
     const options = {
-      margin: 0.5,
+      margin: [0.75, 0.5, 0.75, 0.5], // [top, left, bottom, right] in inches
       filename: `${clientName ? clientName.replace(/[^a-zA-Z0-9]/g, '_') + '_' : ''}AIO_Proposal_${new Date().toISOString().split('T')[0]}.pdf`,
       image: { type: 'jpeg' as const, quality: 0.98 },
       html2canvas: {
         scale: 2,
         useCORS: true,
+        logging: false,
         scrollY: 0,
         scrollX: 0,
         windowHeight: element.scrollHeight,
-        height: element.scrollHeight
+        height: element.scrollHeight,
+        letterRendering: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff'
       },
-      jsPDF: { unit: 'in' as const, format: 'letter' as const, orientation: 'portrait' as const }
+      jsPDF: {
+        unit: 'in' as const,
+        format: 'letter' as const,
+        orientation: 'portrait' as const,
+        compress: true
+      },
+      pagebreak: {
+        mode: ['avoid-all', 'css', 'legacy'] as any,
+        before: '.page-break-before',
+        after: '.page-break-after',
+        avoid: ['.preview-section', '.preview-header', '.savings-section', '.pitch-section', 'table', 'tr', 'img']
+      }
     };
 
     // Wait 500ms for DOM to fully reflow and render expanded content before capturing
     setTimeout(() => {
       // Generate PDF and restore original styles after completion
       html2pdf().set(options).from(element).save().then(() => {
-      element.style.maxHeight = originalMaxHeight;
-      element.style.overflow = originalOverflow;
-      element.style.height = originalHeight;
+        element.style.maxHeight = originalMaxHeight;
+        element.style.overflow = originalOverflow;
+        element.style.height = originalHeight;
       }).catch((error: Error) => {
         console.error('PDF generation failed:', error);
         // Restore styles even on error
@@ -1705,7 +1720,7 @@ export default function ProposalBuilder({
 
                 {/* AI Pitch */}
                 {aiPitch && (
-                  <div className="preview-section pitch-section">
+                  <div className="preview-section pitch-section" style={{ pageBreakInside: 'avoid' }}>
                     <h3>Why the All-In-One Loan is Right for You</h3>
                     <div className="preview-pitch">{aiPitch}</div>
                   </div>
@@ -1713,7 +1728,7 @@ export default function ProposalBuilder({
 
                 {/* Savings Highlight */}
                 {components.find((c) => c.id === 'savings-highlight')?.enabled && (
-                  <div className="preview-section savings-section">
+                  <div className="preview-section savings-section" style={{ pageBreakInside: 'avoid' }}>
                     <h3>Total Interest Savings</h3>
                     <div className="preview-savings-amount">{formatCurrency(simulation.comparison.interestSavings)}</div>
                     <div className="preview-stats">
@@ -1729,9 +1744,9 @@ export default function ProposalBuilder({
 
                 {/* Comparison Table */}
                 {components.find((c) => c.id === 'comparison-cards')?.enabled && (
-                  <div className="preview-section">
+                  <div className="preview-section" style={{ pageBreakInside: 'avoid' }}>
                     <h3>Side-by-Side Comparison</h3>
-                    <table className="preview-table">
+                    <table className="preview-table" style={{ pageBreakInside: 'avoid' }}>
                       <thead>
                         <tr>
                           <th>Metric</th>
@@ -1762,18 +1777,18 @@ export default function ProposalBuilder({
 
                 {/* How It Works */}
                 {components.find((c) => c.id === 'how-it-works')?.enabled && (
-                  <div className="preview-section">
+                  <div className="preview-section" style={{ pageBreakInside: 'avoid' }}>
                     <h3>How the All-In-One Loan Works</h3>
                     <div className="preview-benefits">
-                      <div className="benefit-item">
+                      <div className="benefit-item" style={{ pageBreakInside: 'avoid' }}>
                         <h4>💰 Cash Flow Offset</h4>
                         <p>Your positive cash flow sits in the loan account, reducing the balance used for interest calculations.</p>
                       </div>
-                      <div className="benefit-item">
+                      <div className="benefit-item" style={{ pageBreakInside: 'avoid' }}>
                         <h4>📈 Accelerated Payoff</h4>
                         <p>You'll pay off your mortgage {yearsMonthsFromMonths(simulation.comparison.timeSavedMonths)} faster.</p>
                       </div>
-                      <div className="benefit-item">
+                      <div className="benefit-item" style={{ pageBreakInside: 'avoid' }}>
                         <h4>🔓 Full Flexibility</h4>
                         <p>Access your funds anytime while they work to reduce your interest.</p>
                       </div>
@@ -1783,9 +1798,9 @@ export default function ProposalBuilder({
 
                 {/* Cash Flow Analysis */}
                 {components.find((c) => c.id === 'cash-flow-details')?.enabled && (
-                  <div className="preview-section">
+                  <div className="preview-section" style={{ pageBreakInside: 'avoid' }}>
                     <h3>Cash Flow Analysis</h3>
-                    <table className="preview-table">
+                    <table className="preview-table" style={{ pageBreakInside: 'avoid' }}>
                       <thead>
                         <tr>
                           <th>Item</th>
@@ -1812,7 +1827,7 @@ export default function ProposalBuilder({
 
                 {/* Payoff Timeline Chart */}
                 {components.find((c) => c.id === 'amortization-chart')?.enabled && (
-                  <div className="preview-section">
+                  <div className="preview-section" style={{ pageBreakInside: 'avoid' }}>
                     <h3>Payoff Timeline Comparison</h3>
                     <div style={{ background: '#f7fafc', padding: '2rem', borderRadius: '12px', textAlign: 'center' }}>
                       <p style={{ marginBottom: '1rem', color: '#64748b' }}>Visual timeline showing accelerated payoff</p>
