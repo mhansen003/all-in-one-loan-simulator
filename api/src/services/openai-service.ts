@@ -836,8 +836,20 @@ export async function analyzeStatements(
         }
       }
 
-      // Calculate number of months from monthly breakdown for averaging
-      const numberOfMonths = Math.max(1, (result.monthlyBreakdown || []).length);
+      // Calculate number of COMPLETE months from monthly breakdown for averaging
+      const monthlyBreakdown = result.monthlyBreakdown || [];
+      const getCompleteMonths = (breakdown) => {
+        if (breakdown.length <= 1) return breakdown;
+        const counts = breakdown.map(m => m.transactionCount || 0);
+        const avgCount = counts.reduce((a, b) => a + b, 0) / counts.length;
+        const threshold = avgCount * 0.5;
+        let filtered = [...breakdown];
+        if (counts[0] < threshold) filtered.shift();
+        if (filtered.length > 1 && counts[counts.length - 1] < threshold) filtered.pop();
+        return filtered.length > 0 ? filtered : breakdown;
+      };
+      const completeMonths = getCompleteMonths(monthlyBreakdown);
+      const numberOfMonths = Math.max(1, completeMonths.length);
 
       // Calculate MONTHLY averages (not totals!)
       const monthlyIncome = (result.totalIncome || 0) / numberOfMonths;
@@ -1303,10 +1315,44 @@ EXAMPLE COMPACT FORMAT:
     console.log('════════════════════════════════════════════════════════════');
     console.log('🎉 All phases completed successfully!\n');
 
-    // Calculate number of months from monthly breakdown for averaging
-    const numberOfMonths = Math.max(1, (result.monthlyBreakdown || []).length);
+    // Calculate number of COMPLETE months from monthly breakdown for averaging
+    // Exclude partial months (first/last month if they have significantly fewer transactions)
+    const monthlyBreakdown = result.monthlyBreakdown || [];
 
-    // Calculate MONTHLY averages (not totals!)
+    // Helper function to detect partial months
+    const getCompleteMonths = (breakdown: any[]) => {
+      if (breakdown.length <= 1) return breakdown; // If only 1 month, use it
+
+      // Get transaction counts for each month
+      const counts = breakdown.map(m => m.transactionCount || 0);
+      const avgCount = counts.reduce((a, b) => a + b, 0) / counts.length;
+
+      // A month is "partial" if it has <50% of the average transaction count
+      const threshold = avgCount * 0.5;
+
+      // Filter out first month if partial
+      let filteredBreakdown = [...breakdown];
+      if (counts[0] < threshold) {
+        console.log(`⚠️  Excluding first month (${breakdown[0].month}) - partial data (${counts[0]} txns vs ${avgCount.toFixed(0)} avg)`);
+        filteredBreakdown.shift();
+      }
+
+      // Filter out last month if partial
+      if (filteredBreakdown.length > 1 && counts[counts.length - 1] < threshold) {
+        const lastMonth = filteredBreakdown[filteredBreakdown.length - 1];
+        console.log(`⚠️  Excluding last month (${lastMonth.month}) - partial data (${counts[counts.length - 1]} txns vs ${avgCount.toFixed(0)} avg)`);
+        filteredBreakdown.pop();
+      }
+
+      return filteredBreakdown.length > 0 ? filteredBreakdown : breakdown; // Fallback to original if all filtered
+    };
+
+    const completeMonths = getCompleteMonths(monthlyBreakdown);
+    const numberOfMonths = Math.max(1, completeMonths.length);
+
+    console.log(`📊 Monthly averaging: Using ${numberOfMonths} complete month(s) out of ${monthlyBreakdown.length} total`);
+
+    // Calculate MONTHLY averages based on COMPLETE months only
     const monthlyIncome = (result.totalIncome || 0) / numberOfMonths;
     const monthlyExpenses = (result.totalExpenses || 0) / numberOfMonths;
     const monthlyNet = (result.netCashFlow || 0) / numberOfMonths;
