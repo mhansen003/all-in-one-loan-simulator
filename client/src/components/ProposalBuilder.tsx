@@ -536,6 +536,9 @@ export default function ProposalBuilder({
     // Get the proposal HTML content
     const proposalHTML = element.innerHTML;
 
+    console.log('Opening print preview...');
+    console.log('Content length:', proposalHTML.length, 'characters');
+
     // Write a complete HTML document with all necessary styles
     printWindow.document.write(`
       <!DOCTYPE html>
@@ -583,6 +586,11 @@ export default function ProposalBuilder({
             border-bottom: 3px solid #3b82f6;
           }
 
+          .preview-header img {
+            max-width: 180px;
+            margin-bottom: 1rem;
+          }
+
           .savings-section {
             background: linear-gradient(135deg, #10b981 0%, #059669 100%);
             padding: 2.5rem;
@@ -591,6 +599,20 @@ export default function ProposalBuilder({
             text-align: center;
             margin-bottom: 2rem;
             page-break-inside: avoid;
+          }
+
+          .preview-savings-amount {
+            font-size: 3rem;
+            font-weight: 700;
+            margin: 1rem 0;
+          }
+
+          .preview-stats {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-top: 1rem;
+            font-size: 1.1rem;
           }
 
           .pitch-section {
@@ -602,8 +624,36 @@ export default function ProposalBuilder({
             page-break-inside: avoid;
           }
 
+          .preview-pitch {
+            line-height: 1.8;
+            white-space: pre-wrap;
+          }
+
+          .preview-benefits {
+            display: grid;
+            gap: 1.5rem;
+          }
+
+          .benefit-item {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            border: 2px solid #e2e8f0;
+            page-break-inside: avoid;
+          }
+
+          .benefit-item h4 {
+            margin-bottom: 0.5rem;
+            color: #1e293b;
+          }
+
+          .benefit-item p {
+            color: #64748b;
+            margin: 0;
+          }
+
           /* Tables */
-          table {
+          table, .preview-table {
             width: 100%;
             border-collapse: collapse;
             margin: 1.5rem 0;
@@ -626,12 +676,46 @@ export default function ProposalBuilder({
             background: #f8fafc;
           }
 
+          .savings-cell {
+            background: #f0fdf4 !important;
+            color: #16a34a;
+            font-weight: 600;
+          }
+
+          /* Support for inline styles and divs with specific backgrounds */
+          div[style*="background"] {
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+          }
+
+          /* Float-based layouts */
+          div[style*="float: left"] {
+            float: left;
+          }
+
+          div[style*="clear: both"] {
+            clear: both;
+          }
+
           /* Signature section */
           .signature-section {
             margin-top: 3rem;
             padding-top: 2rem;
             border-top: 2px solid #e2e8f0;
             page-break-inside: avoid;
+          }
+
+          /* Support flexbox in signatures */
+          div[style*="display: flex"] {
+            display: flex;
+          }
+
+          /* Ensure images in signatures print */
+          img {
+            max-width: 100%;
+            height: auto;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
           }
 
           /* Print-specific styles */
@@ -717,6 +801,26 @@ export default function ProposalBuilder({
     `);
 
     printWindow.document.close();
+
+    // Wait for all images to load before enabling print
+    printWindow.addEventListener('load', () => {
+      const images = printWindow.document.getElementsByTagName('img');
+      const imageLoadPromises = Array.from(images).map((img) => {
+        if (img.complete) {
+          return Promise.resolve();
+        }
+        return new Promise((resolve) => {
+          img.addEventListener('load', resolve);
+          img.addEventListener('error', resolve); // Resolve even on error to not block
+        });
+      });
+
+      Promise.all(imageLoadPromises).then(() => {
+        console.log('All images loaded. Print preview ready.');
+        console.log('Total images:', images.length);
+        console.log('Document height:', printWindow.document.body.scrollHeight, 'px');
+      });
+    });
   };
 
   const formatCurrency = (amount: number): string => {
