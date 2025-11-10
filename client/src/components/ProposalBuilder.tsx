@@ -414,12 +414,16 @@ export default function ProposalBuilder({
         saveSignatureToStorage(loanOfficerEmail);
       }
       setCurrentStep((currentStep + 1) as WizardStep);
+      // Scroll to top of main content area
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
   const handlePreviousStep = () => {
     if (currentStep > 1) {
       setCurrentStep((currentStep - 1) as WizardStep);
+      // Scroll to top of main content area
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
@@ -470,7 +474,8 @@ export default function ProposalBuilder({
       }
     };
 
-    // Wait 500ms for DOM to fully reflow and render expanded content before capturing
+    // Wait 2000ms for DOM to fully reflow and render expanded content before capturing
+    // Increased from 500ms to allow complex content (charts, images, etc.) to fully load
     setTimeout(() => {
       // Generate PDF and restore original styles after completion
       html2pdf().set(options).from(element).save().then(() => {
@@ -484,7 +489,7 @@ export default function ProposalBuilder({
         element.style.overflow = originalOverflow;
         element.style.height = originalHeight;
       });
-    }, 500);
+    }, 2000);
   };
 
   const formatCurrency = (amount: number): string => {
@@ -779,15 +784,33 @@ export default function ProposalBuilder({
         {/* Step 2: AI Pitch Generation */}
         {currentStep === 2 && (
         <div className="section-card">
-          <div className="section-header-with-action">
-            <div>
-              <h2>AI-Generated Sales Pitch</h2>
-              <p className="section-description">
-                {aiPitch
-                  ? 'Personalized pitch generated - this will appear at the top of your proposal'
-                  : 'Generate a personalized pitch highlighting the key benefits for this client'}
-              </p>
+          <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+            <div style={{
+              width: '80px',
+              height: '80px',
+              margin: '0 auto 1.5rem',
+              background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 8px 20px rgba(16, 185, 129, 0.3)'
+            }}>
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="white" style={{ width: '40px', height: '40px' }}>
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
             </div>
+            <h2 style={{ fontSize: '2rem', marginBottom: '0.5rem', color: '#1e293b' }}>AI-Generated Sales Pitch</h2>
+            <p className="section-description" style={{ fontSize: '1.1rem' }}>
+              {aiPitch
+                ? 'Personalized pitch generated - this will appear at the top of your proposal'
+                : 'Generate a personalized pitch highlighting the key benefits for this client'}
+            </p>
+          </div>
+
+          <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+          <div className="section-header-with-action">
+            <div style={{ flex: 1 }}></div>
             <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
               <button
                 className="btn-icon-only"
@@ -881,17 +904,36 @@ export default function ProposalBuilder({
               <p>No pitch generated yet. Click "Generate Pitch" to create a personalized message.</p>
             </div>
           )}
+          </div>
         </div>
         )}
 
         {/* Step 3: Component Selection & Ordering */}
         {currentStep === 3 && (
         <div className="section-card">
-          <h2>Select Components</h2>
-          <p className="section-description">
-            Choose which sections to include and drag to reorder them
-          </p>
+          <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+            <div style={{
+              width: '80px',
+              height: '80px',
+              margin: '0 auto 1.5rem',
+              background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 8px 20px rgba(245, 158, 11, 0.3)'
+            }}>
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="white" style={{ width: '40px', height: '40px' }}>
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+              </svg>
+            </div>
+            <h2 style={{ fontSize: '2rem', marginBottom: '0.5rem', color: '#1e293b' }}>Select Components</h2>
+            <p className="section-description" style={{ fontSize: '1.1rem' }}>
+              Choose which sections to include and drag to reorder them
+            </p>
+          </div>
 
+          <div style={{ maxWidth: '800px', margin: '0 auto' }}>
           <DndContext
             sensors={sensors}
             collisionDetection={closestCenter}
@@ -924,6 +966,7 @@ export default function ProposalBuilder({
               />
               <span>Include CMG Financial footer with contact information</span>
             </label>
+          </div>
           </div>
         </div>
         )}
@@ -1699,10 +1742,27 @@ export default function ProposalBuilder({
         {/* Step 5: Preview & Download */}
         {currentStep === 5 && (
           <div className="section-card">
-            <h2>Preview Your Proposal</h2>
-            <p className="section-description">
-              Review the proposal below, then download as PDF
-            </p>
+            <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+              <div style={{
+                width: '80px',
+                height: '80px',
+                margin: '0 auto 1.5rem',
+                background: 'linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 8px 20px rgba(6, 182, 212, 0.3)'
+              }}>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="white" style={{ width: '40px', height: '40px' }}>
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              </div>
+              <h2 style={{ fontSize: '2rem', marginBottom: '0.5rem', color: '#1e293b' }}>Preview Your Proposal</h2>
+              <p className="section-description" style={{ fontSize: '1.1rem' }}>
+                Review the proposal below, then download as PDF
+              </p>
+            </div>
 
             <div className="proposal-preview">
               <div id="proposal-content" className="preview-content">
