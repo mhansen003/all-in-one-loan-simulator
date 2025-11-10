@@ -2167,7 +2167,6 @@ export default function ProposalBuilder({
         );
       })()}
 
-
       {/* Add CSS animations */}
       <style>{`
         @keyframes spin {
@@ -2179,8 +2178,8 @@ export default function ProposalBuilder({
           to { opacity: 1; transform: scale(1); }
         }
       `}</style>
-        </div>
-      </main>
-    </div>
-  );
+      </div>
+    </main>
+  </div>
+);
 }
