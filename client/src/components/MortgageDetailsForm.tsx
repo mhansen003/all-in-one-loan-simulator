@@ -551,7 +551,7 @@ export default function MortgageDetailsForm({
 
           {/* Total Housing Payment Breakdown - COMMENTED OUT: Will be imported from bank statements */}
           {/*
-          {/* Total Housing Payment Breakdown */}
+          Total Housing Payment Breakdown:
           <div className="form-group">
             <label className="form-label required">
               Total Monthly Housing Expense
