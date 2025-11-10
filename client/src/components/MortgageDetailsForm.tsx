@@ -48,21 +48,6 @@ export default function MortgageDetailsForm({
     initialData.propertyValue !== undefined ? String(initialData.propertyValue) : ''
   );
 
-  // Additional housing expenses (separate from P&I)
-  const [additionalExpensesInput, setAdditionalExpensesInput] = useState<string>(() => {
-    if (initialData.currentHousingPayment && initialData.monthlyPayment) {
-      const additional = initialData.currentHousingPayment - initialData.monthlyPayment;
-      return additional > 0 ? String(additional) : '';
-    }
-    return '';
-  });
-  const [additionalExpenses, setAdditionalExpenses] = useState<number>(() => {
-    if (initialData.currentHousingPayment && initialData.monthlyPayment) {
-      return Math.max(0, initialData.currentHousingPayment - initialData.monthlyPayment);
-    }
-    return 0;
-  });
-
   const [errors, setErrors] = useState<Partial<Record<keyof MortgageDetails, string>>>({});
 
   // Market rate calculation state
@@ -130,8 +115,6 @@ export default function MortgageDetailsForm({
   // Debug function to pre-populate form with test data
   const fillTestData = () => {
     const testMonthlyPayment = 2200;
-    const testAdditionalExpenses = 600; // taxes, insurance, HOA
-
     setFormData({
       currentBalance: 350000,
       interestRate: 6.5,
@@ -139,7 +122,7 @@ export default function MortgageDetailsForm({
       monthlyPayment: testMonthlyPayment,
       remainingTermMonths: 300,
       propertyValue: 500000,
-      currentHousingPayment: testMonthlyPayment + testAdditionalExpenses, // 2800
+      currentHousingPayment: testMonthlyPayment, // Will be populated from bank statements
       productType: '25-year-fixed', // Default to 25-year for test data
     });
     setCurrentBalanceInput('350000');
@@ -147,8 +130,6 @@ export default function MortgageDetailsForm({
     setAioInterestRateInput('7.25');
     setMonthlyPaymentInput('2200');
     setPropertyValueInput('500000');
-    setAdditionalExpensesInput('600');
-    setAdditionalExpenses(600);
     setTermYears(25);
     setTermMonths(0);
     setErrors({});
@@ -184,11 +165,6 @@ export default function MortgageDetailsForm({
     if (formData.propertyValue && formData.currentBalance && formData.propertyValue < formData.currentBalance) {
       newErrors.propertyValue = 'Property value must be greater than loan balance';
     }
-
-    if (additionalExpenses < 0) {
-      newErrors.currentHousingPayment = 'Additional expenses cannot be negative';
-    }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -196,15 +172,8 @@ export default function MortgageDetailsForm({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Calculate total housing payment before submitting
-    const totalHousingPayment = (formData.monthlyPayment || 0) + additionalExpenses;
-    const submissionData = {
-      ...formData,
-      currentHousingPayment: totalHousingPayment,
-    };
-
     if (validateForm()) {
-      onSubmit(submissionData as MortgageDetails);
+      onSubmit(formData as MortgageDetails);
     }
   };
 
