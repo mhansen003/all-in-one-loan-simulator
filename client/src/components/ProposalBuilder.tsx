@@ -199,13 +199,13 @@ export default function ProposalBuilder({
       id: 'amortization-chart',
       label: 'Payoff Timeline Chart',
       description: 'Visual timeline comparison',
-      enabled: false,
+      enabled: true,
     },
     {
       id: 'signature',
       label: 'Email Signature',
       description: 'Professional email signature with contact details',
-      enabled: false,
+      enabled: true,
     },
   ]);
 
