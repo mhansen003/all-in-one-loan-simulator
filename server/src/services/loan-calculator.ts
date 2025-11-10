@@ -102,7 +102,8 @@ function simulateMonthlyDailyBalances(
   annualRate: number,
   daysInMonth: number,
   monthNumber: number = 0,
-  debugMode: boolean = false
+  debugMode: boolean = false,
+  monthlyPayment: number = 0
 ): { totalInterest: number; endBalance: number; avgCashOffset: number; principalReduction: number; netCashFlow: number } {
   const dailyRate = annualRate / 100 / 365;
   const netCashFlow = monthlyIncome - monthlyExpenses;
@@ -150,10 +151,11 @@ function simulateMonthlyDailyBalances(
     }
   }
 
-  // At month end: Apply the AIO formula from spreadsheet
-  // New Balance = Starting Balance + Interest - Net Cash Flow
+  // At month end: Apply the CORRECTED AIO formula
+  // New Balance = Starting Balance + AIO Interest - Traditional P&I Payment - Net Cash Flow
+  // The P&I payment is already being made (in expenses), cash flow is ADDITIONAL principal reduction
   const interestCharged = totalInterest;
-  const endBalance = Math.max(0, startingBalance + interestCharged - netCashFlow);
+  const endBalance = Math.max(0, startingBalance + interestCharged - monthlyPayment - netCashFlow);
   const principalReduction = startingBalance - endBalance;
   const avgCashOffset = totalCashOffset / daysInMonth;
 
@@ -161,8 +163,9 @@ function simulateMonthlyDailyBalances(
     console.log(`     ─────────────────────────────────────────────`);
     console.log(`     📊 Month ${monthNumber} Summary:`);
     console.log(`     Starting Balance: $${startingBalance.toFixed(2)}`);
-    console.log(`     + Interest Accrued: $${interestCharged.toFixed(2)}`);
-    console.log(`     - Net Cash Flow: $${netCashFlow.toFixed(2)}`);
+    console.log(`     + AIO Interest Accrued: $${interestCharged.toFixed(2)}`);
+    console.log(`     - Traditional P&I Payment: $${monthlyPayment.toFixed(2)}`);
+    console.log(`     - Extra Cash Flow: $${netCashFlow.toFixed(2)}`);
     console.log(`     = Ending Balance: $${endBalance.toFixed(2)}`);
     console.log(`     Principal Reduction: $${principalReduction.toFixed(2)}`);
     console.log(`     Avg Cash Offset: $${avgCashOffset.toFixed(2)}`);
@@ -190,7 +193,8 @@ function calculateAllInOneLoan(
   mortgage: MortgageDetails,
   cashFlow: CashFlowAnalysis
 ): LoanProjection {
-  const { currentBalance, interestRate } = mortgage;
+  const { currentBalance, aioInterestRate, monthlyPayment } = mortgage;
+  const interestRate = aioInterestRate;  // Use AIO rate, not traditional rate
   const { totalIncome, totalExpenses, monthlyBreakdown } = cashFlow;
 
   // ⚠️ CRITICAL FIX: Calculate MONTHLY averages from totals
@@ -219,7 +223,8 @@ function calculateAllInOneLoan(
   const debugMode = true;
 
   console.log(`\n🔄 [AIO CALC] Starting Monthly Simulation...`);
-  console.log(`   Formula: New Balance = Starting Balance + Interest - Net Cash Flow`);
+  console.log(`   Formula: New Balance = Starting Balance + AIO Interest - P&I Payment - Extra Cash Flow`);
+  console.log(`   Monthly P&I Payment: $${monthlyPayment.toFixed(2)}`);
 
   while (balance > 0.01 && monthsToPayoff < maxMonths) {
     // Simulate this month with daily calculations
@@ -230,7 +235,8 @@ function calculateAllInOneLoan(
       interestRate,
       avgDaysPerMonth,
       monthsToPayoff + 1,
-      debugMode
+      debugMode,
+      monthlyPayment    // CRITICAL: Include traditional P&I payment
     );
 
     totalInterest += monthResult.totalInterest;
@@ -327,6 +333,29 @@ export function simulateLoan(
   allInOneLoan.interestSavings = interestSavings;
   allInOneLoan.monthsSaved = timeSavedMonths;
 
+  // Calculate minimum cash flow needed if scenario is not viable
+  let minimumCashFlowInfo = undefined;
+  if (timeSavedMonths < 12) {
+    console.log(`\n⚠️  [LOAN CALC] Scenario saves less than 1 year - calculating minimum cash flow needed...`);
+    const minCashFlowResult = calculateMinimumCashFlowNeeded(mortgage, traditionalLoan.payoffMonths);
+
+    // Calculate how much MORE is needed beyond current cash flow
+    const monthsOfData = cashFlow.monthlyBreakdown?.length || 1;
+    const currentMonthlyCashFlow = (cashFlow.totalIncome - cashFlow.totalExpenses) / monthsOfData;
+    const additionalNeeded = Math.max(0, minCashFlowResult.minimumMonthlyCashFlow - currentMonthlyCashFlow);
+
+    minimumCashFlowInfo = {
+      minimumMonthlyCashFlow: minCashFlowResult.minimumMonthlyCashFlow,
+      currentMonthlyCashFlow: currentMonthlyCashFlow,
+      additionalNeeded: additionalNeeded,
+      targetPayoffMonths: minCashFlowResult.targetPayoffMonths,
+    };
+
+    console.log(`   Current monthly cash flow: $${currentMonthlyCashFlow.toFixed(2)}`);
+    console.log(`   Minimum needed: $${minCashFlowResult.minimumMonthlyCashFlow.toFixed(2)}`);
+    console.log(`   Additional needed: $${additionalNeeded.toFixed(2)}`);
+  }
+
   return {
     traditionalLoan,
     allInOneLoan,
@@ -335,6 +364,7 @@ export function simulateLoan(
       timeSavedMonths,
       percentageSavings,
     },
+    minimumCashFlowInfo,
   };
 }
 
@@ -346,7 +376,7 @@ export function getDetailedAmortization(
   cashFlow: CashFlowAnalysis,
   months: number = 12
 ): MonthlySnapshot[] {
-  const { currentBalance, interestRate } = mortgage;
+  const { currentBalance, aioInterestRate, monthlyPayment } = mortgage;
   const { totalIncome, totalExpenses, monthlyBreakdown } = cashFlow;
 
   // Calculate monthly averages
@@ -364,10 +394,11 @@ export function getDetailedAmortization(
       balance,
       monthlyIncome,    // FIXED: Using monthly average
       monthlyExpenses,  // FIXED: Using monthly average
-      interestRate,
+      aioInterestRate,  // FIXED: Use AIO rate
       avgDaysPerMonth,
       month,
-      false  // No debug for amortization table
+      false,  // No debug for amortization table
+      monthlyPayment  // FIXED: Include P&I payment
     );
 
     cumulativeInterest += monthResult.totalInterest;
@@ -431,5 +462,93 @@ export function estimateSavingsPotential(
   return {
     estimatedInterestSavings: Math.max(0, estimatedInterestSavings),
     estimatedMonthsSaved: Math.max(0, estimatedMonthsSaved),
+  };
+}
+
+/**
+ * Calculate minimum monthly cash flow needed for AIO loan to be viable
+ * "Viable" means: Saves at least 1 year (12 months) compared to traditional loan
+ */
+export function calculateMinimumCashFlowNeeded(
+  mortgage: MortgageDetails,
+  traditionalPayoffMonths: number
+): {
+  minimumMonthlyCashFlow: number;
+  additionalNeeded: number;
+  targetPayoffMonths: number;
+} {
+  const { currentBalance, aioInterestRate, monthlyPayment } = mortgage;
+  const targetMonths = Math.max(12, traditionalPayoffMonths - 12); // At least 1 year savings
+  const avgDaysPerMonth = 30.42;
+
+  console.log(`\n💡 [MIN CASH FLOW] Calculating minimum cash flow needed...`);
+  console.log(`   Traditional payoff: ${traditionalPayoffMonths} months`);
+  console.log(`   Target AIO payoff: ${targetMonths} months (1 year savings)`);
+  console.log(`   Monthly P&I Payment: $${monthlyPayment.toFixed(2)}`);
+
+  // Binary search for minimum cash flow
+  let low = 0;
+  let high = 50000; // Max reasonable monthly cash flow
+  let result = high;
+
+  // Helper function to simulate with given monthly cash flow
+  const simulateWithCashFlow = (monthlyCashFlow: number): number => {
+    let balance = currentBalance;
+    let month = 0;
+    const maxMonths = Math.min(360, targetMonths + 60); // Don't simulate beyond target + buffer
+
+    while (balance > 0.01 && month < maxMonths) {
+      month++;
+
+      // Simulate daily interest with cash offset
+      let totalDailyInterest = 0;
+      const monthlyIncome = monthlyCashFlow; // Simplified: assume all cash flow comes as income
+      const monthlyExpenses = 0; // Simplified: expenses already subtracted
+
+      for (let day = 1; day <= avgDaysPerMonth; day++) {
+        const dayProgress = day / avgDaysPerMonth;
+        const expensesToDate = monthlyExpenses * dayProgress;
+        const cashAvailable = Math.max(0, monthlyIncome - expensesToDate);
+        const effectiveBalance = Math.max(0, balance - cashAvailable);
+        const dailyInterest = effectiveBalance * (aioInterestRate / 365);
+        totalDailyInterest += dailyInterest;
+      }
+
+      // CORRECTED: New Balance = Starting Balance + Interest - P&I Payment - Cash Flow
+      balance = Math.max(0, balance + totalDailyInterest - monthlyPayment - monthlyCashFlow);
+
+      // Stop if balance stops decreasing (monthly charges exceed payment + cash flow)
+      if (totalDailyInterest >= (monthlyPayment + monthlyCashFlow) && month > 12) {
+        return 999; // Return impossibly high number
+      }
+    }
+
+    return month;
+  };
+
+  // Binary search for minimum cash flow that achieves target months
+  for (let iteration = 0; iteration < 20; iteration++) {
+    const mid = (low + high) / 2;
+    const payoffMonths = simulateWithCashFlow(mid);
+
+    if (payoffMonths <= targetMonths) {
+      result = mid;
+      high = mid;
+    } else {
+      low = mid;
+    }
+
+    // Converged within $10
+    if (high - low < 10) {
+      break;
+    }
+  }
+
+  console.log(`   ✓ Minimum monthly cash flow needed: $${result.toFixed(2)}`);
+
+  return {
+    minimumMonthlyCashFlow: Math.ceil(result),
+    additionalNeeded: Math.ceil(result), // Will be adjusted by caller based on current cash flow
+    targetPayoffMonths: targetMonths,
   };
 }

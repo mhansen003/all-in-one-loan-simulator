@@ -217,30 +217,49 @@ export default function CashFlowSummaryCards({
         }
         backContent={
           <>
-            <h3>Income Breakdown</h3>
+            <h3>Income Calculation</h3>
             <div className="detail-section">
-              <div className="detail-label">Analysis Period</div>
-              <div className="detail-value">{actualMonths} month{actualMonths !== 1 ? 's' : ''}</div>
-              <div className="detail-description">
-                Complete months of transaction data analyzed
+              <div className="detail-label">How This Was Calculated</div>
+              <div className="detail-description" style={{ marginBottom: '0.75rem' }}>
+                Monthly income = Total income ÷ {actualMonths} month{actualMonths !== 1 ? 's' : ''}
+              </div>
+              <div className="detail-value" style={{ fontSize: '1.25rem' }}>
+                {formatCurrency(displayTotalIncome * actualMonths)} ÷ {actualMonths} = {formatCurrency(displayTotalIncome)}
               </div>
             </div>
             {incomeBreakdown.length > 0 ? (
-              <div className="detail-section">
-                <div className="detail-label">Income Sources</div>
-                <ul>
-                  {incomeBreakdown.map((item, idx) => (
-                    <li key={idx}>
-                      <span>{item.category}</span>
-                      <span>{formatCurrency(item.monthly)}/mo</span>
+              <>
+                <div className="detail-section">
+                  <div className="detail-label">Income Sources</div>
+                  <ul>
+                    {incomeBreakdown.map((item, idx) => {
+                      const percentage = ((item.monthly / displayTotalIncome) * 100).toFixed(1);
+                      return (
+                        <li key={idx}>
+                          <div>
+                            <div style={{ fontWeight: 600 }}>{item.category}</div>
+                            <div style={{ fontSize: '0.85rem', opacity: 0.8 }}>{percentage}% of total</div>
+                          </div>
+                          <div>
+                            <div style={{ fontWeight: 700 }}>{formatCurrency(item.monthly)}/mo</div>
+                            <div style={{ fontSize: '0.85rem', opacity: 0.8 }}>{formatCurrency(item.total)} total</div>
+                          </div>
+                        </li>
+                      );
+                    })}
+                    <li className="total-row">
+                      <span>Average Monthly Income</span>
+                      <span>{formatCurrency(displayTotalIncome)}</span>
                     </li>
-                  ))}
-                  <li className="total-row">
-                    <span>Total Monthly Income</span>
-                    <span>{formatCurrency(displayTotalIncome)}</span>
-                  </li>
-                </ul>
-              </div>
+                  </ul>
+                </div>
+                <div className="detail-section">
+                  <div className="detail-label">Analysis Quality</div>
+                  <div className="detail-description">
+                    Based on {transactions?.filter(t => !t.excluded && (t.category === 'income' || (t.category === 'one-time' && t.amount > 0))).length || 0} income transactions over {actualMonths} month{actualMonths !== 1 ? 's' : ''}
+                  </div>
+                </div>
+              </>
             ) : (
               <div className="detail-section">
                 <div className="detail-description">
@@ -298,30 +317,52 @@ export default function CashFlowSummaryCards({
         }
         backContent={
           <>
-            <h3>Expense Breakdown</h3>
+            <h3>Expense Calculation</h3>
             <div className="detail-section">
-              <div className="detail-label">Analysis Period</div>
-              <div className="detail-value">{actualMonths} month{actualMonths !== 1 ? 's' : ''}</div>
-              <div className="detail-description">
-                Excludes housing and one-time expenses by default
+              <div className="detail-label">How This Was Calculated</div>
+              <div className="detail-description" style={{ marginBottom: '0.75rem' }}>
+                Monthly expenses = Total expenses ÷ {actualMonths} month{actualMonths !== 1 ? 's' : ''}
+              </div>
+              <div className="detail-value" style={{ fontSize: '1.25rem' }}>
+                {formatCurrency(displayTotalExpenses * actualMonths)} ÷ {actualMonths} = {formatCurrency(displayTotalExpenses)}
+              </div>
+              <div className="detail-description" style={{ marginTop: '0.5rem', fontSize: '0.9rem', opacity: 0.9 }}>
+                ⓘ Excludes housing and one-time expenses by default
               </div>
             </div>
             {expenseBreakdown.length > 0 ? (
-              <div className="detail-section">
-                <div className="detail-label">Expense Categories</div>
-                <ul>
-                  {expenseBreakdown.map((item, idx) => (
-                    <li key={idx}>
-                      <span>{item.category}</span>
-                      <span>{formatCurrency(item.monthly)}/mo</span>
+              <>
+                <div className="detail-section">
+                  <div className="detail-label">Expense Categories</div>
+                  <ul>
+                    {expenseBreakdown.map((item, idx) => {
+                      const percentage = ((item.monthly / displayTotalExpenses) * 100).toFixed(1);
+                      return (
+                        <li key={idx}>
+                          <div>
+                            <div style={{ fontWeight: 600 }}>{item.category}</div>
+                            <div style={{ fontSize: '0.85rem', opacity: 0.8 }}>{percentage}% of total</div>
+                          </div>
+                          <div>
+                            <div style={{ fontWeight: 700 }}>{formatCurrency(item.monthly)}/mo</div>
+                            <div style={{ fontSize: '0.85rem', opacity: 0.8 }}>{formatCurrency(item.total)} total</div>
+                          </div>
+                        </li>
+                      );
+                    })}
+                    <li className="total-row">
+                      <span>Average Monthly Expenses</span>
+                      <span>{formatCurrency(displayTotalExpenses)}</span>
                     </li>
-                  ))}
-                  <li className="total-row">
-                    <span>Total Monthly Expenses</span>
-                    <span>{formatCurrency(displayTotalExpenses)}</span>
-                  </li>
-                </ul>
-              </div>
+                  </ul>
+                </div>
+                <div className="detail-section">
+                  <div className="detail-label">Analysis Quality</div>
+                  <div className="detail-description">
+                    Based on {transactions?.filter(t => !t.excluded && t.category !== 'income' && (t.category !== 'one-time' || t.amount < 0)).length || 0} expense transactions over {actualMonths} month{actualMonths !== 1 ? 's' : ''}
+                  </div>
+                </div>
+              </>
             ) : (
               <div className="detail-section">
                 <div className="detail-description">
@@ -378,33 +419,55 @@ export default function CashFlowSummaryCards({
           <>
             <h3>Net Cash Flow Calculation</h3>
             <div className="detail-section">
-              <div className="detail-label">Monthly Income</div>
-              <div className="detail-value" style={{ color: '#10b981' }}>
-                +{formatCurrency(displayTotalIncome)}
+              <div className="detail-label">How This Was Calculated</div>
+              <div className="detail-description" style={{ marginBottom: '0.75rem' }}>
+                Net Cash Flow = Income - Expenses
+              </div>
+              <div className="detail-value" style={{ fontSize: '1.25rem' }}>
+                {formatCurrency(displayTotalIncome)} - {formatCurrency(displayTotalExpenses)} = {formatCurrency(displayNetCashFlow)}
               </div>
             </div>
             <div className="detail-section">
-              <div className="detail-label">Monthly Expenses</div>
-              <div className="detail-value" style={{ color: '#ef4444' }}>
-                -{formatCurrency(displayTotalExpenses)}
-              </div>
+              <div className="detail-label">Component Breakdown</div>
+              <ul>
+                <li>
+                  <div>
+                    <div style={{ fontWeight: 600, color: '#10b981' }}>Monthly Income</div>
+                    <div style={{ fontSize: '0.85rem', opacity: 0.8 }}>All income sources</div>
+                  </div>
+                  <div style={{ fontWeight: 700, color: '#10b981' }}>
+                    +{formatCurrency(displayTotalIncome)}
+                  </div>
+                </li>
+                <li>
+                  <div>
+                    <div style={{ fontWeight: 600, color: '#ef4444' }}>Monthly Expenses</div>
+                    <div style={{ fontSize: '0.85rem', opacity: 0.8 }}>Recurring expenses only</div>
+                  </div>
+                  <div style={{ fontWeight: 700, color: '#ef4444' }}>
+                    -{formatCurrency(displayTotalExpenses)}
+                  </div>
+                </li>
+                <li className="total-row">
+                  <span style={{ fontWeight: 700 }}>Net Cash Flow</span>
+                  <span style={{ fontWeight: 700, color: displayNetCashFlow >= 0 ? '#10b981' : '#ef4444' }}>
+                    {formatCurrency(displayNetCashFlow)}
+                  </span>
+                </li>
+              </ul>
             </div>
             <div className="detail-section">
-              <div className="detail-label">Net Cash Flow</div>
-              <div className="detail-value" style={{ color: displayNetCashFlow >= 0 ? '#10b981' : '#ef4444' }}>
-                {formatCurrency(displayNetCashFlow)}
-              </div>
-              <div className="detail-description">
+              <div className="detail-label">AIO Impact</div>
+              <div className="detail-description" style={{ marginBottom: '0.75rem' }}>
                 {displayNetCashFlow >= 0
-                  ? 'This amount is available monthly to offset your AIO loan balance, reducing daily interest charges.'
-                  : 'Negative cash flow indicates expenses exceed income. An AIO loan may not provide benefits in this scenario.'}
+                  ? 'This positive cash flow reduces your loan balance daily, minimizing interest charges.'
+                  : 'Negative cash flow means expenses exceed income. An AIO loan may not provide benefits.'}
               </div>
-            </div>
-            <div className="detail-section">
-              <div className="detail-label">Annual Impact</div>
-              <div className="detail-value">{formatCurrency(displayNetCashFlow * 12)}</div>
-              <div className="detail-description">
-                Projected yearly cash flow impact on loan balance
+              <div className="detail-value" style={{ fontSize: '1.25rem' }}>
+                Annual: {formatCurrency(displayNetCashFlow * 12)}
+              </div>
+              <div className="detail-description" style={{ marginTop: '0.5rem', fontSize: '0.9rem', opacity: 0.9 }}>
+                {displayNetCashFlow > 0 && `With ${formatCurrency(displayNetCashFlow)}/month, you'll reduce your loan balance by ${formatCurrency(displayNetCashFlow * 12)} annually`}
               </div>
             </div>
           </>

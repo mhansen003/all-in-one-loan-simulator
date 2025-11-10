@@ -1908,26 +1908,39 @@ export default function ProposalBuilder({
           background: 'white',
           padding: '1rem 0',
           boxShadow: '0 -2px 10px rgba(0, 0, 0, 0.1)',
-          marginTop: '2rem'
+          marginTop: '2rem',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center'
         }}>
-          <button className="btn-secondary" onClick={currentStep === 1 ? onBack : handlePreviousStep}>
+          <button className="btn-secondary" onClick={onBack} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <svg className="btn-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
-            {currentStep === 1 ? 'Back to Results' : 'Previous Step'}
+            Back to Simulation
           </button>
-          {currentStep < 5 && (
-            <button
-              className="btn-primary"
-              onClick={handleNextStep}
-              disabled={!canProceedToNextStep()}
-            >
-              Next Step
-              <svg className="btn-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </button>
-          )}
+          <div style={{ display: 'flex', gap: '1rem' }}>
+            {currentStep > 1 && (
+              <button className="btn-secondary" onClick={handlePreviousStep}>
+                <svg className="btn-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+                Previous Step
+              </button>
+            )}
+            {currentStep < 5 && (
+              <button
+                className="btn-primary"
+                onClick={handleNextStep}
+                disabled={!canProceedToNextStep()}
+              >
+                Next Step
+                <svg className="btn-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            )}
+          </div>
         </div>
       </div>
 

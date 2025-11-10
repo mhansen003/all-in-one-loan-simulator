@@ -70,6 +70,12 @@ export interface SimulationResult {
     timeSavedMonths: number;
     percentageSavings: number;
   };
+  minimumCashFlowInfo?: {
+    minimumMonthlyCashFlow: number;
+    currentMonthlyCashFlow: number;
+    additionalNeeded: number;
+    targetPayoffMonths: number;
+  };
 }
 
 // OpenAI analysis types
