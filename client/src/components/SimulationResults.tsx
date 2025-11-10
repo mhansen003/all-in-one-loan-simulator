@@ -605,8 +605,8 @@ export default function SimulationResults({
                     <th style={{ padding: '0.75rem', textAlign: 'right', borderBottom: '2px solid #cbd5e1', minWidth: '110px', background: '#15803d' }}>
                       AIO Balance
                     </th>
-                    <th style={{ padding: '0.75rem', textAlign: 'right', borderBottom: '2px solid #cbd5e1', minWidth: '100px', background: '#166534' }}>
-                      Δ Balance
+                    <th style={{ padding: '0.75rem', textAlign: 'right', borderBottom: '2px solid #cbd5e1', minWidth: '140px', background: '#166534' }}>
+                      AIO Additional Principal Paid
                     </th>
                     <th style={{ padding: '0.75rem', textAlign: 'right', borderBottom: '2px solid #cbd5e1', minWidth: '110px', background: '#2d3748' }}>
                       Trad. Principal
