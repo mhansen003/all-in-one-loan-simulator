@@ -450,52 +450,73 @@ export default function ProposalBuilder({
     element.style.overflow = 'visible';
     element.style.height = 'auto';
 
-    const options = {
-      margin: [0.75, 0.5, 0.75, 0.5] as [number, number, number, number], // [top, left, bottom, right] in inches
-      filename: `${clientName ? clientName.replace(/[^a-zA-Z0-9]/g, '_') + '_' : ''}AIO_Proposal_${new Date().toISOString().split('T')[0]}.pdf`,
-      image: { type: 'jpeg' as const, quality: 0.98 },
-      html2canvas: {
-        scale: 2,
-        useCORS: true,
-        logging: false,
-        scrollY: 0,
-        scrollX: 0,
-        windowHeight: element.scrollHeight,
-        height: element.scrollHeight,
-        letterRendering: true,
-        allowTaint: true,
-        backgroundColor: '#ffffff'
-      },
-      jsPDF: {
-        unit: 'in' as const,
-        format: 'letter' as const,
-        orientation: 'portrait' as const,
-        compress: true
-      },
-      pagebreak: {
-        mode: ['avoid-all', 'css', 'legacy'] as any,
-        before: '.page-break-before',
-        after: '.page-break-after',
-        avoid: ['.preview-section', '.preview-header', '.savings-section', '.pitch-section', 'table', 'tr', 'img']
-      }
-    };
+    // Force a layout reflow to get accurate measurements
+    element.offsetHeight;
 
-    // Wait 2000ms for DOM to fully reflow and render expanded content before capturing
-    // Increased from 500ms to allow complex content (charts, images, etc.) to fully load
-    setTimeout(() => {
-      // Generate PDF and restore original styles after completion
-      html2pdf().set(options).from(element).save().then(() => {
-        element.style.maxHeight = originalMaxHeight;
-        element.style.overflow = originalOverflow;
-        element.style.height = originalHeight;
-      }).catch((error: Error) => {
-        console.error('PDF generation failed:', error);
-        // Restore styles even on error
-        element.style.maxHeight = originalMaxHeight;
-        element.style.overflow = originalOverflow;
-        element.style.height = originalHeight;
-      });
-    }, 2000);
+    // Wait for next frame to let layout settle
+    requestAnimationFrame(() => {
+      // Get accurate height after layout has settled
+      const fullHeight = element.scrollHeight;
+
+      console.log('PDF Generation - Element Height:', fullHeight);
+
+      const options = {
+        margin: [0.75, 0.5, 0.75, 0.5] as [number, number, number, number], // [top, left, bottom, right] in inches
+        filename: `${clientName ? clientName.replace(/[^a-zA-Z0-9]/g, '_') + '_' : ''}AIO_Proposal_${new Date().toISOString().split('T')[0]}.pdf`,
+        image: { type: 'jpeg' as const, quality: 0.98 },
+        html2canvas: {
+          scale: 2,
+          useCORS: true,
+          logging: true,
+          scrollY: 0,
+          scrollX: 0,
+          windowHeight: fullHeight,
+          height: fullHeight,
+          letterRendering: true,
+          allowTaint: true,
+          backgroundColor: '#ffffff',
+          onclone: (clonedDoc: Document) => {
+            // Ensure cloned content has proper dimensions
+            const clonedElement = clonedDoc.getElementById('proposal-content');
+            if (clonedElement) {
+              clonedElement.style.maxHeight = 'none';
+              clonedElement.style.overflow = 'visible';
+              clonedElement.style.height = 'auto';
+            }
+          }
+        },
+        jsPDF: {
+          unit: 'in' as const,
+          format: 'letter' as const,
+          orientation: 'portrait' as const,
+          compress: true
+        },
+        pagebreak: {
+          mode: ['avoid-all', 'css', 'legacy'] as any,
+          before: '.page-break-before',
+          after: '.page-break-after',
+          avoid: ['.preview-section', '.preview-header', '.savings-section', '.pitch-section', 'table', 'tr', 'img']
+        }
+      };
+
+      // Wait 3500ms for DOM to fully reflow and render expanded content before capturing
+      // Increased delay to allow images, charts, and complex layouts to fully load
+      setTimeout(() => {
+        // Generate PDF and restore original styles after completion
+        html2pdf().set(options).from(element).save().then(() => {
+          console.log('PDF generation completed successfully');
+          element.style.maxHeight = originalMaxHeight;
+          element.style.overflow = originalOverflow;
+          element.style.height = originalHeight;
+        }).catch((error: Error) => {
+          console.error('PDF generation failed:', error);
+          // Restore styles even on error
+          element.style.maxHeight = originalMaxHeight;
+          element.style.overflow = originalOverflow;
+          element.style.height = originalHeight;
+        });
+      }, 3500);
+    });
   };
 
   const formatCurrency = (amount: number): string => {
