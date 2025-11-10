@@ -1306,11 +1306,33 @@ export default function SimulationResults({
         <div className="math-tab-content" style={{ padding: '2rem', background: 'white', borderRadius: '12px', border: '2px solid #e2e8f0' }}>
           <h2 className="section-header" style={{ textAlign: 'center' }}>🧮 Calculation Details & Formulas</h2>
 
+          {/* Input Values Section */}
+          <div style={{ marginTop: '1.5rem', marginBottom: '1.5rem', padding: '1rem', background: '#f8fafc', borderRadius: '8px' }}>
+            <h3 style={{ marginBottom: '0.75rem', color: '#334155', fontSize: '1rem', fontWeight: '600' }}>📊 Input Values</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.75rem' }}>
+              <div style={{ padding: '0.75rem', background: 'white', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+                <div style={{ fontSize: '0.75rem', color: '#64748b', marginBottom: '0.25rem' }}>Loan Amount</div>
+                <div style={{ fontSize: '1rem', fontWeight: '700', color: '#1e293b' }}>{formatCurrency(mortgageDetails.currentBalance)}</div>
+              </div>
+              <div style={{ padding: '0.75rem', background: 'white', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+                <div style={{ fontSize: '0.75rem', color: '#64748b', marginBottom: '0.25rem' }}>Traditional Rate</div>
+                <div style={{ fontSize: '1rem', fontWeight: '700', color: '#1e293b' }}>{mortgageDetails.interestRate.toFixed(3)}%</div>
+              </div>
+              <div style={{ padding: '0.75rem', background: 'white', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+                <div style={{ fontSize: '0.75rem', color: '#64748b', marginBottom: '0.25rem' }}>AIO Rate</div>
+                <div style={{ fontSize: '1rem', fontWeight: '700', color: '#1e293b' }}>{mortgageDetails.aioInterestRate.toFixed(3)}%</div>
+              </div>
+              <div style={{ padding: '0.75rem', background: 'white', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+                <div style={{ fontSize: '0.75rem', color: '#64748b', marginBottom: '0.25rem' }}>Net Cash Flow</div>
+                <div style={{ fontSize: '1rem', fontWeight: '700', color: '#1e293b' }}>{formatCurrency(cashFlow?.netCashFlow || 0)}</div>
+              </div>
+            </div>
+          </div>
+
           {/* Math Sub-Tabs */}
           <div style={{
             display: 'flex',
             gap: '0.5rem',
-            marginTop: '1.5rem',
             marginBottom: '2rem',
             justifyContent: 'center',
             borderBottom: '2px solid #e2e8f0',
@@ -1350,29 +1372,6 @@ export default function SimulationResults({
             >
               🏦 Traditional Mortgage
             </button>
-          </div>
-
-          {/* Input Values Section */}
-          <div style={{ marginBottom: '3rem', padding: '2rem', background: '#f8fafc', borderRadius: '8px' }}>
-            <h3 style={{ marginBottom: '1.5rem', color: '#334155', fontSize: '1.25rem' }}>📊 Input Values</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
-              <div style={{ padding: '1rem', background: 'white', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
-                <div style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '0.25rem' }}>Loan Amount</div>
-                <div style={{ fontSize: '1.25rem', fontWeight: '700', color: '#1e293b' }}>{formatCurrency(mortgageDetails.currentBalance)}</div>
-              </div>
-              <div style={{ padding: '1rem', background: 'white', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
-                <div style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '0.25rem' }}>Traditional Rate</div>
-                <div style={{ fontSize: '1.25rem', fontWeight: '700', color: '#1e293b' }}>{mortgageDetails.interestRate.toFixed(3)}%</div>
-              </div>
-              <div style={{ padding: '1rem', background: 'white', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
-                <div style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '0.25rem' }}>AIO Rate</div>
-                <div style={{ fontSize: '1.25rem', fontWeight: '700', color: '#1e293b' }}>{mortgageDetails.aioInterestRate.toFixed(3)}%</div>
-              </div>
-              <div style={{ padding: '1rem', background: 'white', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
-                <div style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '0.25rem' }}>Net Cash Flow (Monthly)</div>
-                <div style={{ fontSize: '1.25rem', fontWeight: '700', color: '#1e293b' }}>{formatCurrency(cashFlow?.netCashFlow || 0)}</div>
-              </div>
-            </div>
           </div>
 
           {/* Traditional Loan Math */}
