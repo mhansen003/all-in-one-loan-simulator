@@ -488,37 +488,82 @@ export default function ProposalBuilder({
   };
 
   return (
-    <div className="proposal-builder">
-      <div className="form-header">
-        <h2>Proposal Builder</h2>
-        <p>Step-by-step wizard to create your client proposal</p>
-      </div>
-
-      {/* Step Indicator */}
-      <div className="wizard-steps">
-        {steps.map((step) => (
-          <div
-            key={step.number}
-            className={`wizard-step ${currentStep === step.number ? 'active' : ''} ${currentStep > step.number ? 'completed' : ''}`}
-          >
-            <div className="step-number">
-              {currentStep > step.number ? (
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-              ) : (
-                step.number
-              )}
-            </div>
-            <div className="step-info">
-              <div className="step-title">{step.title}</div>
-              <div className="step-description">{step.description}</div>
-            </div>
+    <div className="proposal-builder-layout">
+      {/* Left Sidebar Navigation */}
+      <aside className="sidebar-nav">
+        <div className="sidebar-header">
+          <div className="sidebar-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
           </div>
-        ))}
-      </div>
+          <h2>Proposal Builder</h2>
+          <p>Build your client proposal</p>
+        </div>
 
-      <div className="proposal-content">
+        <nav className="sidebar-steps">
+          {steps.map((step) => (
+            <button
+              key={step.number}
+              onClick={() => setCurrentStep(step.number as WizardStep)}
+              className={`sidebar-step ${currentStep === step.number ? 'active' : ''} ${currentStep > step.number ? 'completed' : ''}`}
+              disabled={!canProceedToNextStep() && step.number > currentStep}
+            >
+              <div className="step-indicator">
+                {currentStep > step.number ? (
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                ) : (
+                  <span>{step.number}</span>
+                )}
+              </div>
+              <div className="step-content">
+                <div className="step-title">{step.title}</div>
+                <div className="step-description">{step.description}</div>
+              </div>
+            </button>
+          ))}
+        </nav>
+
+        <button
+          className="btn-back"
+          onClick={onBack}
+          style={{
+            marginTop: 'auto',
+            width: '100%',
+            padding: '0.75rem',
+            background: '#f1f5f9',
+            border: '1px solid #cbd5e1',
+            borderRadius: '8px',
+            color: '#475569',
+            fontWeight: '600',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '0.5rem',
+            transition: 'all 0.2s'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = '#e2e8f0';
+            e.currentTarget.style.borderColor = '#94a3b8';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = '#f1f5f9';
+            e.currentTarget.style.borderColor = '#cbd5e1';
+          }}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '18px', height: '18px' }}>
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+          Back to Results
+        </button>
+      </aside>
+
+      {/* Main Content Area */}
+      <main className="main-content">
+        <div className="proposal-content">
         {/* Step 1: Client Information & Loan Officer Email */}
         {currentStep === 1 && (
           <div className="section-card">
@@ -2119,6 +2164,8 @@ export default function ProposalBuilder({
           to { opacity: 1; transform: scale(1); }
         }
       `}</style>
+        </div>
+      </main>
     </div>
   );
 }
