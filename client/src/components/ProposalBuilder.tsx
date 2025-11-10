@@ -2178,7 +2178,6 @@ export default function ProposalBuilder({
           to { opacity: 1; transform: scale(1); }
         }
       `}</style>
-      </div>
     </main>
   </div>
 );
