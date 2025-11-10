@@ -1136,6 +1136,7 @@ export default function ProposalBuilder({
                           </div>
                         )}
                       </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -2149,6 +2150,7 @@ export default function ProposalBuilder({
             </div>
           </div>
         )}
+        </div>
 
         {/* Wizard Navigation Buttons */}
         <div className="wizard-actions" style={{
@@ -2194,7 +2196,7 @@ export default function ProposalBuilder({
             )}
           </div>
         </div>
-      </div>
+      </main>
 
       {/* Pitch Options Modal */}
       <PitchOptionsModal
@@ -2242,7 +2244,6 @@ export default function ProposalBuilder({
           to { opacity: 1; transform: scale(1); }
         }
       `}</style>
-    </main>
-  </div>
-);
+    </div>
+  );
 }
