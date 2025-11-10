@@ -777,26 +777,42 @@ export default function CashFlowReview({
                     domain={[0, yAxisMax || 'auto']}
                   />
                   <Tooltip
-                    content={({ active, payload }) => {
+                    cursor={{ strokeDasharray: '3 3' }}
+                    position={{ x: 0, y: 0 }}
+                    allowEscapeViewBox={{ x: true, y: true }}
+                    content={({ active, payload, coordinate }) => {
                       if (!active || !payload || payload.length === 0) return null;
 
                       // Check if this is a scatter point (one-time transaction)
+                      // Scatter points have dataKey='amount' and payload with description
                       const scatterPoint = payload.find(p =>
                         p.dataKey === 'amount' && p.payload?.description
                       );
 
                       if (scatterPoint && scatterPoint.payload) {
                         const data = scatterPoint.payload;
+                        // Determine if income or expense based on the scatter series name
                         const isIncome = scatterPoint.name === 'One-Time Income';
+                        const isExpense = scatterPoint.name === 'One-Time Expense';
+
+                        // Calculate position relative to cursor
+                        const tooltipX = coordinate?.x || 0;
+                        const tooltipY = coordinate?.y || 0;
+
                         return (
                           <div
                             style={{
+                              position: 'absolute',
+                              left: `${tooltipX + 10}px`,
+                              top: `${tooltipY - 10}px`,
                               backgroundColor: 'white',
                               border: '2px solid ' + (isIncome ? '#10b981' : '#ef4444'),
                               borderRadius: '8px',
                               padding: '0.75rem',
                               boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                              maxWidth: '250px'
+                              maxWidth: '250px',
+                              pointerEvents: 'none',
+                              zIndex: 1000
                             }}
                           >
                             <div style={{
@@ -805,7 +821,10 @@ export default function CashFlowReview({
                               marginBottom: '0.5rem',
                               fontSize: '0.875rem'
                             }}>
-                              {scatterPoint.name}
+                              {isIncome ? '💰 One-Time Income' : '💸 One-Time Expense'}
+                            </div>
+                            <div style={{ fontSize: '0.85rem', color: '#4a5568', marginBottom: '0.25rem' }}>
+                              <strong>Date:</strong> {data.dayLabel || new Date(data.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' })}
                             </div>
                             <div style={{ fontSize: '0.85rem', color: '#4a5568', marginBottom: '0.25rem' }}>
                               <strong>Description:</strong> {data.description}
@@ -830,20 +849,21 @@ export default function CashFlowReview({
                         );
                       }
 
-                      // Regular tooltip for area chart
+                      // Regular tooltip for area chart - don't show if we're over a scatter point area
                       return (
                         <div
                           style={{
                             backgroundColor: 'white',
                             border: '1px solid #e2e8f0',
                             borderRadius: '8px',
-                            padding: '0.75rem'
+                            padding: '0.75rem',
+                            pointerEvents: 'none'
                           }}
                         >
                           <div style={{ marginBottom: '0.5rem', fontWeight: '600', color: '#1a202c' }}>
                             {payload[0]?.payload?.monthLabel}
                           </div>
-                          {payload.map((entry: any, index: number) => (
+                          {payload.filter(p => p.dataKey !== 'amount').map((entry: any, index: number) => (
                             <div key={index} style={{ fontSize: '0.875rem', color: '#4a5568', marginBottom: '0.25rem' }}>
                               <span style={{ color: entry.color, fontWeight: '600' }}>●</span>{' '}
                               {entry.name}: ${entry.value?.toLocaleString()}
@@ -884,7 +904,8 @@ export default function CashFlowReview({
                     fill="#10b981"
                     name="One-Time Income"
                     shape="circle"
-                    r={5}
+                    r={6}
+                    activeShape={{ r: 8, stroke: '#10b981', strokeWidth: 2 }}
                   />
                   <Scatter
                     data={oneTimeExpenseData}
@@ -893,7 +914,8 @@ export default function CashFlowReview({
                     fill="#ef4444"
                     name="One-Time Expense"
                     shape="circle"
-                    r={5}
+                    r={6}
+                    activeShape={{ r: 8, stroke: '#ef4444', strokeWidth: 2 }}
                   />
                 </ComposedChart>
               </ResponsiveContainer>
