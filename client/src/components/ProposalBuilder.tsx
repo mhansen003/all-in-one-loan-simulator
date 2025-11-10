@@ -2168,30 +2168,6 @@ export default function ProposalBuilder({
               </div>
             </div>
 
-            <div className="download-actions">
-              <p style={{
-                textAlign: 'center',
-                color: '#64748b',
-                fontSize: '0.95rem',
-                marginBottom: '1rem',
-                padding: '0.75rem',
-                background: '#f1f5f9',
-                borderRadius: '8px',
-                lineHeight: '1.6'
-              }}>
-                💡 <strong>Tip:</strong> Click the button below to download your proposal as a PDF file. The PDF will be automatically generated and saved to your downloads folder.
-              </p>
-              <button
-                className="btn-primary btn-large"
-                onClick={handleGeneratePDF}
-                title="Download proposal as PDF file"
-              >
-                <svg className="btn-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-                </svg>
-                Download as PDF
-              </button>
-            </div>
           </div>
         )}
         </div>
@@ -2217,7 +2193,7 @@ export default function ProposalBuilder({
             </svg>
             Back to Simulation
           </button>
-          <div style={{ display: 'flex', gap: '1rem' }}>
+          <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
             {currentStep > 1 && (
               <button className="btn-secondary" onClick={handlePreviousStep}>
                 <svg className="btn-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -2236,6 +2212,25 @@ export default function ProposalBuilder({
                 <svg className="btn-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                 </svg>
+              </button>
+            )}
+            {currentStep === 5 && (
+              <button
+                className="btn-primary"
+                onClick={handleGeneratePDF}
+                title="Download proposal as PDF file"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  fontSize: '1.05rem',
+                  padding: '0.875rem 2rem'
+                }}
+              >
+                <svg className="btn-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '20px', height: '20px' }}>
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                Download as PDF
               </button>
             )}
           </div>
