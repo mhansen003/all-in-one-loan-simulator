@@ -1654,7 +1654,6 @@ export default function SimulationResults({
 
                     const effectivePrincipal = Math.max(0, balance - avgBalance);
                     const interest = effectivePrincipal * monthlyRate;
-                    const principal = netCashFlow;
 
                     return (
                       <>
