@@ -448,7 +448,18 @@ Be conversational, professional, and persuasive. Focus on the "why" not just the
 // Generate AI Sales Pitch for Proposal
 router.post('/generate-pitch', async (req, res) => {
   try {
-    const { simulation, mortgageDetails, clientName } = req.body;
+    const { simulation, mortgageDetails, clientName, options } = req.body;
+
+    // Default options if not provided
+    const pitchOptions = options || {
+      tone: 'neutral',
+      length: 'standard',
+      technicalLevel: 'moderate',
+      focus: 'balanced',
+      urgency: 'moderate',
+      style: 'balanced',
+      cta: 'moderate'
+    };
 
     if (!simulation || !mortgageDetails) {
       return res.status(400).json({
@@ -495,6 +506,50 @@ router.post('/generate-pitch', async (req, res) => {
     const loanBalance = formatCurrency(mortgageDetails.currentBalance);
     const percentageSavings = simulation.comparison.percentageSavings.toFixed(1);
 
+    // Build prompt based on options
+    const toneMap = {
+      casual: 'friendly and conversational, like talking to a friend',
+      neutral: 'professional yet warm and conversational',
+      professional: 'highly professional and business-focused'
+    };
+
+    const lengthMap = {
+      shorter: '1-2 concise paragraphs (100-150 words)',
+      standard: '2-3 well-structured paragraphs (175-225 words)',
+      longer: '3-4 detailed paragraphs (250-325 words)'
+    };
+
+    const technicalMap = {
+      simple: 'Use simple, everyday language. Avoid financial jargon. Explain concepts like you would to a friend.',
+      moderate: 'Use some technical terms but explain them clearly. Balance between simple and expert.',
+      technical: 'Use industry terminology and detailed financial concepts. Assume financial sophistication.'
+    };
+
+    const focusMap = {
+      savings: 'Focus heavily on the dollar savings and interest reduction',
+      flexibility: 'Emphasize the liquidity and access to funds advantages',
+      security: 'Highlight the financial freedom and control benefits',
+      balanced: 'Balance savings, flexibility, and security equally'
+    };
+
+    const urgencyMap = {
+      low: 'Take a consultative, educational approach with no time pressure',
+      moderate: 'Suggest the benefits warrant consideration without being pushy',
+      high: 'Emphasize the opportunity cost of waiting and recommend prompt action'
+    };
+
+    const styleMap = {
+      'data-driven': 'Lead with numbers, statistics, and concrete savings figures',
+      balanced: 'Balance data with storytelling and real-world scenarios',
+      'story-based': 'Use narrative and paint a picture of their future financial freedom'
+    };
+
+    const ctaMap = {
+      soft: 'End with an open-ended invitation to learn more',
+      moderate: 'End with a forward-looking statement about their financial future',
+      strong: 'End with a clear call to action and next steps'
+    };
+
     const prompt = `You are a professional mortgage loan officer at CMG Financial. Write a compelling, personalized sales pitch for ${clientName} about the All-In-One loan product based on their specific financial situation.
 
 CLIENT'S SPECIFIC SAVINGS:
@@ -535,14 +590,15 @@ ALL-IN-ONE LOAN PRODUCT ADVANTAGES (weave these naturally into the pitch):
    - Real results, not projections
 
 PITCH REQUIREMENTS:
-- Professional yet warm and conversational tone
+- Tone: ${toneMap[pitchOptions.tone]}
+- Length: ${lengthMap[pitchOptions.length]}
+- Technical Level: ${technicalMap[pitchOptions.technicalLevel]}
+- Focus: ${focusMap[pitchOptions.focus]}
+- Urgency: ${urgencyMap[pitchOptions.urgency]}
+- Style: ${styleMap[pitchOptions.style]}
+- Call to Action: ${ctaMap[pitchOptions.cta]}
 - Address ${clientName} directly and personally
-- Focus on the transformational life impact, not just numbers
 - Emphasize how DAILY interest calculation is revolutionary
-- Highlight the flexibility advantage over traditional mortgages
-- Paint a picture of financial freedom and accelerated wealth building
-- Length: 2-3 well-structured paragraphs (175-225 words)
-- End with a forward-looking statement about their financial future
 
 Write a pitch that makes ${clientName} excited about saving ${interestSavings} and becoming mortgage-free ${timeSaved} earlier.`;
 

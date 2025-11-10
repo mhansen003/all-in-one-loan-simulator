@@ -139,6 +139,17 @@
   border-radius: 0 0 16px 16px;
 }
 
+.modal-footer button {
+  height: 44px;
+  padding: 0 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  min-width: 140px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .modal-footer-actions {
   display: flex;
   gap: 0.75rem;

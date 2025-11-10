@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   DndContext,
   closestCenter,
@@ -18,6 +18,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import type { SimulationResult, MortgageDetails, CashFlowAnalysis } from '../types';
 import PitchOptionsModal, { PitchOptions } from './PitchOptionsModal';
+import { savePitchSettings, loadPitchSettings, getDefaultPitchOptions } from '../utils/userSettings';
 import { CMG_BRANDING } from '../constants/cmgBranding';
 import html2pdf from 'html2pdf.js';
 import './ProposalBuilder.css';
@@ -146,15 +147,7 @@ export default function ProposalBuilder({
   const [showPitchOptions, setShowPitchOptions] = useState(false);
   const [isEditingPitch, setIsEditingPitch] = useState(false);
   const [editedPitch, setEditedPitch] = useState('');
-  const [pitchOptions, setPitchOptions] = useState<PitchOptions>({
-    tone: 'neutral',
-    length: 'standard',
-    technicalLevel: 'moderate',
-    focus: 'balanced',
-    urgency: 'moderate',
-    style: 'balanced',
-    cta: 'moderate',
-  });
+  const [pitchOptions, setPitchOptions] = useState<PitchOptions>(getDefaultPitchOptions());
 
   // Component preview state
   const [showComponentPreview, setShowComponentPreview] = useState(false);
@@ -282,6 +275,17 @@ export default function ProposalBuilder({
     }
   };
 
+  // Load user's saved pitch settings when email is entered
+  useEffect(() => {
+    if (loanOfficerEmail && loanOfficerEmail.includes('@')) {
+      const savedSettings = loadPitchSettings(loanOfficerEmail);
+      if (savedSettings) {
+        setPitchOptions(savedSettings);
+        console.log('✓ Loaded saved pitch preferences for', loanOfficerEmail);
+      }
+    }
+  }, [loanOfficerEmail]);
+
   const handleLoanOfficerEmailChange = (email: string) => {
     setLoanOfficerEmail(email);
     setSignatureFound(false);
@@ -349,6 +353,12 @@ export default function ProposalBuilder({
 
   const handleApplyPitchOptions = (options: PitchOptions) => {
     setPitchOptions(options);
+
+    // Save settings to user profile
+    if (loanOfficerEmail) {
+      savePitchSettings(loanOfficerEmail, options);
+    }
+
     // Automatically regenerate pitch with new options
     setTimeout(() => {
       handleGeneratePitch();
