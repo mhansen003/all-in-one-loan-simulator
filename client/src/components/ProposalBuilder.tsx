@@ -420,15 +420,43 @@ export default function ProposalBuilder({
       return;
     }
 
+    // Store original styles to restore after PDF generation
+    const originalMaxHeight = element.style.maxHeight;
+    const originalOverflow = element.style.overflow;
+    const originalHeight = element.style.height;
+
+    // Temporarily remove height constraints to capture full content
+    element.style.maxHeight = 'none';
+    element.style.overflow = 'visible';
+    element.style.height = 'auto';
+
     const options = {
       margin: 0.5,
       filename: `${clientName ? clientName.replace(/[^a-zA-Z0-9]/g, '_') + '_' : ''}AIO_Proposal_${new Date().toISOString().split('T')[0]}.pdf`,
       image: { type: 'jpeg' as const, quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true },
+      html2canvas: {
+        scale: 2,
+        useCORS: true,
+        scrollY: 0,
+        scrollX: 0,
+        windowHeight: element.scrollHeight,
+        height: element.scrollHeight
+      },
       jsPDF: { unit: 'in' as const, format: 'letter' as const, orientation: 'portrait' as const }
     };
 
-    html2pdf().set(options).from(element).save();
+    // Generate PDF and restore original styles after completion
+    html2pdf().set(options).from(element).save().then(() => {
+      element.style.maxHeight = originalMaxHeight;
+      element.style.overflow = originalOverflow;
+      element.style.height = originalHeight;
+    }).catch((error: Error) => {
+      console.error('PDF generation failed:', error);
+      // Restore styles even on error
+      element.style.maxHeight = originalMaxHeight;
+      element.style.overflow = originalOverflow;
+      element.style.height = originalHeight;
+    });
   };
 
   const formatCurrency = (amount: number): string => {
