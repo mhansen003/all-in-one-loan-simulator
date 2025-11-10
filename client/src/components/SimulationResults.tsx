@@ -29,6 +29,21 @@ export default function SimulationResults({
   const [paydownView, setPaydownView] = useState<PaydownView>('monthly');
   const [warningDismissed, setWarningDismissed] = useState(false);
   const [mathSubTab, setMathSubTab] = useState<'aio' | 'traditional'>('aio');
+
+  // Calculate actual months from transaction data
+  const calculateActualMonths = (transactions: any[]): number => {
+    if (!transactions || transactions.length === 0) return 1;
+
+    const dates = transactions.map(t => new Date(t.date));
+    const minDate = new Date(Math.min(...dates.map(d => d.getTime())));
+    const maxDate = new Date(Math.max(...dates.map(d => d.getTime())));
+
+    const monthsDiff = (maxDate.getFullYear() - minDate.getFullYear()) * 12 +
+                       (maxDate.getMonth() - minDate.getMonth()) + 1;
+
+    return Math.max(1, monthsDiff); // At least 1 month
+  };
+
   const formatCurrency = (amount: number): string => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -208,6 +223,8 @@ export default function SimulationResults({
         }}>
           <CashFlowSummaryCards
             cashFlow={cashFlow}
+            transactions={cashFlow.transactions}
+            actualMonths={calculateActualMonths(cashFlow.transactions)}
             displayTotalIncome={cashFlow.totalIncome}
             displayTotalExpenses={cashFlow.totalExpenses}
             displayNetCashFlow={cashFlow.netCashFlow}
