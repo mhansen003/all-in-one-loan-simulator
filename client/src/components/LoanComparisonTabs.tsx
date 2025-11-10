@@ -7,6 +7,7 @@ import {
   type LoanInputs,
   type WeeklyBreakdownEntry,
 } from '../utils/loanCalculations';
+import html2pdf from 'html2pdf.js';
 import './LoanComparisonTabs.css';
 
 interface LoanComparisonTabsProps {
@@ -78,8 +79,27 @@ export default function LoanComparisonTabs({
     );
   }, [loanAmount, aioRate, averageBalance, monthlyLeftover]);
 
+
+  const handleGeneratePDF = () => {
+    const element = document.getElementById('loan-comparison-content');
+    if (!element) {
+      console.error('Loan comparison content element not found');
+      return;
+    }
+
+    const options = {
+      margin: 0.5,
+      filename: `AIO_Loan_Analysis_${new Date().toISOString().split('T')[0]}.pdf`,
+      image: { type: 'jpeg' as const, quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true },
+      jsPDF: { unit: 'in' as const, format: 'letter' as const, orientation: 'portrait' as const }
+    };
+
+    html2pdf().set(options).from(element).save();
+  };
+
   return (
-    <div className="loan-comparison-tabs-container">
+    <div id="loan-comparison-content" className="loan-comparison-tabs-container">
       {/* Header */}
       <div className="comparison-header">
         <h1>📊 Your Loan Analysis</h1>
@@ -214,7 +234,7 @@ export default function LoanComparisonTabs({
           </button>
         )}
 
-        <button type="button" className="btn-primary" onClick={() => window.print()}>
+        <button type="button" className="btn-primary" onClick={handleGeneratePDF}>
           <svg
             className="btn-icon"
             xmlns="http://www.w3.org/2000/svg"
@@ -229,7 +249,7 @@ export default function LoanComparisonTabs({
               d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"
             />
           </svg>
-          Print / Save Results
+          Download Results as PDF
         </button>
       </div>
     </div>
