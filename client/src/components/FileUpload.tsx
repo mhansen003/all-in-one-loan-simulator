@@ -384,40 +384,6 @@ export default function FileUpload({
         </div>
       )}
 
-      {/* Analyze Button - Stays at top when files are uploaded */}
-      {selectedFiles.length > 0 && (
-        <div className="analyze-button-container">
-          <button
-            type="button"
-            className="btn-analyze-top"
-            onClick={onSubmit}
-            disabled={isAnalyzing || isProcessingPdf}
-          >
-            {isAnalyzing ? (
-              <>
-                <div className="spinner-small"></div>
-                Analyzing Statements...
-              </>
-            ) : isProcessingPdf ? (
-              <>
-                <div className="spinner-small"></div>
-                Processing PDFs...
-              </>
-            ) : (
-              <>
-                <svg className="btn-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
-                Analyze {selectedFiles.length} {selectedFiles.length === 1 ? 'File' : 'Files'} with AI
-                <svg className="btn-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </>
-            )}
-          </button>
-        </div>
-      )}
-
       {selectedFiles.length > 0 && (
         <div className="file-list">
           <div className="file-list-header">
