@@ -1138,7 +1138,7 @@ EXAMPLE COMPACT FORMAT:
 {"transactions":[{"date":"2024-08-01","description":"Paycheck","amount":5000,"category":"income","flagged":false}],"monthlyBreakdown":[{"month":"2024-08","income":5000,"expenses":2500,"netCashFlow":2500,"transactionCount":45}],"totalIncome":5000,"totalExpenses":2500,"netCashFlow":2500,"confidence":0.85}`;
 
     // Create a timeout promise for the main analysis call
-    const ANALYSIS_TIMEOUT_MS = 90000; // 90 seconds (increased for complex JSON analysis with categorization)
+    const ANALYSIS_TIMEOUT_MS = 150000; // 150 seconds (2.5 minutes) for complex analysis with many transactions
     const analysisStartTime = Date.now();
 
     // Track elapsed time during analysis
