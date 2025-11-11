@@ -491,7 +491,7 @@ function App() {
 
         <div className="footer-bottom">
           <p>© {new Date().getFullYear()} CMG Financial. All rights reserved. | NMLS# 1820</p>
-          <p style={{ marginTop: '0.5rem' }}>
+          <p style={{ marginTop: '0.2rem' }}>
             AI-powered All-In-One Look Back Simulator
           </p>
         </div>
