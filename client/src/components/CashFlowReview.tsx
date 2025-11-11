@@ -803,27 +803,16 @@ export default function CashFlowReview({
                     content={({ active, payload, coordinate }) => {
                       if (!active || !payload || payload.length === 0) return null;
 
-                      // Check if this is a scatter point (one-time transaction)
-                      // Scatter points have dataKey='amount' and payload with description
+                      // Check if this is a scatter point (one-time transaction) - hovering directly on a dot
                       const scatterPoint = payload.find(p =>
                         p.dataKey === 'amount' && p.payload?.description
                       );
 
-                      // Debug logging
-                      if (scatterPoint) {
-                        console.log('Scatter point detected:', {
-                          name: scatterPoint.name,
-                          amount: scatterPoint.payload?.amount,
-                          description: scatterPoint.payload?.description
-                        });
-                      }
-
+                      // If hovering directly over a scatter point dot, show detailed single-transaction tooltip
                       if (scatterPoint && scatterPoint.payload) {
                         const data = scatterPoint.payload;
-                        // Determine if income or expense based on the scatter series name
                         const isIncome = scatterPoint.name === 'One-Time Income';
 
-                        // Calculate position relative to cursor
                         const tooltipX = coordinate?.x || 0;
                         const tooltipY = coordinate?.y || 0;
 
@@ -879,26 +868,219 @@ export default function CashFlowReview({
                         );
                       }
 
-                      // Regular tooltip for area chart - don't show if we're over a scatter point area
+                      // Regular monthly tooltip - show ALL data including one-time transactions for the month
+                      const monthData = payload[0]?.payload;
+                      if (!monthData) return null;
+
+                      // Calculate totals for display
+                      const hasOneTimeIncome = monthData.oneTimeIncome && monthData.oneTimeIncome.length > 0;
+                      const hasOneTimeExpense = monthData.oneTimeExpense && monthData.oneTimeExpense.length > 0;
+                      const hasOneTimeTransactions = hasOneTimeIncome || hasOneTimeExpense;
+
                       return (
                         <div
                           style={{
                             backgroundColor: 'white',
-                            border: '1px solid #e2e8f0',
-                            borderRadius: '8px',
-                            padding: '0.75rem',
-                            pointerEvents: 'none'
+                            border: '2px solid #4299e1',
+                            borderRadius: '10px',
+                            padding: '1rem',
+                            pointerEvents: 'none',
+                            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                            maxWidth: '450px',
+                            maxHeight: '500px',
+                            overflowY: 'auto'
                           }}
                         >
-                          <div style={{ marginBottom: '0.5rem', fontWeight: '600', color: '#1a202c' }}>
-                            {payload[0]?.payload?.monthLabel}
+                          {/* Month Header */}
+                          <div style={{
+                            marginBottom: '0.75rem',
+                            fontWeight: '700',
+                            color: '#1a202c',
+                            fontSize: '1rem',
+                            paddingBottom: '0.5rem',
+                            borderBottom: '2px solid #e2e8f0'
+                          }}>
+                            📅 {monthData.monthLabel}
                           </div>
-                          {payload.filter(p => p.dataKey !== 'amount').map((entry: any, index: number) => (
-                            <div key={index} style={{ fontSize: '0.875rem', color: '#4a5568', marginBottom: '0.25rem' }}>
-                              <span style={{ color: entry.color, fontWeight: '600' }}>●</span>{' '}
-                              {entry.name}: ${entry.value?.toLocaleString()}
+
+                          {/* Recurring Income */}
+                          {monthData.incoming > 0 && (
+                            <div style={{
+                              fontSize: '0.875rem',
+                              color: '#4a5568',
+                              marginBottom: '0.5rem',
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              alignItems: 'center'
+                            }}>
+                              <div>
+                                <span style={{ color: '#60a5fa', fontWeight: '600', fontSize: '1.1em' }}>●</span>{' '}
+                                <strong>Recurring Income:</strong>
+                              </div>
+                              <span style={{ color: '#10b981', fontWeight: '600', marginLeft: '1rem' }}>
+                                ${monthData.incoming.toLocaleString()}
+                              </span>
                             </div>
-                          ))}
+                          )}
+
+                          {/* Recurring Expenses */}
+                          {monthData.outgoing > 0 && (
+                            <div style={{
+                              fontSize: '0.875rem',
+                              color: '#4a5568',
+                              marginBottom: hasOneTimeTransactions ? '0.75rem' : '0',
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              alignItems: 'center'
+                            }}>
+                              <div>
+                                <span style={{ color: '#fbbf24', fontWeight: '600', fontSize: '1.1em' }}>●</span>{' '}
+                                <strong>Recurring Expenses:</strong>
+                              </div>
+                              <span style={{ color: '#f59e0b', fontWeight: '600', marginLeft: '1rem' }}>
+                                ${monthData.outgoing.toLocaleString()}
+                              </span>
+                            </div>
+                          )}
+
+                          {/* One-Time Income Section */}
+                          {hasOneTimeIncome && (
+                            <div style={{
+                              marginTop: '0.75rem',
+                              paddingTop: '0.75rem',
+                              borderTop: '1px solid #e2e8f0'
+                            }}>
+                              <div style={{
+                                fontSize: '0.875rem',
+                                fontWeight: '700',
+                                color: '#10b981',
+                                marginBottom: '0.5rem',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.5rem'
+                              }}>
+                                💰 One-Time Income ({monthData.oneTimeIncome.length})
+                              </div>
+                              {monthData.oneTimeIncome.map((item: any, idx: number) => (
+                                <div
+                                  key={`income-${idx}`}
+                                  style={{
+                                    fontSize: '0.8rem',
+                                    color: '#4a5568',
+                                    marginBottom: '0.4rem',
+                                    marginLeft: '1.5rem',
+                                    paddingLeft: '0.5rem',
+                                    borderLeft: '2px solid #10b981',
+                                    opacity: item.excluded ? 0.5 : 1
+                                  }}
+                                >
+                                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem' }}>
+                                    <span style={{
+                                      flex: 1,
+                                      whiteSpace: 'nowrap',
+                                      overflow: 'hidden',
+                                      textOverflow: 'ellipsis'
+                                    }}>
+                                      {item.description}
+                                    </span>
+                                    <span style={{
+                                      color: '#10b981',
+                                      fontWeight: '600',
+                                      whiteSpace: 'nowrap'
+                                    }}>
+                                      ${item.amount.toLocaleString()}
+                                    </span>
+                                  </div>
+                                  {item.excluded && (
+                                    <div style={{
+                                      fontSize: '0.7rem',
+                                      color: '#dc2626',
+                                      fontStyle: 'italic',
+                                      marginTop: '0.1rem'
+                                    }}>
+                                      ⚠️ Excluded
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* One-Time Expense Section */}
+                          {hasOneTimeExpense && (
+                            <div style={{
+                              marginTop: '0.75rem',
+                              paddingTop: '0.75rem',
+                              borderTop: '1px solid #e2e8f0'
+                            }}>
+                              <div style={{
+                                fontSize: '0.875rem',
+                                fontWeight: '700',
+                                color: '#ef4444',
+                                marginBottom: '0.5rem',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.5rem'
+                              }}>
+                                💸 One-Time Expense ({monthData.oneTimeExpense.length})
+                              </div>
+                              {monthData.oneTimeExpense.map((item: any, idx: number) => (
+                                <div
+                                  key={`expense-${idx}`}
+                                  style={{
+                                    fontSize: '0.8rem',
+                                    color: '#4a5568',
+                                    marginBottom: '0.4rem',
+                                    marginLeft: '1.5rem',
+                                    paddingLeft: '0.5rem',
+                                    borderLeft: '2px solid #ef4444',
+                                    opacity: item.excluded ? 0.5 : 1
+                                  }}
+                                >
+                                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem' }}>
+                                    <span style={{
+                                      flex: 1,
+                                      whiteSpace: 'nowrap',
+                                      overflow: 'hidden',
+                                      textOverflow: 'ellipsis'
+                                    }}>
+                                      {item.description}
+                                    </span>
+                                    <span style={{
+                                      color: '#ef4444',
+                                      fontWeight: '600',
+                                      whiteSpace: 'nowrap'
+                                    }}>
+                                      ${item.amount.toLocaleString()}
+                                    </span>
+                                  </div>
+                                  {item.excluded && (
+                                    <div style={{
+                                      fontSize: '0.7rem',
+                                      color: '#dc2626',
+                                      fontStyle: 'italic',
+                                      marginTop: '0.1rem'
+                                    }}>
+                                      ⚠️ Excluded
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* Empty state message */}
+                          {!monthData.incoming && !monthData.outgoing && !hasOneTimeTransactions && (
+                            <div style={{
+                              fontSize: '0.875rem',
+                              color: '#718096',
+                              fontStyle: 'italic',
+                              textAlign: 'center',
+                              padding: '0.5rem'
+                            }}>
+                              No transactions this month
+                            </div>
+                          )}
                         </div>
                       );
                     }}
