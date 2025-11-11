@@ -918,6 +918,14 @@ ${dataToAnalyze}
 
 Your task is to CATEGORIZE and ANALYZE the above transactions:
 
+⚠️ CRITICAL - PATTERN DETECTION ACROSS ALL MONTHS:
+   - You are analyzing data from MULTIPLE MONTHS of bank statements
+   - Before categorizing ANY transaction, SCAN ALL TRANSACTIONS to detect repeating patterns
+   - Look for the SAME merchant/description appearing 2+ times across ANY months
+   - If you see "Cape & Coast Pre" in Oct + Nov + Dec → That's recurring income (3 times)
+   - If you see "SHARE DRAFT FROM CASH" 5+ times → That's recurring income
+   - This is how self-employed people receive income - through repeating client deposits!
+
 1. **PRESERVE & CATEGORIZE EVERY TRANSACTION**:
    - The data is already extracted - keep ALL transactions in your output
    - Use the EXACT date, description, and amount from the input
@@ -929,46 +937,78 @@ Your task is to CATEGORIZE and ANALYZE the above transactions:
    ⚠️ CRITICAL: You MUST be 100% consistent. Same transaction = same category every time.
 
    SUMMARY OF CATEGORIES:
-   - "income" = Regular recurring paychecks ONLY
-   - "one-time" = Irregular deposits (Zelle, tax refunds, etc.) AND one-time expenses (>$500 purchases, travel, etc.)
+   - "income" = ALL recurring deposits (paychecks, business income, rental income, repeating client payments)
+   - "one-time" = Truly irregular deposits/expenses appearing ONCE (tax refunds, large one-time purchases, etc.)
    - "housing" = Mortgage/rent payments matching the expected amount
    - "expense" = All other regular recurring expenses
 
    NOTE: Both one-time income AND one-time expenses use category "one-time" and are EXCLUDED from totals.
 
-   STEP 1 - Check if REGULAR INCOME (recurring paychecks only):
-   For a deposit to be considered REGULAR income, it must match these patterns:
-   - Contains keywords: "PAYROLL", "SALARY", "DIRECT DEP", "ACH CREDIT", "PAYCHECK", "PAY CHECK"
-   - OR: Regular bi-weekly/monthly deposits of similar amounts (e.g., $2,500 every 2 weeks)
-   - OR: Employer name in description (if you can identify the employer pattern)
+   ⚠️ BE LIBERAL WITH INCOME: If a deposit source repeats 2+ times = "income", NOT "one-time"!
+
+   STEP 1 - Check if REGULAR INCOME (be LIBERAL - detect ALL recurring deposits):
+
+   ⚠️ CRITICAL: Be MORE LIBERAL about income detection! Many people have self-employment, rental, or business income.
+
+   A deposit should be considered REGULAR income if it matches ANY of these patterns:
+
+   A. Traditional Employment:
+   - Contains keywords: "PAYROLL", "SALARY", "DIRECT DEP", "PAYCHECK", "PAY CHECK", "WAGES"
+
+   B. Self-Employment & Business Income (⭐ IMPORTANT):
+   - EFT/ACH deposits from business names appearing 2+ times across ALL months
+   - "SHARE DRAFT FROM CASH/CHECKS RECEIVED" - regular check deposits (common for self-employed)
+   - Property management companies (e.g., "Cape & Coast", "Property Management", "Mgmt")
+   - Rental income (e.g., "Witts End", "Indian Pass LLC", property names)
+   - Client payments appearing multiple times (same client name depositing 2+ times)
+   - Business platforms (Stripe, Square, PayPal Business if appearing regularly)
+   - 1099 contract work (if same payer appears 2+ times)
+
+   C. Recurring Deposit Patterns:
+   - The SAME merchant/description depositing 2+ times (even if months apart)
+   - Deposits of similar amounts (within 30%) appearing monthly or bi-monthly
+   - Any positive deposit that repeats from the same source = income
+
+   ⚠️ BE VERY LIBERAL: If you see ANY repeating deposit pattern from the same source (2+ times total),
+   categorize it as "income" UNLESS it's clearly a transfer, refund, or Venmo/Zelle between friends.
+
+   Examples of income to INCLUDE:
+   - "Cape & Coast Pre" $1,335 + $1,105 = INCOME (property management)
+   - "SHARE DRAFT FROM CASH RECEIVED" appearing 5 times = INCOME (business deposits)
+   - "Natural Retreats" $950 + $770 = INCOME (rental/business)
+   - "Witts End Prop" $370 = INCOME (rental property)
+   - "Capital Management" $1,500 appearing 2x = INCOME
 
    Do NOT categorize as regular income:
-   - Zelle, Venmo, Cash App, PayPal transfers (these are usually reimbursements or paybacks)
-   - Wire transfers IN (usually one-time)
-   - Tax refunds
-   - Large irregular deposits
-   - Refunds or reimbursements
+   - Zelle, Venmo, Cash App (one-time only - likely friend payments/reimbursements)
+   - Wire transfers IN (unless from same source 2+ times)
+   - Tax refunds (one-time)
+   - Refunds from merchants
+   - Transfers between own accounts (if detected)
 
-   → Category: "income" (only for regular, recurring employment income)
+   → Category: "income" (for all recurring deposits from business/employment sources)
 
    STEP 1B - Check if ONE-TIME INCOME (irregular deposits):
-   If it's a positive amount (deposit/credit) but NOT regular income, check if it's irregular:
+   If it's a positive amount (deposit/credit) but NOT regular income (didn't match Step 1), check if it's irregular:
 
-   One-Time Income Rules:
-   - Zelle, Venmo, Cash App, PayPal deposits (look for: "ZELLE", "VENMO", "CASH APP", "PAYPAL")
-   - Wire transfers IN (look for: "WIRE", "WIRE TRANSFER IN", "INCOMING WIRE")
+   ⚠️ IMPORTANT: Only categorize as "one-time" if it appears ONCE or is clearly irregular.
+
+   One-Time Income Rules (must appear ONLY ONCE or be clearly irregular):
+   - Zelle, Venmo, Cash App transfers appearing ONCE only (if appearing 3+ times, it's income!)
+   - Wire transfers IN from unique sources (one-time only)
    - Tax refunds (look for: "IRS", "TAX REFUND", "FEDERAL TAX", "STATE TAX")
-   - Large irregular deposits (>$1000 that don't match paycheck pattern)
+   - Large irregular deposits that don't repeat (>$5000 single occurrence)
    - Refunds and reimbursements (look for: "REFUND", "REIMBURSEMENT", "REBATE")
-   - Bonuses (look for: "BONUS", "COMMISSION")
-   - Large check deposits (>$2000 if not identified as payroll)
-   - Gifts, inheritance, settlements
-   - Side income that's irregular (freelance, gig work if not consistent)
+   - Bonuses appearing once (look for: "BONUS", "COMMISSION" - if one-time)
+   - Gifts, inheritance, settlements (one-time large amounts)
+
+   ⚠️ If Venmo/Zelle appears 3+ times: Treat as "income" in Step 1 (likely business payments)
+   ⚠️ If check deposits repeat 2+ times: Treat as "income" in Step 1 (self-employment)
 
    → Category: "one-time" + SET flagged=true + flagReason: "One-Time Income: [reason]"
 
    Examples of flag reasons:
-   - "One-Time Income: Zelle transfer - likely reimbursement"
+   - "One-Time Income: Single Zelle transfer - likely reimbursement"
    - "One-Time Income: Tax refund"
    - "One-Time Income: Large irregular deposit"
    - "One-Time Income: Wire transfer in"
