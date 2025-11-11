@@ -44,28 +44,36 @@ export default function AnalyzingModal({ fileCount, batchProgress }: AnalyzingMo
 
   const tips = [
     {
-      title: "What is an All-In-One Loan?",
-      content: "An All-In-One (AIO) loan combines your mortgage and bank account into one, allowing your income to offset your loan balance daily, reducing interest charges."
+      title: "📄 Extracting Text from PDFs",
+      content: "Our AI uses advanced OCR (Optical Character Recognition) to extract text from your bank statements, even from scanned images or complex PDF layouts."
     },
     {
-      title: "How Does Cash Flow Matter?",
-      content: "The more positive cash flow you have each month, the greater your interest savings. Every dollar in your account works to reduce the balance that accrues interest."
+      title: "🔍 Parsing Transaction Data",
+      content: "The AI identifies transaction dates, descriptions, amounts, and balances from unstructured text, handling various bank statement formats automatically."
     },
     {
-      title: "What About Access to My Money?",
-      content: "You have complete access to your funds anytime with checks, debit cards, and online transfers. Your money remains fully liquid while saving you interest."
+      title: "🧠 Pattern Recognition",
+      content: "Machine learning algorithms scan across all months to detect repeating deposits and expenses, identifying your consistent income sources and spending patterns."
     },
     {
-      title: "How Much Can I Save?",
-      content: "Most borrowers save 30-50% on total interest and pay off their mortgage 8-12 years faster, depending on their cash flow."
+      title: "💰 Income Detection",
+      content: "The AI looks for payroll deposits, self-employment income, rental income, and investment distributions that appear 2+ times across your statements."
     },
     {
-      title: "Is This Right for Everyone?",
-      content: "AIO loans work best for borrowers with consistent positive cash flow. Our analysis will show your suitability based on your transaction history."
+      title: "🏷️ Smart Categorization",
+      content: "Each transaction is intelligently categorized as income, expense, or one-time based on description keywords, amounts, and frequency patterns."
     },
     {
-      title: "What Makes This Different?",
-      content: "Unlike traditional mortgages that calculate interest monthly, AIO loans calculate daily. This means every deposit immediately starts reducing your interest."
+      title: "📊 Cash Flow Calculation",
+      content: "The system calculates your monthly averages, net cash flow, and deposit frequency to determine your financial suitability for an AIO loan."
+    },
+    {
+      title: "🚨 Fraud Detection",
+      content: "Advanced algorithms flag unusual transactions, large one-time deposits, and potential duplicates to ensure accurate cash flow analysis."
+    },
+    {
+      title: "⚡ Batch Processing",
+      content: "We process 2 batches simultaneously with automatic retry logic to handle large uploads quickly while staying within API rate limits."
     },
   ];
 
@@ -149,6 +157,12 @@ export default function AnalyzingModal({ fileCount, batchProgress }: AnalyzingMo
                 <div className="batch-header">
                   Processing Batches (2 at a time)
                 </div>
+                <div className="batch-progress-summary">
+                  <span className="progress-label">Completed:</span>
+                  <span className="progress-count">
+                    {batchProgress.current} / {batchProgress.total} batches
+                  </span>
+                </div>
                 <div className="batch-grid">
                   {Array.from({ length: batchProgress.total }, (_, i) => {
                     const status = getBatchStatus(i);
@@ -160,7 +174,7 @@ export default function AnalyzingModal({ fileCount, batchProgress }: AnalyzingMo
                         <div className="batch-label">Batch {i + 1}</div>
                         {status === 'processing' && <div className="batch-spinner"></div>}
                         {status === 'completed' && <div className="batch-checkmark">Done</div>}
-                        {status === 'waiting' && <div className="batch-waiting">Waiting</div>}
+                        {status === 'waiting' && <div className="batch-waiting">Queued</div>}
                       </div>
                     );
                   })}
@@ -174,10 +188,10 @@ export default function AnalyzingModal({ fileCount, batchProgress }: AnalyzingMo
             )}
           </div>
 
-          {/* FAQ Tips Carousel */}
+          {/* AI Processing Tips Carousel */}
           <div className="tips-carousel">
             <div className="tip-content-wrapper">
-              <div className="tip-icon">💡</div>
+              <div className="tip-icon">{tips[currentTip].title.split(' ')[0]}</div>
               <div className="tip-text">
                 <h4 className="tip-title">{tips[currentTip].title}</h4>
                 <p className="tip-description">{tips[currentTip].content}</p>
