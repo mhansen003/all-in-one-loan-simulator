@@ -61,23 +61,21 @@ export const analyzeStatements = async (
 
   console.log(`📊 Created ${batches.length} batches`);
 
-  // Store batch results in memory (client-side)
-  const batchResults: CashFlowAnalysis[] = [];
+  // Notify that all batches are starting in parallel
+  if (onProgress) {
+    onProgress({
+      current: 1,
+      total: batches.length,
+      message: `Processing all ${batches.length} batches in parallel (${files.length} files total)...`,
+    });
+  }
 
-  // Process each batch sequentially
-  for (let i = 0; i < batches.length; i++) {
-    const batch = batches[i];
-    const batchNumber = i + 1;
+  console.log(`🚀 Processing all ${batches.length} batches in PARALLEL`);
 
-    if (onProgress) {
-      onProgress({
-        current: i + 1,
-        total: batches.length,
-        message: `Processing batch ${batchNumber} of ${batches.length} (${batch.length} files)...`,
-      });
-    }
-
-    console.log(`🚀 Processing batch ${batchNumber}/${batches.length} (${batch.length} files)`);
+  // Process all batches in parallel using Promise.all
+  const batchPromises = batches.map(async (batch, index) => {
+    const batchNumber = index + 1;
+    console.log(`📦 Starting batch ${batchNumber}/${batches.length} (${batch.length} files)`);
 
     const formData = new FormData();
     batch.forEach((file) => {
@@ -95,12 +93,16 @@ export const analyzeStatements = async (
       });
 
       console.log(`✅ Batch ${batchNumber} completed`);
-      batchResults.push(response.data.cashFlow);
+      return response.data.cashFlow;
     } catch (error) {
       console.error(`❌ Batch ${batchNumber} failed:`, error);
       throw new Error(`Failed to process batch ${batchNumber}: ${error}`);
     }
-  }
+  });
+
+  // Wait for all batches to complete
+  const batchResults = await Promise.all(batchPromises);
+  console.log(`✅ All ${batches.length} batches completed in parallel`);
 
   // Combine all batch results (client-side)
   if (onProgress) {
