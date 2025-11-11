@@ -862,6 +862,7 @@ export default function ProposalBuilder({
         mortgageDetails,
         cashFlow,
         clientName,
+        loanOfficerEmail, // Added for tracking proposals by user
         aiPitch,
         components,
         signatureName,

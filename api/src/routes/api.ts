@@ -841,19 +841,52 @@ router.post('/save-proposal', async (req, res) => {
       });
     }
 
+    // Extract loan officer email and client name
+    const loanOfficerEmail = proposalData.loanOfficerEmail;
+    const clientName = proposalData.clientName || 'Unnamed Client';
+
+    if (!loanOfficerEmail) {
+      return res.status(400).json({
+        error: 'Missing loan officer email',
+        message: 'Loan officer email is required to save proposals',
+      });
+    }
+
     // Generate unique ID for the proposal (10 characters, URL-safe)
     const proposalId = nanoid(10);
 
-    // Store the proposal in Vercel KV with 90-day expiration
-    await kv.set(`proposal:${proposalId}`, proposalData, {
+    // Create proposal metadata
+    const proposalMetadata = {
+      id: proposalId,
+      clientName,
+      loanOfficerEmail,
+      createdAt: new Date().toISOString(),
+      expiresAt: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(),
+    };
+
+    // Store the full proposal data in Vercel KV with 90-day expiration
+    await kv.set(`proposal:${proposalId}`, {
+      ...proposalData,
+      metadata: proposalMetadata,
+    }, {
       ex: 90 * 24 * 60 * 60, // 90 days in seconds
     });
+
+    // Add this proposal to the loan officer's list
+    const userProposalsKey = `user:proposals:${loanOfficerEmail}`;
+    const existingProposals = (await kv.get(userProposalsKey)) as any[] || [];
+
+    // Add new proposal to the beginning of the array
+    const updatedProposals = [proposalMetadata, ...existingProposals];
+
+    // Store updated list (no expiration on user list)
+    await kv.set(userProposalsKey, updatedProposals);
 
     // Generate the shareable URL
     const baseUrl = process.env.CLIENT_URL || 'http://localhost:5173';
     const shareableUrl = `${baseUrl}/proposal/${proposalId}`;
 
-    console.log(`📎 Proposal saved: ${proposalId}`);
+    console.log(`📎 Proposal saved: ${proposalId} for ${loanOfficerEmail}`);
 
     res.json({
       success: true,
@@ -907,6 +940,103 @@ router.get('/proposals/:id', async (req, res) => {
       success: false,
       error: 'Retrieval failed',
       message: error.message || 'Failed to retrieve proposal',
+    });
+  }
+});
+
+// Get all proposals for a loan officer by email
+router.get('/my-proposals/:email', async (req, res) => {
+  try {
+    const { email } = req.params;
+
+    if (!email) {
+      return res.status(400).json({
+        error: 'Missing email',
+        message: 'Email is required',
+      });
+    }
+
+    // Retrieve the user's proposals list
+    const userProposalsKey = `user:proposals:${email}`;
+    const proposals = (await kv.get(userProposalsKey)) as any[] || [];
+
+    console.log(`📋 Retrieved ${proposals.length} proposals for ${email}`);
+
+    res.json({
+      success: true,
+      proposals,
+      count: proposals.length,
+      message: 'Proposals retrieved successfully',
+    });
+  } catch (error: any) {
+    console.error('Error retrieving user proposals:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Retrieval failed',
+      message: error.message || 'Failed to retrieve proposals',
+    });
+  }
+});
+
+// Delete a proposal
+router.delete('/proposals/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { email } = req.body;
+
+    if (!id || id.length !== 10) {
+      return res.status(400).json({
+        error: 'Invalid proposal ID',
+        message: 'Proposal ID must be 10 characters',
+      });
+    }
+
+    if (!email) {
+      return res.status(400).json({
+        error: 'Missing email',
+        message: 'Loan officer email is required',
+      });
+    }
+
+    // Get the proposal to verify ownership
+    const proposalData = await kv.get(`proposal:${id}`) as any;
+
+    if (!proposalData) {
+      return res.status(404).json({
+        error: 'Proposal not found',
+        message: 'This proposal does not exist or has expired',
+      });
+    }
+
+    // Verify ownership
+    if (proposalData.loanOfficerEmail !== email && proposalData.metadata?.loanOfficerEmail !== email) {
+      return res.status(403).json({
+        error: 'Unauthorized',
+        message: 'You can only delete your own proposals',
+      });
+    }
+
+    // Delete the proposal from KV
+    await kv.del(`proposal:${id}`);
+
+    // Remove from user's proposal list
+    const userProposalsKey = `user:proposals:${email}`;
+    const existingProposals = (await kv.get(userProposalsKey)) as any[] || [];
+    const updatedProposals = existingProposals.filter((p: any) => p.id !== id);
+    await kv.set(userProposalsKey, updatedProposals);
+
+    console.log(`🗑️ Proposal deleted: ${id} by ${email}`);
+
+    res.json({
+      success: true,
+      message: 'Proposal deleted successfully',
+    });
+  } catch (error: any) {
+    console.error('Error deleting proposal:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Deletion failed',
+      message: error.message || 'Failed to delete proposal',
     });
   }
 });

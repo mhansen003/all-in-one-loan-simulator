@@ -12,6 +12,7 @@ import ProposalBuilder from './components/ProposalBuilder';
 import AnalyzingModal from './components/AnalyzingModal';
 import FAQSlideout from './components/FAQSlideout';
 import PitchGuideModal from './components/PitchGuideModal';
+import MyProposals from './components/MyProposals';
 import { analyzeStatements, checkEligibility, simulateLoan } from './api';
 import './App.css';
 
@@ -63,9 +64,10 @@ function App() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [batchProgress, setBatchProgress] = useState<{ current: number; total: number; message: string } | null>(null);
 
-  // FAQ and Pitch Guide state
+  // FAQ, Pitch Guide, and My Proposals state
   const [isFAQOpen, setIsFAQOpen] = useState(false);
   const [isPitchGuideOpen, setIsPitchGuideOpen] = useState(false);
+  const [isMyProposalsOpen, setIsMyProposalsOpen] = useState(false);
   const [isHelpDropdownOpen, setIsHelpDropdownOpen] = useState(false);
 
   // Save state to localStorage whenever it changes
@@ -320,6 +322,21 @@ function App() {
                       <div className="dropdown-item-desc">Ask questions, get answers</div>
                     </div>
                   </button>
+                  <button
+                    className="help-dropdown-item"
+                    onClick={() => {
+                      setIsMyProposalsOpen(true);
+                      setIsHelpDropdownOpen(false);
+                    }}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    <div>
+                      <div className="dropdown-item-title">My Proposals</div>
+                      <div className="dropdown-item-desc">View and manage sent proposals</div>
+                    </div>
+                  </button>
                 </div>
               )}
             </div>
@@ -502,6 +519,82 @@ function App() {
 
       {/* Pitch Guide Modal */}
       <PitchGuideModal isOpen={isPitchGuideOpen} onClose={() => setIsPitchGuideOpen(false)} />
+
+      {/* My Proposals Modal */}
+      {isMyProposalsOpen && (
+        <div
+          onClick={() => setIsMyProposalsOpen(false)}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0, 0, 0, 0.6)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            backdropFilter: 'blur(4px)',
+            padding: '2rem',
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: 'white',
+              borderRadius: '16px',
+              maxWidth: '1200px',
+              width: '100%',
+              maxHeight: '90vh',
+              overflow: 'auto',
+              boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
+            }}
+          >
+            <div
+              style={{
+                padding: '1.5rem',
+                borderBottom: '2px solid #e2e8f0',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                background: 'linear-gradient(135deg, #9bc53d 0%, #7ba32a 100%)',
+                borderRadius: '16px 16px 0 0',
+              }}
+            >
+              <h2 style={{ margin: 0, fontSize: '1.5rem', color: 'white' }}>My Proposals</h2>
+              <button
+                onClick={() => setIsMyProposalsOpen(false)}
+                style={{
+                  background: 'rgba(255,255,255,0.2)',
+                  border: 'none',
+                  borderRadius: '8px',
+                  padding: '0.5rem',
+                  cursor: 'pointer',
+                }}
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="white"
+                  style={{ width: '24px', height: '24px' }}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+            <div style={{ padding: '2rem' }}>
+              <MyProposals />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
