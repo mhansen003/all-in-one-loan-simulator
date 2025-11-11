@@ -456,7 +456,7 @@ function App() {
               <span className="logo-cmg">CMG</span>
               <span className="logo-financial">FINANCIAL</span>
             </div>
-            <p style={{ fontSize: '0.85rem', lineHeight: '1.6', marginTop: '0.5rem' }}>
+            <p style={{ fontSize: '0.7rem', lineHeight: '1.4', marginTop: '0.25rem' }}>
               All-In-One Look Back Simulator
               <br />
               Powered by AI

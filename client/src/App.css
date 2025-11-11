@@ -28,7 +28,7 @@ body {
 
 .app-header {
   background: #2b3e50;
-  padding: 1rem 2rem;
+  padding: 0.5rem 1.5rem;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
   position: relative;
   z-index: 1001;
@@ -41,13 +41,13 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 2rem;
+  gap: 1rem;
 }
 
 .header-left {
   display: flex;
   align-items: center;
-  gap: 2rem;
+  gap: 1rem;
 }
 
 .logo {
@@ -59,26 +59,26 @@ body {
 
 .logo-cmg {
   color: #9bc53d;
-  font-size: 1.75rem;
+  font-size: 1.15rem;
   letter-spacing: -0.5px;
 }
 
 .logo-financial {
   color: #95a5a6;
-  font-size: 1.1rem;
+  font-size: 0.75rem;
   font-weight: 600;
   letter-spacing: 0.5px;
 }
 
 .header-divider {
   width: 1px;
-  height: 35px;
+  height: 25px;
   background: rgba(255, 255, 255, 0.15);
 }
 
 .header-title {
   color: #ffffff !important;
-  font-size: 1.35rem;
+  font-size: 0.95rem;
   margin: 0;
   font-weight: 600;
 }
@@ -592,9 +592,9 @@ h2.section-header {
 
 .app-footer {
   background: #2b3e50;
-  padding: 1.5rem 2rem 1rem;
+  padding: 0.75rem 1.5rem 0.5rem;
   color: #a8a8a8;
-  font-size: 0.85rem;
+  font-size: 0.75rem;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
   width: 100%;
   margin-top: auto;
@@ -605,15 +605,15 @@ h2.section-header {
   margin: 0 auto;
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1.5rem;
-  margin-bottom: 1rem;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
 }
 
 .footer-section h4 {
   color: #ffffff;
-  font-size: 0.9rem;
+  font-size: 0.75rem;
   font-weight: 600;
-  margin-bottom: 0.6rem;
+  margin-bottom: 0.35rem;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -625,14 +625,14 @@ h2.section-header {
 }
 
 .footer-section li {
-  margin-bottom: 0.4rem;
+  margin-bottom: 0.25rem;
 }
 
 .footer-section a {
   color: #a8a8a8;
   text-decoration: none;
   transition: color 0.2s ease;
-  font-size: 0.8rem;
+  font-size: 0.7rem;
 }
 
 .footer-section a:hover {
@@ -642,10 +642,10 @@ h2.section-header {
 .footer-bottom {
   max-width: 1400px;
   margin: 0 auto;
-  padding-top: 1rem;
+  padding-top: 0.5rem;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
   text-align: center;
-  font-size: 0.75rem;
+  font-size: 0.65rem;
   color: #718096;
 }
 
@@ -653,19 +653,19 @@ h2.section-header {
   display: flex;
   align-items: baseline;
   gap: 0.25rem;
-  margin-bottom: 0.6rem;
+  margin-bottom: 0.35rem;
 }
 
 .footer-logo .logo-cmg {
   color: #9bc53d;
-  font-size: 1.5rem;
+  font-size: 1rem;
   font-weight: 700;
   letter-spacing: -0.5px;
 }
 
 .footer-logo .logo-financial {
   color: #95a5a6;
-  font-size: 1rem;
+  font-size: 0.7rem;
   font-weight: 600;
   letter-spacing: 0.5px;
 }
@@ -674,7 +674,7 @@ h2.section-header {
 
 @media (max-width: 768px) {
   .app-header {
-    padding: 1rem;
+    padding: 0.5rem;
   }
 
   .header-container {
@@ -693,15 +693,15 @@ h2.section-header {
   }
 
   .header-title {
-    font-size: 1.2rem;
+    font-size: 0.85rem;
   }
 
   .logo-cmg {
-    font-size: 1.5rem;
+    font-size: 1rem;
   }
 
   .logo-financial {
-    font-size: 1rem;
+    font-size: 0.7rem;
   }
 
   .header-right {

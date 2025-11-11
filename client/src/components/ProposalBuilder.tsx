@@ -2191,7 +2191,7 @@ export default function ProposalBuilder({
               border: '2px solid #e2e8f0'
             }}>
               <button
-                onClick={handleDownloadPDF}
+                onClick={_handleGeneratePDF}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
