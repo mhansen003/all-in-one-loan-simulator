@@ -49,10 +49,9 @@ export const analyzeStatements = async (
     return response.data.cashFlow;
   }
 
-  // For 5+ files, use batch processing
+  // For 5+ files, use batch processing (client-side storage)
   console.log(`📦 Using batch processing for ${files.length} files (${BATCH_SIZE} per batch)`);
 
-  const batchId = `batch_${Date.now()}_${Math.random().toString(36).substring(7)}`;
   const batches: File[][] = [];
 
   // Split files into batches
@@ -61,6 +60,9 @@ export const analyzeStatements = async (
   }
 
   console.log(`📊 Created ${batches.length} batches`);
+
+  // Store batch results in memory (client-side)
+  const batchResults: CashFlowAnalysis[] = [];
 
   // Process each batch sequentially
   for (let i = 0; i < batches.length; i++) {
@@ -82,25 +84,25 @@ export const analyzeStatements = async (
       formData.append('files', file);
     });
     formData.append('currentHousingPayment', currentHousingPayment.toString());
-    formData.append('batchId', batchId);
-    formData.append('batchNumber', batchNumber.toString());
-    formData.append('totalBatches', batches.length.toString());
 
     try {
-      await api.post('/analyze-statements-batch', formData, {
+      // Use the regular analyze-statements endpoint
+      const response = await api.post('/analyze-statements', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
         timeout: 180000, // 3 minutes per batch
       });
+
       console.log(`✅ Batch ${batchNumber} completed`);
+      batchResults.push(response.data.cashFlow);
     } catch (error) {
       console.error(`❌ Batch ${batchNumber} failed:`, error);
       throw new Error(`Failed to process batch ${batchNumber}: ${error}`);
     }
   }
 
-  // Combine all batch results
+  // Combine all batch results (client-side)
   if (onProgress) {
     onProgress({
       current: batches.length,
@@ -109,16 +111,42 @@ export const analyzeStatements = async (
     });
   }
 
-  console.log(`🎯 Combining ${batches.length} batches...`);
+  console.log(`🎯 Combining ${batches.length} batch results...`);
 
-  const response = await api.post(`/batch-complete/${batchId}`, {
-    totalBatches: batches.length,
-    currentHousingPayment,
-  });
+  // Merge all transactions from all batches
+  const allTransactions = batchResults.flatMap(result => result.transactions || []);
 
-  console.log(`✅ All batches combined successfully`);
+  // Calculate totals from all transactions
+  const totalIncome = allTransactions
+    .filter(t => ['income', 'salary', 'deposit'].includes(t.category?.toLowerCase()) && !t.excluded)
+    .reduce((sum, t) => sum + Math.abs(t.amount), 0);
 
-  return response.data.cashFlow;
+  const totalExpenses = allTransactions
+    .filter(t => ['expense', 'recurring', 'payment'].includes(t.category?.toLowerCase()) && !t.excluded)
+    .reduce((sum, t) => sum + Math.abs(t.amount), 0);
+
+  // Use the first batch's calculated monthly averages as baseline
+  const firstBatch = batchResults[0];
+
+  const combinedCashFlow: CashFlowAnalysis = {
+    transactions: allTransactions,
+    totalIncome,
+    totalExpenses,
+    monthlyDeposits: firstBatch.monthlyDeposits || 0,
+    monthlyExpenses: firstBatch.monthlyExpenses || 0,
+    netCashFlow: (firstBatch.monthlyDeposits || 0) - (firstBatch.monthlyExpenses || 0) - currentHousingPayment,
+    depositFrequency: firstBatch.depositFrequency || 'monthly',
+    monthlyLeftover: (firstBatch.monthlyDeposits || 0) - (firstBatch.monthlyExpenses || 0) - currentHousingPayment,
+    averageMonthlyBalance: firstBatch.averageMonthlyBalance || 0,
+    monthlyBreakdown: firstBatch.monthlyBreakdown || [],
+    flaggedTransactions: allTransactions.filter(t => t.flagged),
+    duplicateTransactions: allTransactions.filter(t => t.isDuplicate),
+    confidence: firstBatch.confidence || 0.8,
+  };
+
+  console.log(`✅ Combined ${allTransactions.length} transactions from ${batches.length} batches`);
+
+  return combinedCashFlow;
 };
 
 // Check eligibility
