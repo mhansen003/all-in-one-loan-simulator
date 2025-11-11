@@ -122,7 +122,172 @@ router.get('/test-ai', async (req, res) => {
   }
 });
 
-// Analyze bank statements
+// Analyze bank statements - BATCH PROCESSING
+// This endpoint processes files in batches to avoid Vercel's 180s timeout
+router.post('/analyze-statements-batch', upload.array('files', 4), async (req, res) => {
+  try {
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({
+        error: 'No files uploaded',
+        message: 'Please upload at least one bank statement',
+      });
+    }
+
+    const files = req.files as Express.Multer.File[];
+    const currentHousingPayment = parseFloat(req.body.currentHousingPayment) || 0;
+    const batchId = req.body.batchId || nanoid(10);
+    const batchNumber = parseInt(req.body.batchNumber) || 1;
+    const totalBatches = parseInt(req.body.totalBatches) || 1;
+
+    console.log(`📦 Processing batch ${batchNumber}/${totalBatches} (ID: ${batchId})`);
+    console.log(`📁 Files in this batch: ${files.length}`);
+    console.log(`💰 Current housing payment: $${currentHousingPayment}`);
+
+    // Analyze this batch of files
+    const cashFlow = await analyzeStatements(files, currentHousingPayment);
+
+    // Store batch result in KV with 1-hour expiration
+    const batchKey = `batch:${batchId}:${batchNumber}`;
+    await kv.set(batchKey, {
+      batchNumber,
+      cashFlow,
+      fileCount: files.length,
+      processedAt: new Date().toISOString(),
+    }, { ex: 3600 }); // 1 hour expiration
+
+    // Update batch progress
+    const progressKey = `batch:${batchId}:progress`;
+    await kv.set(progressKey, {
+      completed: batchNumber,
+      total: totalBatches,
+      lastUpdate: new Date().toISOString(),
+    }, { ex: 3600 });
+
+    console.log(`✅ Batch ${batchNumber}/${totalBatches} completed`);
+
+    res.json({
+      success: true,
+      batchId,
+      batchNumber,
+      totalBatches,
+      cashFlow, // Return this batch's results
+      message: `Batch ${batchNumber}/${totalBatches} processed successfully`,
+    });
+  } catch (error: any) {
+    console.error(`❌ Error analyzing batch:`, error);
+    res.status(500).json({
+      error: 'Batch analysis failed',
+      message: error.message || 'Failed to analyze batch',
+    });
+  }
+});
+
+// Get batch processing status
+router.get('/batch-status/:batchId', async (req, res) => {
+  try {
+    const { batchId } = req.params;
+    const progressKey = `batch:${batchId}:progress`;
+    const progress = await kv.get(progressKey);
+
+    if (!progress) {
+      return res.status(404).json({
+        error: 'Batch not found',
+        message: 'No batch found with this ID',
+      });
+    }
+
+    res.json({
+      success: true,
+      progress,
+    });
+  } catch (error: any) {
+    console.error('Error getting batch status:', error);
+    res.status(500).json({
+      error: 'Status check failed',
+      message: error.message,
+    });
+  }
+});
+
+// Combine all batch results into final cash flow analysis
+router.post('/batch-complete/:batchId', async (req, res) => {
+  try {
+    const { batchId } = req.params;
+    const { totalBatches, currentHousingPayment } = req.body;
+
+    console.log(`🎯 Combining results for batch ID: ${batchId}`);
+
+    // Retrieve all batch results
+    const batchResults = [];
+    for (let i = 1; i <= totalBatches; i++) {
+      const batchKey = `batch:${batchId}:${i}`;
+      const batchData: any = await kv.get(batchKey);
+      if (batchData) {
+        batchResults.push(batchData.cashFlow);
+      }
+    }
+
+    if (batchResults.length === 0) {
+      return res.status(404).json({
+        error: 'No batch results found',
+        message: 'Could not find any batch results to combine',
+      });
+    }
+
+    // Combine all transactions from all batches
+    const allTransactions = batchResults.flatMap(cf => cf.transactions || []);
+
+    // Calculate combined totals
+    const totalIncome = allTransactions
+      .filter(t => ['income', 'salary', 'deposit'].includes(t.category?.toLowerCase()) && !t.excluded)
+      .reduce((sum, t) => sum + Math.abs(t.amount), 0);
+
+    const totalExpenses = allTransactions
+      .filter(t => ['expense', 'recurring', 'payment'].includes(t.category?.toLowerCase()) && !t.excluded)
+      .reduce((sum, t) => sum + Math.abs(t.amount), 0);
+
+    const monthlyDeposits = batchResults[0].monthlyDeposits || 0;
+    const monthlyExpenses = batchResults[0].monthlyExpenses || 0;
+    const netCashFlow = monthlyDeposits - monthlyExpenses - currentHousingPayment;
+
+    // Use first batch's deposit frequency
+    const depositFrequency = batchResults[0].depositFrequency || 'monthly';
+
+    const combinedCashFlow = {
+      transactions: allTransactions,
+      totalIncome,
+      totalExpenses,
+      monthlyDeposits,
+      monthlyExpenses,
+      netCashFlow,
+      depositFrequency,
+      monthlyLeftover: netCashFlow,
+      currentHousingPayment,
+    };
+
+    // Clean up batch data from KV
+    for (let i = 1; i <= totalBatches; i++) {
+      await kv.del(`batch:${batchId}:${i}`);
+    }
+    await kv.del(`batch:${batchId}:progress`);
+
+    console.log(`✅ Combined ${batchResults.length} batches with ${allTransactions.length} total transactions`);
+
+    res.json({
+      success: true,
+      cashFlow: combinedCashFlow,
+      message: 'All batches combined successfully',
+    });
+  } catch (error: any) {
+    console.error('Error combining batches:', error);
+    res.status(500).json({
+      error: 'Batch combination failed',
+      message: error.message,
+    });
+  }
+});
+
+// Analyze bank statements - LEGACY (single request, may timeout with many files)
 router.post('/analyze-statements', upload.array('files', 20), async (req, res) => {
   try {
     if (!req.files || req.files.length === 0) {

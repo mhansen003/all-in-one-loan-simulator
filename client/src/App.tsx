@@ -61,6 +61,7 @@ function App() {
 
   const [error, setError] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [batchProgress, setBatchProgress] = useState<{ current: number; total: number; message: string } | null>(null);
 
   // FAQ and Pitch Guide state
   const [isFAQOpen, setIsFAQOpen] = useState(false);
@@ -154,12 +155,18 @@ function App() {
 
     setError(null);
     setIsAnalyzing(true);
+    setBatchProgress(null);
     setStep('analyzing');
 
     try {
       const cashFlow = await analyzeStatements(
         bankStatements,
-        mortgageDetails.currentHousingPayment || 0
+        mortgageDetails.currentHousingPayment || 0,
+        (progress) => {
+          // Update batch progress for user feedback
+          setBatchProgress(progress);
+          console.log(`Progress: ${progress.message} (${progress.current}/${progress.total})`);
+        }
       );
 
       setCashFlowAnalysis(cashFlow);
@@ -170,6 +177,7 @@ function App() {
       setStep('upload-statements');
     } finally {
       setIsAnalyzing(false);
+      setBatchProgress(null);
     }
   };
 
@@ -378,7 +386,7 @@ function App() {
           )}
 
           {step === 'analyzing' && (
-            <AnalyzingModal fileCount={bankStatements.length} />
+            <AnalyzingModal fileCount={bankStatements.length} batchProgress={batchProgress} />
           )}
 
           {step === 'cash-flow-review' && cashFlowAnalysis && (

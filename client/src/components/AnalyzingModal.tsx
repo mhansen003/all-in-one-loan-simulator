@@ -3,9 +3,10 @@ import './AnalyzingModal.css';
 
 interface AnalyzingModalProps {
   fileCount: number;
+  batchProgress?: { current: number; total: number; message: string } | null;
 }
 
-export default function AnalyzingModal({ fileCount }: AnalyzingModalProps) {
+export default function AnalyzingModal({ fileCount, batchProgress }: AnalyzingModalProps) {
   const [currentStep, setCurrentStep] = useState(0);
   const [currentTip, setCurrentTip] = useState(0);
 
@@ -118,12 +119,24 @@ export default function AnalyzingModal({ fileCount }: AnalyzingModalProps) {
             </div>
           </div>
 
-          {/* Current Step */}
+          {/* Current Step or Batch Progress */}
           <div className="current-step">
-            <div className="step-indicator">
-              <span className="step-icon">✨</span>
-              <span className="step-text">{steps[currentStep]?.label}</span>
-            </div>
+            {batchProgress ? (
+              <div className="batch-progress-info">
+                <div className="step-indicator">
+                  <span className="step-icon">📦</span>
+                  <span className="step-text">{batchProgress.message}</span>
+                </div>
+                <div className="batch-counter">
+                  Batch {batchProgress.current} of {batchProgress.total}
+                </div>
+              </div>
+            ) : (
+              <div className="step-indicator">
+                <span className="step-icon">✨</span>
+                <span className="step-text">{steps[currentStep]?.label}</span>
+              </div>
+            )}
           </div>
 
           {/* FAQ Tips Carousel */}
