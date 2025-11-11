@@ -2794,17 +2794,66 @@ export default function ProposalBuilder({
                   </button>
                 </div>
               </div>
-              <div style={{ background: '#f0fdf4', border: '2px solid #86efac', borderRadius: '8px', padding: '1rem' }}>
+              {/* Success Info */}
+              <div style={{ background: '#f0fdf4', border: '2px solid #86efac', borderRadius: '8px', padding: '1rem', marginBottom: '1rem' }}>
                 <div style={{ display: 'flex', gap: '0.75rem' }}>
                   <div style={{ fontSize: '1.5rem' }}>✅</div>
                   <div>
                     <div style={{ fontWeight: 600, color: '#16a34a', marginBottom: '0.25rem' }}>Proposal Saved Successfully</div>
                     <div style={{ fontSize: '0.9rem', color: '#15803d', lineHeight: 1.5 }}>
-                      Your client can view this proposal anytime using the link above. It will be available for 90 days. They can also print or save it as a PDF directly from their browser.
+                      Your client can view this proposal anytime using the link above. It will be available for 90 days.
                     </div>
                   </div>
                 </div>
               </div>
+
+              {/* My Proposals Info */}
+              <div style={{ background: '#eff6ff', border: '2px solid #93c5fd', borderRadius: '8px', padding: '1rem' }}>
+                <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'start' }}>
+                  <div style={{ fontSize: '1.5rem' }}>📋</div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 600, color: '#1e40af', marginBottom: '0.5rem' }}>Access Your Proposals Anytime</div>
+                    <div style={{ fontSize: '0.9rem', color: '#1e3a8a', lineHeight: 1.5, marginBottom: '0.75rem' }}>
+                      This proposal has been saved to <strong>My Proposals</strong> where you can:
+                      <ul style={{ margin: '0.5rem 0 0 0', paddingLeft: '1.25rem' }}>
+                        <li>View all your sent proposals</li>
+                        <li>Copy links to resend to clients</li>
+                        <li>Delete old proposals</li>
+                      </ul>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setShowShareModal(false);
+                        // Trigger My Proposals modal
+                        const event = new CustomEvent('openMyProposals');
+                        window.dispatchEvent(event);
+                      }}
+                      style={{
+                        padding: '0.625rem 1.25rem',
+                        background: '#2563eb',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '6px',
+                        fontSize: '0.875rem',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem'
+                      }}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '16px', height: '16px' }}>
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                      Open My Proposals
+                    </button>
+                    <div style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '0.5rem', fontStyle: 'italic' }}>
+                      💡 Tip: You can also access My Proposals from the <strong>Tools</strong> dropdown in the header
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               <div style={{ marginTop: '1.5rem', display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
                 <button
                   onClick={() => setShowShareModal(false)}

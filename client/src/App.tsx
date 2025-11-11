@@ -70,6 +70,15 @@ function App() {
   const [isMyProposalsOpen, setIsMyProposalsOpen] = useState(false);
   const [isHelpDropdownOpen, setIsHelpDropdownOpen] = useState(false);
 
+  // Listen for custom event to open My Proposals
+  useEffect(() => {
+    const handleOpenMyProposals = () => {
+      setIsMyProposalsOpen(true);
+    };
+    window.addEventListener('openMyProposals', handleOpenMyProposals);
+    return () => window.removeEventListener('openMyProposals', handleOpenMyProposals);
+  }, []);
+
   // Save state to localStorage whenever it changes
   useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.STEP, step);
