@@ -225,11 +225,11 @@ export default function CashFlowReview({
       .forEach(transaction => {
         const date = new Date(transaction.date);
         const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-        const amount = Math.abs(transaction.amount);
         const isIncome = transaction.amount > 0;
 
         const dataPoint = {
-          amount,
+          amount: Math.abs(transaction.amount), // Display amount (always positive)
+          originalAmount: transaction.amount,   // Preserve sign for verification
           description: transaction.description,
           excluded: transaction.excluded || false,
           date: transaction.date
@@ -961,48 +961,56 @@ export default function CashFlowReview({
                               }}>
                                 💰 One-Time Income ({monthData.oneTimeIncome.length})
                               </div>
-                              {monthData.oneTimeIncome.map((item: any, idx: number) => (
-                                <div
-                                  key={`income-${idx}`}
-                                  style={{
-                                    fontSize: '0.8rem',
-                                    color: '#4a5568',
-                                    marginBottom: '0.4rem',
-                                    marginLeft: '1.5rem',
-                                    paddingLeft: '0.5rem',
-                                    borderLeft: '2px solid #10b981',
-                                    opacity: item.excluded ? 0.5 : 1
-                                  }}
-                                >
-                                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem' }}>
-                                    <span style={{
-                                      flex: 1,
-                                      whiteSpace: 'nowrap',
-                                      overflow: 'hidden',
-                                      textOverflow: 'ellipsis'
-                                    }}>
-                                      {item.description}
-                                    </span>
-                                    <span style={{
-                                      color: '#10b981',
-                                      fontWeight: '600',
-                                      whiteSpace: 'nowrap'
-                                    }}>
-                                      +${item.amount.toLocaleString()}
-                                    </span>
-                                  </div>
-                                  {item.excluded && (
-                                    <div style={{
-                                      fontSize: '0.7rem',
-                                      color: '#dc2626',
-                                      fontStyle: 'italic',
-                                      marginTop: '0.1rem'
-                                    }}>
-                                      ⚠️ Excluded
+                              {monthData.oneTimeIncome.map((item: any, idx: number) => {
+                                // Verify categorization using original amount
+                                const isActuallyIncome = !item.originalAmount || item.originalAmount > 0;
+                                const displayColor = isActuallyIncome ? '#10b981' : '#ef4444';
+                                const displayBorder = isActuallyIncome ? '#10b981' : '#ef4444';
+                                const displaySign = isActuallyIncome ? '+' : '-';
+
+                                return (
+                                  <div
+                                    key={`income-${idx}`}
+                                    style={{
+                                      fontSize: '0.8rem',
+                                      color: '#4a5568',
+                                      marginBottom: '0.4rem',
+                                      marginLeft: '1.5rem',
+                                      paddingLeft: '0.5rem',
+                                      borderLeft: `2px solid ${displayBorder}`,
+                                      opacity: item.excluded ? 0.5 : 1
+                                    }}
+                                  >
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem' }}>
+                                      <span style={{
+                                        flex: 1,
+                                        whiteSpace: 'nowrap',
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis'
+                                      }}>
+                                        {item.description}
+                                      </span>
+                                      <span style={{
+                                        color: displayColor,
+                                        fontWeight: '600',
+                                        whiteSpace: 'nowrap'
+                                      }}>
+                                        {displaySign}${item.amount.toLocaleString()}
+                                      </span>
                                     </div>
-                                  )}
-                                </div>
-                              ))}
+                                    {item.excluded && (
+                                      <div style={{
+                                        fontSize: '0.7rem',
+                                        color: '#dc2626',
+                                        fontStyle: 'italic',
+                                        marginTop: '0.1rem'
+                                      }}>
+                                        ⚠️ Excluded
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              })}
                             </div>
                           )}
 
@@ -1024,48 +1032,56 @@ export default function CashFlowReview({
                               }}>
                                 💸 One-Time Withdrawal ({monthData.oneTimeExpense.length})
                               </div>
-                              {monthData.oneTimeExpense.map((item: any, idx: number) => (
-                                <div
-                                  key={`expense-${idx}`}
-                                  style={{
-                                    fontSize: '0.8rem',
-                                    color: '#4a5568',
-                                    marginBottom: '0.4rem',
-                                    marginLeft: '1.5rem',
-                                    paddingLeft: '0.5rem',
-                                    borderLeft: '2px solid #ef4444',
-                                    opacity: item.excluded ? 0.5 : 1
-                                  }}
-                                >
-                                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem' }}>
-                                    <span style={{
-                                      flex: 1,
-                                      whiteSpace: 'nowrap',
-                                      overflow: 'hidden',
-                                      textOverflow: 'ellipsis'
-                                    }}>
-                                      {item.description}
-                                    </span>
-                                    <span style={{
-                                      color: '#ef4444',
-                                      fontWeight: '600',
-                                      whiteSpace: 'nowrap'
-                                    }}>
-                                      -${item.amount.toLocaleString()}
-                                    </span>
-                                  </div>
-                                  {item.excluded && (
-                                    <div style={{
-                                      fontSize: '0.7rem',
-                                      color: '#dc2626',
-                                      fontStyle: 'italic',
-                                      marginTop: '0.1rem'
-                                    }}>
-                                      ⚠️ Excluded
+                              {monthData.oneTimeExpense.map((item: any, idx: number) => {
+                                // Verify categorization using original amount
+                                const isActuallyExpense = !item.originalAmount || item.originalAmount < 0;
+                                const displayColor = isActuallyExpense ? '#ef4444' : '#10b981';
+                                const displayBorder = isActuallyExpense ? '#ef4444' : '#10b981';
+                                const displaySign = isActuallyExpense ? '-' : '+';
+
+                                return (
+                                  <div
+                                    key={`expense-${idx}`}
+                                    style={{
+                                      fontSize: '0.8rem',
+                                      color: '#4a5568',
+                                      marginBottom: '0.4rem',
+                                      marginLeft: '1.5rem',
+                                      paddingLeft: '0.5rem',
+                                      borderLeft: `2px solid ${displayBorder}`,
+                                      opacity: item.excluded ? 0.5 : 1
+                                    }}
+                                  >
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem' }}>
+                                      <span style={{
+                                        flex: 1,
+                                        whiteSpace: 'nowrap',
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis'
+                                      }}>
+                                        {item.description}
+                                      </span>
+                                      <span style={{
+                                        color: displayColor,
+                                        fontWeight: '600',
+                                        whiteSpace: 'nowrap'
+                                      }}>
+                                        {displaySign}${item.amount.toLocaleString()}
+                                      </span>
                                     </div>
-                                  )}
-                                </div>
-                              ))}
+                                    {item.excluded && (
+                                      <div style={{
+                                        fontSize: '0.7rem',
+                                        color: '#dc2626',
+                                        fontStyle: 'italic',
+                                        marginTop: '0.1rem'
+                                      }}>
+                                        ⚠️ Excluded
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              })}
                             </div>
                           )}
 

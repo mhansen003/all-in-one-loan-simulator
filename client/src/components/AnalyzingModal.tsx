@@ -4,11 +4,12 @@ import './AnalyzingModal.css';
 interface AnalyzingModalProps {
   fileCount: number;
   batchProgress?: { current: number; total: number; message: string } | null;
+  onAbort?: () => void;
 }
 
 type BatchStatus = 'waiting' | 'processing' | 'completed';
 
-export default function AnalyzingModal({ fileCount, batchProgress }: AnalyzingModalProps) {
+export default function AnalyzingModal({ fileCount, batchProgress, onAbort }: AnalyzingModalProps) {
   const [currentStep, setCurrentStep] = useState(0);
   const [currentTip, setCurrentTip] = useState(0);
 
@@ -150,6 +151,10 @@ export default function AnalyzingModal({ fileCount, batchProgress }: AnalyzingMo
             </div>
           </div>
 
+          <p className="analyzing-note">
+            Sit back, this might take a few minutes...
+          </p>
+
           {/* Current Step or Batch Progress */}
           <div className="current-step">
             {batchProgress ? (
@@ -207,9 +212,16 @@ export default function AnalyzingModal({ fileCount, batchProgress }: AnalyzingMo
             </div>
           </div>
 
-          <p className="analyzing-note">
-            Sit back, this might take a few minutes...
-          </p>
+          {/* Abort Button */}
+          {onAbort && (
+            <button
+              className="abort-button"
+              onClick={onAbort}
+              title="Cancel analysis and return to upload"
+            >
+              ✕ Cancel
+            </button>
+          )}
         </div>
       </div>
     </div>

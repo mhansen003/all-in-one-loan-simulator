@@ -767,6 +767,13 @@ PITCH REQUIREMENTS:
 - Address ${clientName} directly and personally
 - Emphasize how DAILY interest calculation is revolutionary
 
+CRITICAL FORMATTING INSTRUCTIONS:
+- DO NOT include a subject line
+- DO NOT include "Subject:" or any header
+- DO NOT write "I wanted to reach out..." or "I'd like to share..."
+- Start IMMEDIATELY with the pitch content
+- Jump straight into the value proposition
+
 Write a pitch that makes ${clientName} excited about saving ${interestSavings} and becoming mortgage-free ${timeSaved} earlier.`;
 
     const completion = await openai.chat.completions.create({
@@ -775,7 +782,7 @@ Write a pitch that makes ${clientName} excited about saving ${interestSavings} a
         {
           role: 'system',
           content:
-            'You are an expert loan officer specializing in All-In-One mortgages. Write compelling, personalized sales pitches that help clients understand the transformational benefits of this product.',
+            'You are an expert loan officer specializing in All-In-One mortgages. Write compelling, personalized sales pitches that help clients understand the transformational benefits of this product. IMPORTANT: Start directly with the pitch content - no subject lines, no headers, no preamble like "I wanted to reach out". Jump straight into the value proposition.',
         },
         {
           role: 'user',

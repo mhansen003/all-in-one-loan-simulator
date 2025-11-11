@@ -181,6 +181,14 @@ function App() {
     }
   };
 
+  const handleAbortAnalysis = () => {
+    console.log('Analysis aborted by user');
+    setIsAnalyzing(false);
+    setBatchProgress(null);
+    setStep('upload-statements');
+    setError('Analysis cancelled. You can re-upload and try again.');
+  };
+
   const handleContinueToSimulation = async () => {
     if (!cashFlowAnalysis || !mortgageDetails) {
       setError('Missing required data');
@@ -386,7 +394,11 @@ function App() {
           )}
 
           {step === 'analyzing' && (
-            <AnalyzingModal fileCount={bankStatements.length} batchProgress={batchProgress} />
+            <AnalyzingModal
+              fileCount={bankStatements.length}
+              batchProgress={batchProgress}
+              onAbort={handleAbortAnalysis}
+            />
           )}
 
           {step === 'cash-flow-review' && cashFlowAnalysis && (
