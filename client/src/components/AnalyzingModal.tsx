@@ -122,12 +122,18 @@ export default function AnalyzingModal({ fileCount, batchProgress }: AnalyzingMo
           {/* Current Step or Batch Progress */}
           <div className="current-step">
             {batchProgress ? (
-              <div className="batch-progress-info">
-                <div className="batch-counter">
-                  📦 Batch {batchProgress.current} of {batchProgress.total}
+              <div className="batch-progress-container">
+                <div className="batch-header">
+                  Processing All Batches in Parallel
                 </div>
-                <div className="step-indicator">
-                  <span className="step-text">Processing documents in batches to ensure reliability...</span>
+                <div className="batch-grid">
+                  {Array.from({ length: batchProgress.total }, (_, i) => (
+                    <div key={i} className="batch-item">
+                      <div className="batch-icon">📦</div>
+                      <div className="batch-label">Batch {i + 1}</div>
+                      <div className="batch-spinner"></div>
+                    </div>
+                  ))}
                 </div>
               </div>
             ) : (
