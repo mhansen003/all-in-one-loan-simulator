@@ -22,6 +22,7 @@ export default function ManualCashFlowInput({ onSubmit, onBack, mortgageDetails 
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysis, setAnalysis] = useState<CashFlowAnalysis | null>(null);
   const [showReviewModal, setShowReviewModal] = useState(false);
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
 
   const handleManualSubmit = () => {
     const value = parseFloat(cashFlow.replace(/[,$]/g, ''));
@@ -149,6 +150,12 @@ export default function ManualCashFlowInput({ onSubmit, onBack, mortgageDetails 
 
   const handleReviewCancel = () => {
     setShowReviewModal(false);
+  };
+
+  const handleClearAll = () => {
+    setFiles([]);
+    setShowClearConfirm(false);
+    setError(null);
   };
 
   return (
@@ -324,7 +331,56 @@ export default function ManualCashFlowInput({ onSubmit, onBack, mortgageDetails 
 
             {files.length > 0 && (
               <div className="files-list">
-                <h3>Uploaded Files ({files.length})</h3>
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginBottom: '1rem'
+                }}>
+                  <h3 style={{ margin: 0 }}>Uploaded Files ({files.length})</h3>
+                  <button
+                    type="button"
+                    onClick={() => setShowClearConfirm(true)}
+                    style={{
+                      padding: '0.5rem 1rem',
+                      background: '#fef2f2',
+                      border: '1px solid #fecaca',
+                      borderRadius: '6px',
+                      color: '#dc2626',
+                      fontSize: '0.875rem',
+                      fontWeight: '600',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      transition: 'all 0.2s'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = '#fee2e2';
+                      e.currentTarget.style.borderColor = '#fca5a5';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = '#fef2f2';
+                      e.currentTarget.style.borderColor = '#fecaca';
+                    }}
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      style={{ width: '16px', height: '16px' }}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                      />
+                    </svg>
+                    Clear All
+                  </button>
+                </div>
                 {files.map((file, index) => (
                   <div key={index} className="file-item">
                     <svg
@@ -471,6 +527,170 @@ export default function ManualCashFlowInput({ onSubmit, onBack, mortgageDetails 
           onConfirm={handleReviewConfirm}
           onCancel={handleReviewCancel}
         />
+      )}
+
+      {/* Clear All Confirmation Modal */}
+      {showClearConfirm && (
+        <div
+          onClick={() => setShowClearConfirm(false)}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0, 0, 0, 0.6)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            backdropFilter: 'blur(4px)'
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: 'white',
+              borderRadius: '16px',
+              padding: '2rem',
+              maxWidth: '480px',
+              width: '90%',
+              boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
+              animation: 'slideIn 0.2s ease-out'
+            }}
+          >
+            {/* Warning Icon */}
+            <div style={{
+              width: '64px',
+              height: '64px',
+              margin: '0 auto 1.5rem',
+              background: 'linear-gradient(135deg, #fee2e2 0%, #fef2f2 100%)',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              border: '3px solid #fecaca'
+            }}>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="#dc2626"
+                style={{ width: '36px', height: '36px' }}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2.5}
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                />
+              </svg>
+            </div>
+
+            {/* Title */}
+            <h2 style={{
+              margin: '0 0 0.75rem 0',
+              fontSize: '1.5rem',
+              fontWeight: '700',
+              color: '#1a202c',
+              textAlign: 'center'
+            }}>
+              Clear All Files?
+            </h2>
+
+            {/* Description */}
+            <p style={{
+              margin: '0 0 2rem 0',
+              fontSize: '1rem',
+              color: '#4a5568',
+              textAlign: 'center',
+              lineHeight: '1.6'
+            }}>
+              This will remove all <strong>{files.length} uploaded file{files.length !== 1 ? 's' : ''}</strong> from the list.
+              You'll need to re-upload them if you want to analyze your statements.
+            </p>
+
+            {/* Action Buttons */}
+            <div style={{
+              display: 'flex',
+              gap: '1rem',
+              justifyContent: 'center'
+            }}>
+              <button
+                type="button"
+                onClick={() => setShowClearConfirm(false)}
+                style={{
+                  padding: '0.75rem 1.5rem',
+                  border: '2px solid #e2e8f0',
+                  borderRadius: '10px',
+                  background: 'white',
+                  color: '#4a5568',
+                  fontSize: '0.9375rem',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  minWidth: '120px'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = '#f7fafc';
+                  e.currentTarget.style.borderColor = '#cbd5e0';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'white';
+                  e.currentTarget.style.borderColor = '#e2e8f0';
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleClearAll}
+                style={{
+                  padding: '0.75rem 1.5rem',
+                  border: '2px solid #dc2626',
+                  borderRadius: '10px',
+                  background: '#dc2626',
+                  color: 'white',
+                  fontSize: '0.9375rem',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  minWidth: '120px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.5rem'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = '#b91c1c';
+                  e.currentTarget.style.borderColor = '#b91c1c';
+                  e.currentTarget.style.transform = 'scale(1.02)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = '#dc2626';
+                  e.currentTarget.style.borderColor = '#dc2626';
+                  e.currentTarget.style.transform = 'scale(1)';
+                }}
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  style={{ width: '18px', height: '18px' }}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                  />
+                </svg>
+                Clear All
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </>
   );

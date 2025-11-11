@@ -988,7 +988,7 @@ export default function CashFlowReview({
                                       fontWeight: '600',
                                       whiteSpace: 'nowrap'
                                     }}>
-                                      ${item.amount.toLocaleString()}
+                                      +${item.amount.toLocaleString()}
                                     </span>
                                   </div>
                                   {item.excluded && (
@@ -1006,7 +1006,7 @@ export default function CashFlowReview({
                             </div>
                           )}
 
-                          {/* One-Time Expense Section */}
+                          {/* One-Time Withdrawal/Expense Section */}
                           {hasOneTimeExpense && (
                             <div style={{
                               marginTop: '0.75rem',
@@ -1022,7 +1022,7 @@ export default function CashFlowReview({
                                 alignItems: 'center',
                                 gap: '0.5rem'
                               }}>
-                                💸 One-Time Expense ({monthData.oneTimeExpense.length})
+                                💸 One-Time Withdrawal ({monthData.oneTimeExpense.length})
                               </div>
                               {monthData.oneTimeExpense.map((item: any, idx: number) => (
                                 <div
@@ -1051,7 +1051,7 @@ export default function CashFlowReview({
                                       fontWeight: '600',
                                       whiteSpace: 'nowrap'
                                     }}>
-                                      ${item.amount.toLocaleString()}
+                                      -${item.amount.toLocaleString()}
                                     </span>
                                   </div>
                                   {item.excluded && (
@@ -1143,7 +1143,7 @@ export default function CashFlowReview({
 
       {/* Transactions Section */}
       {mainTab === 'transactions' && (
-      <div className="transactions-view">
+      <div className="transactions-view" style={{ marginBottom: '3rem' }}>
         {/* Deposit Frequency and Add Transaction Row */}
         <div style={{
           display: 'flex',
@@ -1279,7 +1279,7 @@ export default function CashFlowReview({
 
           {/* Scrollable Transaction Container */}
           {true && (
-          <div style={{ maxHeight: '600px', overflowY: 'auto', border: '1px solid #e2e8f0', borderRadius: '8px', marginTop: '0.5rem' }}>
+          <div style={{ maxHeight: '600px', overflowY: 'auto', border: '1px solid #e2e8f0', borderRadius: '8px', marginTop: '0.5rem', paddingBottom: '2rem' }}>
           {Object.entries(getFilteredTransactions()).map(([category, categoryTransactions]) => {
             const actualIndices = categoryTransactions.map(t =>
               transactions.findIndex(tr => tr === t)

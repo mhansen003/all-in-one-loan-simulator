@@ -6,9 +6,32 @@ interface AnalyzingModalProps {
   batchProgress?: { current: number; total: number; message: string } | null;
 }
 
+type BatchStatus = 'waiting' | 'processing' | 'completed';
+
 export default function AnalyzingModal({ fileCount, batchProgress }: AnalyzingModalProps) {
   const [currentStep, setCurrentStep] = useState(0);
   const [currentTip, setCurrentTip] = useState(0);
+
+  // Calculate batch status based on current progress (controlled concurrency: 2 at a time)
+  const getBatchStatus = (batchIndex: number): BatchStatus => {
+    if (!batchProgress) return 'processing';
+
+    const current = batchProgress.current;
+    const batchNumber = batchIndex + 1;
+
+    // Completed batches
+    if (batchNumber <= current) {
+      return 'completed';
+    }
+
+    // Currently processing (2 at a time)
+    if (batchNumber <= current + 2) {
+      return 'processing';
+    }
+
+    // Waiting batches
+    return 'waiting';
+  };
 
   const steps = [
     { label: 'Extracting text from documents', duration: 3000 },
@@ -124,16 +147,23 @@ export default function AnalyzingModal({ fileCount, batchProgress }: AnalyzingMo
             {batchProgress ? (
               <div className="batch-progress-container">
                 <div className="batch-header">
-                  Processing All Batches in Parallel
+                  Processing Batches (2 at a time)
                 </div>
                 <div className="batch-grid">
-                  {Array.from({ length: batchProgress.total }, (_, i) => (
-                    <div key={i} className="batch-item">
-                      <div className="batch-icon">📦</div>
-                      <div className="batch-label">Batch {i + 1}</div>
-                      <div className="batch-spinner"></div>
-                    </div>
-                  ))}
+                  {Array.from({ length: batchProgress.total }, (_, i) => {
+                    const status = getBatchStatus(i);
+                    return (
+                      <div key={i} className={`batch-item batch-${status}`}>
+                        <div className="batch-icon">
+                          {status === 'completed' ? '✅' : status === 'processing' ? '📦' : '⏳'}
+                        </div>
+                        <div className="batch-label">Batch {i + 1}</div>
+                        {status === 'processing' && <div className="batch-spinner"></div>}
+                        {status === 'completed' && <div className="batch-checkmark">Done</div>}
+                        {status === 'waiting' && <div className="batch-waiting">Waiting</div>}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             ) : (

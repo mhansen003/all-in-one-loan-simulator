@@ -61,48 +61,100 @@ export const analyzeStatements = async (
 
   console.log(`📊 Created ${batches.length} batches`);
 
-  // Notify that all batches are starting in parallel
+  // Notify that batches are starting with controlled concurrency
   if (onProgress) {
     onProgress({
-      current: 1,
+      current: 0,
       total: batches.length,
-      message: `Processing all ${batches.length} batches in parallel (${files.length} files total)...`,
+      message: `Processing ${batches.length} batches (2 at a time to avoid rate limits)...`,
     });
   }
 
-  console.log(`🚀 Processing all ${batches.length} batches in PARALLEL`);
+  console.log(`🚀 Processing ${batches.length} batches with controlled concurrency (2 at a time)`);
 
-  // Process all batches in parallel using Promise.all
-  const batchPromises = batches.map(async (batch, index) => {
-    const batchNumber = index + 1;
-    console.log(`📦 Starting batch ${batchNumber}/${batches.length} (${batch.length} files)`);
+  // Helper function to process a single batch with retry logic
+  const processBatchWithRetry = async (
+    batch: File[],
+    batchNumber: number,
+    maxRetries = 3
+  ): Promise<CashFlowAnalysis> => {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        console.log(`📦 Starting batch ${batchNumber}/${batches.length} (${batch.length} files) - Attempt ${attempt}`);
 
-    const formData = new FormData();
-    batch.forEach((file) => {
-      formData.append('files', file);
-    });
-    formData.append('currentHousingPayment', currentHousingPayment.toString());
+        const formData = new FormData();
+        batch.forEach((file) => {
+          formData.append('files', file);
+        });
+        formData.append('currentHousingPayment', currentHousingPayment.toString());
 
-    try {
-      // Use the regular analyze-statements endpoint
-      const response = await api.post('/analyze-statements', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-        timeout: 180000, // 3 minutes per batch
-      });
+        const response = await api.post('/analyze-statements', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+          timeout: 180000, // 3 minutes per batch
+        });
 
-      console.log(`✅ Batch ${batchNumber} completed`);
-      return response.data.cashFlow;
-    } catch (error) {
-      console.error(`❌ Batch ${batchNumber} failed:`, error);
-      throw new Error(`Failed to process batch ${batchNumber}: ${error}`);
+        console.log(`✅ Batch ${batchNumber} completed`);
+        return response.data.cashFlow;
+      } catch (error) {
+        console.error(`❌ Batch ${batchNumber} failed (attempt ${attempt}/${maxRetries}):`, error);
+
+        // If this was the last attempt, throw the error
+        if (attempt === maxRetries) {
+          throw new Error(`Failed to process batch ${batchNumber} after ${maxRetries} attempts: ${error}`);
+        }
+
+        // Wait before retrying (exponential backoff: 2s, 4s, 8s)
+        const delayMs = Math.pow(2, attempt) * 1000;
+        console.log(`⏳ Retrying batch ${batchNumber} in ${delayMs / 1000} seconds...`);
+        await new Promise(resolve => setTimeout(resolve, delayMs));
+      }
     }
-  });
 
-  // Wait for all batches to complete
-  const batchResults = await Promise.all(batchPromises);
-  console.log(`✅ All ${batches.length} batches completed in parallel`);
+    throw new Error(`Failed to process batch ${batchNumber}`);
+  };
+
+  // Process batches with controlled concurrency (2 at a time)
+  const CONCURRENT_BATCHES = 2;
+  const batchResults: CashFlowAnalysis[] = [];
+  let completedCount = 0;
+
+  for (let i = 0; i < batches.length; i += CONCURRENT_BATCHES) {
+    // Get the next 2 batches (or fewer if we're at the end)
+    const currentBatchGroup = batches.slice(i, i + CONCURRENT_BATCHES);
+    const batchNumbersInGroup = currentBatchGroup.map((_, idx) => i + idx + 1);
+
+    console.log(`🔄 Processing batch group: [${batchNumbersInGroup.join(', ')}]`);
+
+    // Process this group of batches in parallel
+    const groupPromises = currentBatchGroup.map((batch, idx) =>
+      processBatchWithRetry(batch, i + idx + 1)
+    );
+
+    // Wait for this group to complete
+    const groupResults = await Promise.all(groupPromises);
+    batchResults.push(...groupResults);
+
+    completedCount += currentBatchGroup.length;
+
+    // Update progress
+    if (onProgress) {
+      onProgress({
+        current: completedCount,
+        total: batches.length,
+        message: `Completed ${completedCount}/${batches.length} batches...`,
+      });
+    }
+
+    // Add a small delay between batch groups to avoid overwhelming the API
+    if (i + CONCURRENT_BATCHES < batches.length) {
+      console.log('⏳ Short delay before next batch group...');
+      await new Promise(resolve => setTimeout(resolve, 1000)); // 1 second delay
+    }
+  }
+
+  console.log(`✅ All ${batches.length} batches completed`);
 
   // Combine all batch results (client-side)
   if (onProgress) {

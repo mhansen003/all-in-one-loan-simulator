@@ -282,7 +282,26 @@
   flex-direction: column;
   align-items: center;
   gap: 0.5rem;
+  transition: all 0.3s ease;
+}
+
+/* Processing state - pulsing blue */
+.batch-item.batch-processing {
   animation: batchPulse 2s ease-in-out infinite;
+}
+
+/* Completed state - green with checkmark */
+.batch-item.batch-completed {
+  background: rgba(16, 185, 129, 0.25);
+  border: 2px solid rgba(16, 185, 129, 0.7);
+  box-shadow: 0 0 15px rgba(16, 185, 129, 0.3);
+}
+
+/* Waiting state - dimmed */
+.batch-item.batch-waiting {
+  background: rgba(255, 255, 255, 0.05);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  opacity: 0.6;
 }
 
 .batch-icon {
@@ -303,6 +322,19 @@
   border-top-color: white;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
+}
+
+.batch-checkmark {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #10b981;
+  text-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+}
+
+.batch-waiting {
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.5);
 }
 
 @keyframes batchPulse {
