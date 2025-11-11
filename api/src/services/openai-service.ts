@@ -964,7 +964,15 @@ Your task is to CATEGORIZE and ANALYZE the above transactions:
    - Business platforms (Stripe, Square, PayPal Business if appearing regularly)
    - 1099 contract work (if same payer appears 2+ times)
 
-   C. Recurring Deposit Patterns:
+   C. Investment Income (⭐ NEW - if recurring):
+   - Dividends appearing 2+ times (look for: "DIVIDEND", "DIV", "DIVIDEND EARNED")
+   - ETF distributions appearing 2+ times (look for: "ETF", "DISTRIBUTION", "DISTRIB")
+   - Share income appearing 2+ times (look for: "SHARE", "SHARES", "SHARE EARNED")
+   - Interest income appearing 2+ times (look for: "INTEREST", "INT EARNED")
+   - Investment account transfers if recurring (Vanguard, Fidelity, Schwab if 2+ times)
+   - Brokerage distributions if recurring
+
+   D. Recurring Deposit Patterns:
    - The SAME merchant/description depositing 2+ times (even if months apart)
    - Deposits of similar amounts (within 30%) appearing monthly or bi-monthly
    - Any positive deposit that repeats from the same source = income
@@ -978,6 +986,9 @@ Your task is to CATEGORIZE and ANALYZE the above transactions:
    - "Natural Retreats" $950 + $770 = INCOME (rental/business)
    - "Witts End Prop" $370 = INCOME (rental property)
    - "Capital Management" $1,500 appearing 2x = INCOME
+   - "DIVIDEND EARNED" appearing monthly = INCOME (investment dividends)
+   - "ETF DISTRIBUTION" appearing quarterly = INCOME (investment income)
+   - "INTEREST" appearing monthly = INCOME (savings/investment interest)
 
    Do NOT categorize as regular income:
    - Zelle, Venmo, Cash App (one-time only - likely friend payments/reimbursements)
