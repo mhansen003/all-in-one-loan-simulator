@@ -151,11 +151,12 @@ function simulateMonthlyDailyBalances(
     }
   }
 
-  // At month end: Apply the CORRECTED AIO formula
-  // New Balance = Starting Balance + AIO Interest - Traditional P&I Payment - Net Cash Flow
-  // The P&I payment is already being made (in expenses), cash flow is ADDITIONAL principal reduction
+  // At month end: Apply the CORRECT AIO formula per CMG specification (lines 94-96)
+  // 🔧 CRITICAL FIX: The formula is simply: New Balance = Starting Balance + Interest - Net Cash Flow
+  // netCashFlow already represents the available principal reduction (income - ALL expenses)
+  // DO NOT subtract monthlyPayment separately - it creates incorrect double-counting
   const interestCharged = totalInterest;
-  const endBalance = Math.max(0, startingBalance + interestCharged - monthlyPayment - netCashFlow);
+  const endBalance = Math.max(0, startingBalance + interestCharged - netCashFlow);
   const principalReduction = startingBalance - endBalance;
   const avgCashOffset = totalCashOffset / daysInMonth;
 
@@ -164,8 +165,7 @@ function simulateMonthlyDailyBalances(
     console.log(`     📊 Month ${monthNumber} Summary:`);
     console.log(`     Starting Balance: $${startingBalance.toFixed(2)}`);
     console.log(`     + AIO Interest Accrued: $${interestCharged.toFixed(2)}`);
-    console.log(`     - Traditional P&I Payment: $${monthlyPayment.toFixed(2)}`);
-    console.log(`     - Extra Cash Flow: $${netCashFlow.toFixed(2)}`);
+    console.log(`     - Net Cash Flow Available: $${netCashFlow.toFixed(2)}`);
     console.log(`     = Ending Balance: $${endBalance.toFixed(2)}`);
     console.log(`     Principal Reduction: $${principalReduction.toFixed(2)}`);
     console.log(`     Avg Cash Offset: $${avgCashOffset.toFixed(2)}`);
@@ -226,8 +226,8 @@ function calculateAllInOneLoan(
   const debugMode = true;
 
   console.log(`\n🔄 [AIO CALC] Starting Monthly Simulation...`);
-  console.log(`   Formula: New Balance = Starting Balance + AIO Interest - P&I Payment - Extra Cash Flow`);
-  console.log(`   Monthly P&I Payment: $${monthlyPayment.toFixed(2)}`);
+  console.log(`   Formula: New Balance = Starting Balance + AIO Interest - Net Cash Flow`);
+  console.log(`   Net Cash Flow: Income minus ALL expenses (including housing)`);
 
   while (balance > 0.01 && monthsToPayoff < maxMonths) {
     // Simulate this month with daily calculations

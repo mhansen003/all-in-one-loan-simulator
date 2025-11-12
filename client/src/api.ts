@@ -133,7 +133,7 @@ export const analyzeStatements = async (
   // ===== PHASE 2: CATEGORIZATION =====
   console.log(`\n🏷️  PHASE 2: Categorizing ${allTransactions.length} transactions...`);
 
-  const CATEGORIZATION_CHUNK_SIZE = 50; // Larger chunks for faster processing
+  const CATEGORIZATION_CHUNK_SIZE = 25; // Balanced chunk size - fast and reliable
   const chunks: any[][] = [];
 
   for (let i = 0; i < allTransactions.length; i += CATEGORIZATION_CHUNK_SIZE) {
@@ -151,8 +151,8 @@ export const analyzeStatements = async (
     });
   }
 
-  // Process chunks with controlled concurrency (3 at a time for frequent progress updates)
-  const CONCURRENT_CHUNKS = 3;
+  // Process chunks with controlled concurrency (5 at a time for optimal speed)
+  const CONCURRENT_CHUNKS = 5;
   const categorizedChunks: any[] = [];
   let transactionsProcessed = 0;
 
@@ -177,7 +177,7 @@ export const analyzeStatements = async (
           chunkNumber,
           totalChunks: chunks.length,
         }, {
-          timeout: 60000, // 60 seconds per chunk (plenty of time for small chunks)
+          timeout: 90000, // 90 seconds per chunk (allows for API delays)
         });
 
         return {
