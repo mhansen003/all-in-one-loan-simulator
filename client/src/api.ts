@@ -30,28 +30,8 @@ export const analyzeStatements = async (
 ): Promise<CashFlowAnalysis> => {
   const BATCH_SIZE = 1; // Process 1 file at a time to stay under Vercel's 4.5MB body size limit
 
-  // Always use batch processing to respect Vercel's 4.5MB body size limit
-  // (Previously uploaded 4 files at once, but this could exceed limit with large PDFs)
-  if (files.length <= 1) {
-    console.log(`📤 Uploading ${files.length} files in single request`);
-    const formData = new FormData();
-    files.forEach((file) => {
-      formData.append('files', file);
-    });
-    formData.append('currentHousingPayment', currentHousingPayment.toString());
-
-    const response = await api.post('/analyze-statements', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-      timeout: 180000, // 3 minutes (Vercel limit)
-    });
-
-    return response.data.cashFlow;
-  }
-
-  // For 5+ files, use batch processing (client-side storage)
-  console.log(`📦 Using batch processing for ${files.length} files (${BATCH_SIZE} per batch)`);
+  // Always use batch processing for consistent UI (even for single files)
+  console.log(`📦 Using batch processing for ${files.length} file${files.length === 1 ? '' : 's'} (${BATCH_SIZE} per batch)`);
 
   const batches: File[][] = [];
 
