@@ -8,6 +8,8 @@ interface CashFlowSummaryCardsProps {
   displayTotalIncome: number;
   displayTotalExpenses: number;
   displayNetCashFlow: number;
+  cashFlowPercentage?: number; // Optional: only for review page
+  onCashFlowPercentageChange?: (percentage: number) => void; // Optional: only for review page
   confidenceLabel: string;
   confidenceColor: string;
   temperatureRating: {
@@ -24,6 +26,8 @@ export default function CashFlowSummaryCards({
   displayTotalIncome,
   displayTotalExpenses,
   displayNetCashFlow,
+  cashFlowPercentage,
+  onCashFlowPercentageChange,
   confidenceLabel,
   confidenceColor,
   temperatureRating
@@ -80,6 +84,9 @@ export default function CashFlowSummaryCards({
 
   const incomeBreakdown = getIncomeBreakdown();
   const expenseBreakdown = getExpenseBreakdown();
+
+  // Calculate the base (100%) net cash flow for slider reference
+  const baseNetCashFlow = displayTotalIncome - displayTotalExpenses;
 
   // Calculate data source context
   const getDataSourceContext = () => {
@@ -476,9 +483,52 @@ export default function CashFlowSummaryCards({
             <div style={{ fontSize: '2rem', fontWeight: '700', color: displayNetCashFlow >= 0 ? '#059669' : '#ef4444', marginBottom: '0.5rem' }}>
               {formatCurrency(displayNetCashFlow)}
             </div>
-            <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+            <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginBottom: '1rem' }}>
               {displayNetCashFlow >= 0 ? 'Available for loan offset' : 'Not suitable for AIO'}
             </div>
+
+            {/* Cash Flow Adjustment Slider - Only show on review page */}
+            {cashFlowPercentage !== undefined && onCashFlowPercentageChange && (
+              <div style={{
+                marginTop: 'auto',
+                padding: '1rem',
+                background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)',
+                borderRadius: '8px',
+                border: '2px solid #3b82f6',
+                boxShadow: '0 2px 8px rgba(59, 130, 246, 0.15)'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                  <label style={{ fontSize: '0.75rem', fontWeight: '600', color: '#1e40af', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    💼 LO Adjustment
+                  </label>
+                  <span style={{ fontSize: '0.875rem', fontWeight: '700', color: '#1e40af', background: '#dbeafe', padding: '0.25rem 0.5rem', borderRadius: '4px' }}>
+                    {cashFlowPercentage}%
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={cashFlowPercentage}
+                  onChange={(e) => onCashFlowPercentageChange(Number(e.target.value))}
+                  style={{
+                    width: '100%',
+                    height: '6px',
+                    borderRadius: '3px',
+                    background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${cashFlowPercentage}%, #cbd5e0 ${cashFlowPercentage}%, #cbd5e0 100%)`,
+                    outline: 'none',
+                    cursor: 'pointer',
+                    WebkitAppearance: 'none',
+                  }}
+                />
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.25rem' }}>
+                  <span style={{ fontSize: '0.65rem', color: '#64748b' }}>$0</span>
+                  <span style={{ fontSize: '0.65rem', color: '#64748b', fontWeight: '600' }}>
+                    Max: {formatCurrency(baseNetCashFlow)}
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
         }
         backContent={

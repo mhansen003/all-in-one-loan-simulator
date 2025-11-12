@@ -41,6 +41,9 @@ export default function CashFlowReview({
   const [searchFilter, setSearchFilter] = useState('');
   const [showAIModal, setShowAIModal] = useState(false);
 
+  // Cash flow adjustment slider (starts at 100%)
+  const [cashFlowPercentage, setCashFlowPercentage] = useState(100);
+
   // Manual transaction entry states
   const [showAddTransaction, setShowAddTransaction] = useState(false);
   const [newTransaction, setNewTransaction] = useState({
@@ -64,7 +67,7 @@ export default function CashFlowReview({
     return Math.max(1, monthsDiff); // At least 1 month
   };
 
-  // Recalculate totals whenever transactions change
+  // Recalculate totals whenever transactions or cash flow percentage changes
   useEffect(() => {
     const includedTransactions = transactions.filter(t => !t.excluded);
     const actualMonths = calculateActualMonths(includedTransactions);
@@ -79,30 +82,36 @@ export default function CashFlowReview({
       .filter(t => t.category !== 'income' && (t.category !== 'one-time' || t.amount < 0))
       .reduce((sum, t) => sum + Math.abs(t.amount), 0) / actualMonths;
 
-    const netCashFlow = totalIncome - totalExpenses;
+    // Calculate base net cash flow
+    const baseNetCashFlow = totalIncome - totalExpenses;
+
+    // Apply percentage adjustment to net cash flow
+    const adjustedNetCashFlow = baseNetCashFlow * (cashFlowPercentage / 100);
 
     const updatedCashFlow: CashFlowAnalysis = {
       ...cashFlow,
       transactions,
       totalIncome,
       totalExpenses,
-      netCashFlow,
+      netCashFlow: adjustedNetCashFlow,
       monthlyDeposits: totalIncome,
       monthlyExpenses: totalExpenses,
-      monthlyLeftover: netCashFlow,
+      monthlyLeftover: adjustedNetCashFlow,
       depositFrequency
     };
 
     console.log('[CashFlowReview] Cash flow recalculated:', {
       totalIncome: totalIncome.toFixed(2),
       totalExpenses: totalExpenses.toFixed(2),
-      netCashFlow: netCashFlow.toFixed(2),
+      baseNetCashFlow: baseNetCashFlow.toFixed(2),
+      cashFlowPercentage: cashFlowPercentage + '%',
+      adjustedNetCashFlow: adjustedNetCashFlow.toFixed(2),
       depositFrequency,
       includedTransactionCount: includedTransactions.length,
       excludedTransactionCount: transactions.length - includedTransactions.length
     });
     onCashFlowUpdate?.(updatedCashFlow);
-  }, [transactions, depositFrequency]);
+  }, [transactions, depositFrequency, cashFlowPercentage]);
 
   const toggleTransactionExclusion = (index: number) => {
     const updatedTransactions = [...transactions];
@@ -114,6 +123,8 @@ export default function CashFlowReview({
     };
     console.log(`[CashFlowReview] Transaction toggled: ${transaction.description} ($${Math.abs(transaction.amount)}) - ${wasExcluded ? 'INCLUDED' : 'EXCLUDED'}`);
     setTransactions(updatedTransactions);
+    // Reset cash flow percentage to 100% when any transaction is toggled
+    setCashFlowPercentage(100);
   };
 
   const updateTransactionAmount = (index: number, newAmount: number) => {
@@ -624,10 +635,10 @@ export default function CashFlowReview({
                   onClick={() => setShowAIModal(true)}
                   style={{
                     padding: '0.75rem 1.5rem',
-                    background: 'linear-gradient(135deg, #2b3e50 0%, #1a252f 100%)',
-                    border: 'none',
+                    background: 'linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%)',
+                    border: '2px solid #3b82f6',
                     borderRadius: '8px',
-                    color: 'white',
+                    color: '#1e40af',
                     fontSize: '0.9rem',
                     fontWeight: '600',
                     cursor: 'pointer',
@@ -635,15 +646,17 @@ export default function CashFlowReview({
                     display: 'flex',
                     alignItems: 'center',
                     gap: '0.5rem',
-                    boxShadow: '0 2px 8px rgba(43, 62, 80, 0.3)'
+                    boxShadow: '0 2px 8px rgba(59, 130, 246, 0.2)'
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.transform = 'translateY(-2px)';
-                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(43, 62, 80, 0.5)';
+                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(59, 130, 246, 0.35)';
+                    e.currentTarget.style.background = 'linear-gradient(135deg, #bae6fd 0%, #93c5fd 100%)';
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = '0 2px 8px rgba(43, 62, 80, 0.3)';
+                    e.currentTarget.style.boxShadow = '0 2px 8px rgba(59, 130, 246, 0.2)';
+                    e.currentTarget.style.background = 'linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%)';
                   }}
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '20px', height: '20px' }}>
@@ -696,6 +709,8 @@ export default function CashFlowReview({
             displayTotalIncome={displayTotalIncome}
             displayTotalExpenses={displayTotalExpenses}
             displayNetCashFlow={displayNetCashFlow}
+            cashFlowPercentage={cashFlowPercentage}
+            onCashFlowPercentageChange={setCashFlowPercentage}
             confidenceLabel={confidenceLabel}
             confidenceColor={confidenceColor}
             temperatureRating={temperatureRating}
