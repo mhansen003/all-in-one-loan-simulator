@@ -270,10 +270,16 @@ export const analyzeStatements = async (
     const monthData = monthlyMap.get(month);
     monthData.transactionCount++;
 
+    // Skip excluded transactions
+    if (t.excluded) {
+      return;
+    }
+
     if (t.category === 'income') {
       monthData.income += Math.abs(t.amount);
-    } else if (t.category === 'expense' || t.category === 'housing' || t.category === 'one-time') {
-      // Count ALL non-income transactions as expenses for cash flow calculation
+    } else if (t.category === 'expense' || t.category === 'housing') {
+      // Count recurring expenses (expense + housing) for cash flow calculation
+      // EXCLUDE one-time expenses as they are not part of recurring cash flow
       monthData.expenses += Math.abs(t.amount);
     }
 
