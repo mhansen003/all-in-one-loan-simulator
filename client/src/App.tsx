@@ -62,7 +62,7 @@ function App() {
 
   const [error, setError] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [batchProgress, setBatchProgress] = useState<{ current: number; total: number; message: string } | null>(null);
+  const [batchProgress, setBatchProgress] = useState<{ current: number; total: number; message: string; phase?: string } | null>(null);
 
   // FAQ, Pitch Guide, and My Proposals state
   const [isFAQOpen, setIsFAQOpen] = useState(false);
