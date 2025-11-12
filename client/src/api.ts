@@ -272,7 +272,8 @@ export const analyzeStatements = async (
 
     if (t.category === 'income') {
       monthData.income += Math.abs(t.amount);
-    } else if (t.category === 'expense') {
+    } else if (t.category === 'expense' || t.category === 'housing' || t.category === 'one-time') {
+      // Count ALL non-income transactions as expenses for cash flow calculation
       monthData.expenses += Math.abs(t.amount);
     }
 
@@ -291,7 +292,9 @@ export const analyzeStatements = async (
   const monthsAnalyzed = monthlyBreakdown.length || 1;
   const monthlyDeposits = totalIncome / monthsAnalyzed;
   const monthlyExpenses = totalExpenses / monthsAnalyzed;
-  const monthlyLeftover = monthlyDeposits - monthlyExpenses - currentHousingPayment;
+  // Note: monthlyExpenses now includes housing, one-time, and regular expenses
+  // Don't subtract currentHousingPayment again to avoid double-counting
+  const monthlyLeftover = monthlyDeposits - monthlyExpenses;
   const averageMonthlyBalance = Math.max(0, monthlyLeftover);
 
   console.log(`\n📈 FINAL RESULTS:`);
