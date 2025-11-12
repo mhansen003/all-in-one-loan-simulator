@@ -27,11 +27,12 @@ const openRouter = new OpenAI({
 });
 
 // Model configurations
-const TEXT_MODEL = 'gpt-4o'; // OpenAI Direct - excellent for structured data, JSON analysis
+// const TEXT_MODEL = 'gpt-4o'; // OpenAI Direct - excellent for structured data, JSON analysis (PREVIOUS)
+const TEXT_MODEL = 'google/gemini-2.5-flash-exp'; // OpenRouter Gemini 2.5 - TESTING for faster categorization
 const VISION_MODEL = 'google/gemini-2.0-flash-001'; // OpenRouter Gemini - superior vision, fast, cost-effective
 
 console.log(`🔧 Smart AI Routing Enabled:`);
-console.log(`   📊 Text/CSV/XLSX → OpenAI Direct (${TEXT_MODEL})`);
+console.log(`   📊 Text/Categorization → OpenRouter Gemini 2.5 (${TEXT_MODEL}) - TESTING`);
 console.log(`   👁️  Images/PDFs → OpenRouter (${VISION_MODEL})`);
 
 /**
@@ -479,7 +480,8 @@ Return COMPACT JSON (omit flagReason when flagged=false):
   const CHUNK_TIMEOUT_MS = 90000; // 90 seconds per chunk
 
   try {
-    const response = await openaiDirect.chat.completions.create({
+    // Using OpenRouter with Gemini 2.5 Flash for categorization
+    const response = await openRouter.chat.completions.create({
       model: TEXT_MODEL,
       messages: [
         {
@@ -976,11 +978,11 @@ Return COMPACT JSON (minimize whitespace, omit empty flagReason for unflagged it
       }, ANALYSIS_TIMEOUT_MS);
     });
 
-    // Use OpenAI Direct (GPT-4o) for final text analysis
+    // Using OpenRouter with Gemini 2.5 Flash for categorization (TESTING)
     // This analyzes the extracted transaction text (from CSV or vision extraction)
-    console.log(`🧠 Using OpenAI Direct (${TEXT_MODEL}) for transaction analysis...`);
+    console.log(`🧠 Using OpenRouter Gemini 2.5 (${TEXT_MODEL}) for transaction analysis - TESTING...`);
     console.log(`🔒 Deterministic mode: temperature=0, top_p=1, seed=42 for consistent results`);
-    const analysisApiCallPromise = openaiDirect.chat.completions.create({
+    const analysisApiCallPromise = openRouter.chat.completions.create({
       model: TEXT_MODEL,
       messages: [
         {
@@ -996,7 +998,7 @@ Return COMPACT JSON (minimize whitespace, omit empty flagReason for unflagged it
       temperature: 0, // Fully deterministic for consistent JSON formatting
       top_p: 1, // Disable nucleus sampling for maximum determinism
       seed: 42, // Fixed seed for reproducible results across identical inputs
-      max_tokens: 16384, // GPT-4o's maximum output token limit
+      max_tokens: 16384, // Gemini's maximum output token limit
     }, {
       timeout: ANALYSIS_TIMEOUT_MS,
     });
@@ -1258,9 +1260,10 @@ Return COMPACT JSON (omit flagReason when flagged=false):
   "confidence": 0.85
 }`;
 
-    const CHUNK_TIMEOUT_MS = 30000; // 30 seconds per chunk (fast categorization)
+    const CHUNK_TIMEOUT_MS = 60000; // 60 seconds per chunk (reliable categorization)
 
-    const response = await openaiDirect.chat.completions.create({
+    // Using OpenRouter with Gemini 2.5 Flash for categorization
+    const response = await openRouter.chat.completions.create({
       model: TEXT_MODEL,
       messages: [
         {
