@@ -44,7 +44,7 @@
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #2b3e50 0%, #1a252f 100%);
   color: white;
   border-radius: 16px 16px 0 0;
 }
@@ -99,7 +99,7 @@
 
 .ai-modal-button {
   padding: 0.75rem 2rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #9bc53d 0%, #7da631 100%);
   color: white;
   border: none;
   border-radius: 8px;
@@ -111,7 +111,7 @@
 
 .ai-modal-button:hover {
   transform: translateY(-2px);
-  box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 10px 20px rgba(155, 197, 61, 0.4);
 }
 
 /* Section Styles */
@@ -358,7 +358,7 @@
 }
 
 .ai-important-note {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #2b3e50 0%, #1a252f 100%);
   color: white;
   padding: 1.25rem;
   border-radius: 12px;
@@ -392,7 +392,7 @@
   flex-shrink: 0;
   width: 36px;
   height: 36px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #9bc53d 0%, #7da631 100%);
   color: white;
   border-radius: 50%;
   display: flex;
@@ -435,7 +435,7 @@
   flex-shrink: 0;
   width: 50px;
   height: 50px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #9bc53d 0%, #7da631 100%);
   color: white;
   border-radius: 10px;
   display: flex;
@@ -576,10 +576,10 @@
 }
 
 .ai-modal-body::-webkit-scrollbar-thumb {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #9bc53d 0%, #7da631 100%);
   border-radius: 10px;
 }
 
 .ai-modal-body::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(135deg, #5568d3 0%, #63357d 100%);
+  background: linear-gradient(135deg, #8ab52e 0%, #6c8928 100%);
 }

@@ -624,7 +624,7 @@ export default function CashFlowReview({
                   onClick={() => setShowAIModal(true)}
                   style={{
                     padding: '0.75rem 1.5rem',
-                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    background: 'linear-gradient(135deg, #2b3e50 0%, #1a252f 100%)',
                     border: 'none',
                     borderRadius: '8px',
                     color: 'white',
@@ -635,15 +635,15 @@ export default function CashFlowReview({
                     display: 'flex',
                     alignItems: 'center',
                     gap: '0.5rem',
-                    boxShadow: '0 2px 8px rgba(102, 126, 234, 0.3)'
+                    boxShadow: '0 2px 8px rgba(43, 62, 80, 0.3)'
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.transform = 'translateY(-2px)';
-                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.4)';
+                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(43, 62, 80, 0.5)';
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = '0 2px 8px rgba(102, 126, 234, 0.3)';
+                    e.currentTarget.style.boxShadow = '0 2px 8px rgba(43, 62, 80, 0.3)';
                   }}
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '20px', height: '20px' }}>

@@ -87,7 +87,7 @@
 
 /* Back Face */
 .flip-card-back {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #2b3e50 0%, #1a252f 100%);
   color: white;
   transform: rotateY(180deg);
   display: flex;
@@ -127,7 +127,7 @@
 .flip-card-container:hover .flip-indicator {
   opacity: 1;
   transform: translateY(-2px);
-  color: #667eea;
+  color: #9bc53d;
   animation: pulseGlow 2s infinite;
 }
 
@@ -136,7 +136,7 @@
     color: #9ca3af;
   }
   50% {
-    color: #667eea;
+    color: #9bc53d;
   }
 }
 
