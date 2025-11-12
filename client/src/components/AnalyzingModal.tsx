@@ -3,7 +3,7 @@ import './AnalyzingModal.css';
 
 interface AnalyzingModalProps {
   fileCount: number;
-  batchProgress?: { current: number; total: number; message: string } | null;
+  batchProgress?: { current: number; total: number; message: string; phase?: string } | null;
   onAbort?: () => void;
 }
 
@@ -159,31 +159,86 @@ export default function AnalyzingModal({ fileCount, batchProgress, onAbort }: An
           <div className="current-step">
             {batchProgress ? (
               <div className="batch-progress-container">
-                <div className="batch-header">
-                  Processing Batches (2 at a time)
-                </div>
-                <div className="batch-progress-summary">
-                  <span className="progress-label">Completed:</span>
-                  <span className="progress-count">
-                    {batchProgress.current} / {batchProgress.total} batches
-                  </span>
-                </div>
-                <div className="batch-grid">
-                  {Array.from({ length: batchProgress.total }, (_, i) => {
-                    const status = getBatchStatus(i);
-                    return (
-                      <div key={i} className={`batch-item batch-${status}`}>
-                        <div className="batch-icon">
-                          {status === 'completed' ? '✅' : status === 'processing' ? '📦' : '⏳'}
-                        </div>
-                        <div className="batch-label">Batch {i + 1}</div>
-                        {status === 'processing' && <div className="batch-spinner"></div>}
-                        {status === 'completed' && <div className="batch-checkmark">Done</div>}
-                        {status === 'waiting' && <div className="batch-waiting">Queued</div>}
+                {/* Extraction Phase: Show batch grid (small number of files) */}
+                {batchProgress.phase === 'extraction' && (
+                  <>
+                    <div className="batch-header">
+                      Processing Files (2 at a time)
+                    </div>
+                    <div className="batch-progress-summary">
+                      <span className="progress-label">Completed:</span>
+                      <span className="progress-count">
+                        {batchProgress.current} / {batchProgress.total} files
+                      </span>
+                    </div>
+                    <div className="batch-grid">
+                      {Array.from({ length: batchProgress.total }, (_, i) => {
+                        const status = getBatchStatus(i);
+                        return (
+                          <div key={i} className={`batch-item batch-${status}`}>
+                            <div className="batch-icon">
+                              {status === 'completed' ? '✅' : status === 'processing' ? '📦' : '⏳'}
+                            </div>
+                            <div className="batch-label">File {i + 1}</div>
+                            {status === 'processing' && <div className="batch-spinner"></div>}
+                            {status === 'completed' && <div className="batch-checkmark">Done</div>}
+                            {status === 'waiting' && <div className="batch-waiting">Queued</div>}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </>
+                )}
+
+                {/* Categorization Phase: Show simple progress bar (large number of chunks) */}
+                {batchProgress.phase === 'categorization' && (
+                  <>
+                    <div className="batch-header">
+                      🏷️ Categorizing Transactions
+                    </div>
+                    <div className="simple-progress-container">
+                      <div className="simple-progress-bar">
+                        <div
+                          className="simple-progress-fill"
+                          style={{ width: `${(batchProgress.current / batchProgress.total) * 100}%` }}
+                        ></div>
                       </div>
-                    );
-                  })}
-                </div>
+                      <div className="simple-progress-text">
+                        Processing chunk {batchProgress.current} of {batchProgress.total}
+                      </div>
+                      <div className="simple-progress-percentage">
+                        {Math.round((batchProgress.current / batchProgress.total) * 100)}% complete
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {/* Aggregation Phase: Show simple message */}
+                {batchProgress.phase === 'aggregation' && (
+                  <>
+                    <div className="batch-header">
+                      📊 Finalizing Analysis
+                    </div>
+                    <div className="simple-progress-text">
+                      Aggregating results and calculating totals...
+                    </div>
+                  </>
+                )}
+
+                {/* Legacy: No phase specified, use old behavior */}
+                {!batchProgress.phase && (
+                  <>
+                    <div className="batch-header">
+                      Processing Batches (2 at a time)
+                    </div>
+                    <div className="batch-progress-summary">
+                      <span className="progress-label">Completed:</span>
+                      <span className="progress-count">
+                        {batchProgress.current} / {batchProgress.total} batches
+                      </span>
+                    </div>
+                  </>
+                )}
               </div>
             ) : (
               <div className="step-indicator">

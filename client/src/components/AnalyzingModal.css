@@ -386,6 +386,76 @@
   }
 }
 
+/* Simple Progress Bar (for categorization phase with many chunks) */
+.simple-progress-container {
+  padding: 1rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.simple-progress-bar {
+  width: 100%;
+  height: 24px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  overflow: hidden;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  position: relative;
+}
+
+.simple-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #10b981 0%, #34d399 100%);
+  border-radius: 10px;
+  transition: width 0.3s ease;
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.5);
+  position: relative;
+  overflow: hidden;
+}
+
+.simple-progress-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.3) 50%,
+    transparent 100%
+  );
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.simple-progress-text {
+  font-size: 1rem;
+  font-weight: 600;
+  color: white;
+  text-align: center;
+  letter-spacing: 0.3px;
+}
+
+.simple-progress-percentage {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #10b981;
+  text-align: center;
+  text-shadow: 0 0 15px rgba(16, 185, 129, 0.6);
+  animation: pulseGreen 2s ease-in-out infinite;
+}
+
 /* Responsive: Stack batches on mobile */
 @media (max-width: 640px) {
   .batch-grid {
@@ -403,6 +473,10 @@
 
   .batch-label {
     font-size: 0.75rem;
+  }
+
+  .simple-progress-percentage {
+    font-size: 1.25rem;
   }
 }
 
