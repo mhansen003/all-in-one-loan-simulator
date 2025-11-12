@@ -2,30 +2,43 @@ import OpenAI from 'openai';
 import fs from 'fs/promises';
 import path from 'path';
 import xlsx from 'xlsx';
-import type { CashFlowAnalysis, Transaction, OpenAIAnalysisResult } from '../types.js';
+import type { CashFlowAnalysis, OpenAIAnalysisResult } from '../types.js';
 
-// ==================== UNIFIED OPENROUTER ROUTING ====================
-// ALL AI requests now go through OpenRouter for unified management
+// ==================== SMART AI ROUTING ====================
+// We use TWO AI clients for optimal performance:
+// 1. OpenAI Direct (GPT-4) → CSV/XLSX structured data analysis
+// 2. OpenRouter (Gemini) → Images/PDFs vision processing
 
-// OpenRouter client - handles ALL AI requests
+// Client 1: OpenAI Direct for structured data (CSV/XLSX)
+const openaiDirect = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+  timeout: 180000, // 3 minutes timeout for large file analysis
+});
+
+// Client 2: OpenRouter with Gemini for vision tasks (images/PDFs)
 const openRouter = new OpenAI({
   apiKey: process.env.OPENROUTER_API_KEY,
   baseURL: 'https://openrouter.ai/api/v1',
+  timeout: 180000, // 3 minutes timeout for PDF/image processing
   defaultHeaders: {
     'HTTP-Referer': process.env.YOUR_SITE_URL || 'https://aio-simulator.cmgfinancial.ai',
     'X-Title': 'All-In-One Look Back Simulator',
   },
 });
 
-// Model configurations (all via OpenRouter)
-const TEXT_MODEL = 'google/gemini-2.5-flash'; // OpenRouter → Gemini 2.5 Flash for analysis (reliable performance)
-const VISION_MODEL = 'google/gemini-2.0-flash-001'; // OpenRouter → Gemini for images
-const TEXT_EXTRACTION_MODEL = 'google/gemini-2.5-flash'; // OpenRouter → Gemini 2.5 Flash for PDFs (120s timeout)
+// Model configurations
+const TEXT_MODEL = 'gpt-4o'; // OpenAI Direct - excellent for structured data, JSON analysis
+const VISION_MODEL = 'google/gemini-2.0-flash-001'; // OpenRouter Gemini - superior vision, fast, cost-effective
 
-console.log(`🔧 Unified AI Routing via OpenRouter:`);
-console.log(`   📊 Text/CSV/XLSX → OpenRouter (${TEXT_MODEL}) [Reliable: Gemini 2.5 Flash]`);
-console.log(`   👁️  Images → OpenRouter (${VISION_MODEL})`);
-console.log(`   📄 PDFs → OpenRouter (${TEXT_EXTRACTION_MODEL}) [120s timeout]`);
+console.log(`🔧 Smart AI Routing Enabled:`);
+console.log(`   📊 Text/CSV/XLSX → OpenAI Direct (${TEXT_MODEL})`);
+console.log(`   👁️  Images/PDFs → OpenRouter (${VISION_MODEL})`);
+
+/**
+ * Note: PDFs are now processed NATIVELY using Gemini 2.0 Flash's PDF capabilities.
+ * This eliminates the need for client-side PDF-to-image conversion.
+ * The analyzePdf function handles direct PDF analysis.
+ */
 
 /**
  * Extract data from Excel/CSV file with intelligent compression
@@ -44,8 +57,9 @@ async function extractDataFromSpreadsheet(filePath: string): Promise<string> {
 
     // Debug: Log first row to see column names
     if (jsonData.length > 0) {
-      console.log(`📋 CSV Column names:`, Object.keys(jsonData[0]));
-      console.log(`📋 First row sample:`, jsonData[0]);
+      const firstRow = jsonData[0] as Record<string, any>;
+      console.log(`📋 CSV Column names:`, Object.keys(firstRow));
+      console.log(`📋 First row sample:`, firstRow);
     }
 
     // Helper to convert Excel serial date to ISO date string
@@ -86,11 +100,15 @@ async function extractDataFromSpreadsheet(filePath: string): Promise<string> {
     // Sample first few dates to verify parsing
     if (compressedData.length > 0) {
       const sample = compressedData.slice(0, 3);
-      console.log(`📅 Sample dates from CSV:`, sample.map(r => ({
-        raw: r.date,
-        parsed: new Date(r.date).toISOString(),
-        valid: !isNaN(new Date(r.date).getTime())
-      })));
+      console.log(`📅 Sample dates from CSV:`, sample.map(r => {
+        const rawDate = r.date;
+        if (!rawDate) return { raw: null, parsed: null, valid: false };
+        return {
+          raw: rawDate,
+          parsed: new Date(rawDate).toISOString(),
+          valid: !isNaN(new Date(rawDate).getTime())
+        };
+      }));
     }
 
     // Return ALL valid transactions - no date filtering
@@ -228,34 +246,28 @@ Begin extraction now:`,
 }
 
 /**
- * Analyze PDF file using Gemini 2.5 Flash model via OpenRouter
- * OPTIMIZATIONS:
- * - Gemini 2.5 Flash (latest fast vision model)
- * - 120s timeout (reduced from 180s)
- * - Streaming enabled (keeps connection alive)
- * - Condensed prompt (80 tokens)
- * - Reduced max_tokens (8000)
+ * Analyze PDF file using vision model via OpenAI
+ * TESTING: Native PDF support (no conversion to images)
  */
 async function analyzePdf(filePath: string): Promise<string> {
-  const TIMEOUT_MS = 120000; // 120 seconds (reduced from 180s)
+  const TIMEOUT_MS = 120000; // 120 seconds for PDFs (can be multi-page)
 
   try {
-    console.log('📄 Starting fast PDF analysis with Gemini 2.5 Flash...');
+    console.log('📄 [1/4] Starting PDF analysis...');
     console.log(`   📁 File: ${filePath}`);
 
-    console.log('📖 [1/3] Reading PDF file...');
+    console.log('📖 [2/4] Reading PDF file...');
     const pdfBuffer = await fs.readFile(filePath);
     console.log(`   ✓ File read successfully (${pdfBuffer.length} bytes)`);
 
-    console.log('🔄 [2/3] Converting to base64...');
+    console.log('🔄 [3/4] Converting to base64...');
     const base64Pdf = pdfBuffer.toString('base64');
     console.log(`   ✓ Converted to base64 (${base64Pdf.length} chars)`);
 
-    console.log('🚀 [3/3] Calling OpenRouter (Gemini 2.5 Flash - STREAMING)...');
+    console.log('🌐 [4/4] Calling OpenRouter (Gemini) with native PDF...');
     console.log(`   📡 Endpoint: ${openRouter.baseURL}`);
-    console.log(`   🤖 Model: ${TEXT_EXTRACTION_MODEL}`);
+    console.log(`   🤖 Model: ${VISION_MODEL}`);
     console.log(`   ⏱️  Timeout: ${TIMEOUT_MS / 1000}s`);
-    console.log(`   🌊 Streaming: ENABLED`);
 
     const timeoutPromise = new Promise<never>((_, reject) => {
       setTimeout(() => {
@@ -264,36 +276,52 @@ async function analyzePdf(filePath: string): Promise<string> {
       }, TIMEOUT_MS);
     });
 
-    console.log('   🚀 Sending streaming API request...');
+    console.log('   🚀 Sending API request NOW with native PDF...');
     const startTime = Date.now();
 
-    // Use Gemini 2.5 Flash with streaming enabled
+    // Send PDF directly to OpenRouter (Gemini) using proper file format
     const apiCallPromise = openRouter.chat.completions.create({
-      model: TEXT_EXTRACTION_MODEL, // Gemini 2.5 Flash via OpenRouter
-      stream: true, // STREAMING ENABLED
+      model: VISION_MODEL,
       messages: [
         {
           role: 'user',
           content: [
             {
               type: 'text',
-              // Condensed prompt for fast extraction
-              text: `Extract ALL transactions from this bank statement as:
-YYYY-MM-DD | Description | +/-Amount
+              text: `⚠️ CRITICAL INSTRUCTIONS FOR PDF TRANSACTION EXTRACTION ⚠️
 
-Rules:
-- Extract EVERY transaction (no skipping)
-- Exact dates, descriptions, amounts
-- One transaction per line
+You are extracting transaction data from a bank statement PDF. This data will be used for financial analysis.
 
-Example:
-2024-10-24 | CMG MORTGAGE PAYROLL | +9233.45
-2024-10-24 | SO CAL EDISON BILL PAYMT | -155.38
+🔴 MANDATORY REQUIREMENTS:
+1. Extract EVERY SINGLE TRANSACTION - no sampling, no skipping
+2. Use EXACT dates as shown in the PDF (do not modify or hallucinate dates)
+3. Use EXACT descriptions as shown in the PDF (do not summarize or shorten)
+4. Use EXACT amounts as shown in the PDF (preserve decimal precision)
+5. If the PDF has 500 transactions, your output must have 500 transactions
+6. Count transactions as you extract to ensure completeness
 
-Begin:`,
+FORMAT REQUIREMENT - Each transaction on a new line:
+YYYY-MM-DD | Full Description Text | +/-Amount
+
+EXAMPLES:
+2024-10-24 | CMG MORTGAGE INC PAYROLL PPD ID: 9999922657 | +9233.45
+2024-10-24 | SO CAL EDISON CO BILL PAYMT 700689315083 | -155.38
+2024-10-23 | Payment to Chase card ending in 8435 10/23 | -295.88
+
+CRITICAL RULES:
+✓ EXTRACT EVERY TRANSACTION - Do not skip any rows
+✓ PRESERVE EXACT DATES - Copy dates exactly as shown (MM/DD/YYYY → YYYY-MM-DD)
+✓ PRESERVE EXACT DESCRIPTIONS - Do not abbreviate or summarize merchant names
+✓ PRESERVE EXACT AMOUNTS - Keep full precision (e.g., -155.38 not -155)
+✓ DETERMINISTIC - Same PDF must produce same output every time
+✓ NO FILTERING - Include all transaction types (credits, debits, transfers, fees)
+
+⚠️ VERIFICATION: After extraction, count your transactions and state the total count at the end.
+
+Begin extraction now:`,
             },
             {
-              type: 'file' as any,
+              type: 'file' as any, // OpenRouter-specific file type
               file: {
                 filename: path.basename(filePath),
                 file_data: `data:application/pdf;base64,${base64Pdf}`,
@@ -302,42 +330,20 @@ Begin:`,
           ],
         },
       ],
-      max_tokens: 8000, // Optimized for transaction extraction
-      temperature: 0,
-      top_p: 1,
+      max_tokens: 16000, // Increased to handle 500+ transactions
+      temperature: 0, // Deterministic output for consistent results
+      top_p: 1, // Disable nucleus sampling for maximum consistency
+      seed: 42, // Fixed seed for reproducibility (may not be supported by all models)
     } as any, {
       timeout: TIMEOUT_MS,
     });
 
-    console.log('   🌊 Streaming response (receiving chunks)...');
-
-    // Handle streaming response
-    let extractedContent = '';
-    let chunkCount = 0;
-    const streamStartTime = Date.now();
-
-    const streamPromise = (async () => {
-      for await (const chunk of await apiCallPromise) {
-        const delta = chunk.choices[0]?.delta?.content || '';
-        if (delta) {
-          extractedContent += delta;
-          chunkCount++;
-
-          // Log progress every 10 chunks
-          if (chunkCount % 10 === 0) {
-            const elapsed = ((Date.now() - streamStartTime) / 1000).toFixed(1);
-            console.log(`   📦 Chunk ${chunkCount} | ${elapsed}s | ${extractedContent.length} chars`);
-          }
-        }
-      }
-    })();
-
-    // Race streaming against timeout
-    await Promise.race([streamPromise, timeoutPromise]);
+    console.log('   ⏳ Waiting for response...');
+    const response = await Promise.race([apiCallPromise, timeoutPromise]);
 
     const elapsedTime = Date.now() - startTime;
-    console.log(`✅ [PHASE 3] Streaming completed in ${(elapsedTime / 1000).toFixed(2)}s`);
-    console.log(`   📝 Total chunks received: ${chunkCount}`);
+    const extractedContent = response.choices[0]?.message?.content || '';
+    console.log(`✅ [4/4] API response received in ${(elapsedTime / 1000).toFixed(2)}s`);
     console.log(`   📝 Response length: ${extractedContent.length} chars`);
 
     // Count transactions in extracted data for verification
@@ -346,7 +352,7 @@ Begin:`,
 
     return extractedContent;
   } catch (error) {
-    console.error('❌ [PHASE 3] Error analyzing PDF:', error);
+    console.error('❌ Error analyzing PDF:', error);
 
     if (error instanceof Error) {
       if (error.message.includes('timeout') || error.message.includes('timed out')) {
@@ -354,7 +360,7 @@ Begin:`,
       }
       throw new Error(`Failed to analyze PDF: ${error.message}`);
     }
-    throw new Error('Failed to analyze PDF with extraction model');
+    throw new Error('Failed to analyze PDF with vision model');
   }
 }
 
@@ -368,9 +374,8 @@ function estimateTokens(text: string): number {
 /**
  * Chunk transactions into batches for processing
  * Ensures each chunk stays under token limits
- * Reduced default from 250 to 150 for faster parallel processing and better timeout management
  */
-function chunkTransactions(transactions: any[], maxTransactionsPerChunk: number = 150): any[][] {
+function chunkTransactions(transactions: any[], maxTransactionsPerChunk: number = 250): any[][] {
   const chunks: any[][] = [];
 
   for (let i = 0; i < transactions.length; i += maxTransactionsPerChunk) {
@@ -423,6 +428,22 @@ FLAG ANOMALIES:
 MONTHLY BREAKDOWN:
 - Group by month (YYYY-MM) and calculate income, expenses, net cash flow, transaction count
 
+DEPOSIT FREQUENCY DETECTION (CRITICAL FOR AIO LOAN CALCULATION):
+Analyze the INCOME transactions to determine the deposit pattern:
+- "weekly": Deposits every 7 days (e.g., every Monday)
+- "biweekly": Deposits every 14 days (e.g., every other Friday)
+- "semi-monthly": Deposits twice per month (e.g., 1st and 15th, or 10th and 25th)
+- "monthly": Deposits once per month (e.g., 1st of month or last day)
+
+Look for:
+1. Regular income deposits (payroll, salary, etc.)
+2. Count days between consecutive deposits
+3. If deposits are 6-8 days apart consistently → "weekly"
+4. If deposits are 13-15 days apart consistently → "biweekly"
+5. If deposits are 14-16 days apart AND occur ~2x per month → "semi-monthly"
+6. If deposits are 28-32 days apart consistently → "monthly"
+7. If pattern is unclear or mixed → "monthly" (default)
+
 CRITICAL RULES:
 ✓ PRESERVE EVERY TRANSACTION - Output count must match input count (${chunkData.length} transactions)
 ✓ USE EXACT DATES/AMOUNTS/DESCRIPTIONS from input
@@ -440,15 +461,15 @@ Return COMPACT JSON (omit flagReason when flagged=false):
   "totalIncome": 5000.00,
   "totalExpenses": 2500.00,
   "netCashFlow": 2500.00,
-  "confidence": 0.85
+  "confidence": 0.85,
+  "depositFrequency": "biweekly"
 }`;
 
-  const CHUNK_TIMEOUT_MS = 45000; // 45 seconds per chunk (reduced for smaller chunks)
+  const CHUNK_TIMEOUT_MS = 90000; // 90 seconds per chunk
 
   try {
-    console.log(`   🌐 Calling OpenRouter with GPT-4o for CSV analysis...`);
-    const response = await openRouter.chat.completions.create({
-      model: TEXT_MODEL, // openai/gpt-4o via OpenRouter
+    const response = await openaiDirect.chat.completions.create({
+      model: TEXT_MODEL,
       messages: [
         {
           role: 'system',
@@ -539,6 +560,10 @@ function mergeChunkResults(chunkResults: OpenAIAnalysisResult[]): OpenAIAnalysis
     totalExpenses,
     netCashFlow,
     confidence: avgConfidence,
+    depositFrequency: 'monthly',
+    monthlyDeposits: totalIncome / (monthlyBreakdown.length || 1),
+    monthlyExpenses: totalExpenses / (monthlyBreakdown.length || 1),
+    monthlyLeftover: netCashFlow / (monthlyBreakdown.length || 1),
   };
 }
 
@@ -733,6 +758,7 @@ export async function analyzeStatements(
       if (result.status === 'fulfilled') {
         const fileResult = result.value;
         if (fileResult.success && 'content' in fileResult) {
+          // @ts-ignore - content is checked above
           extractedData.push(fileResult.content);
         } else if (!fileResult.success) {
           failedFiles.push(fileResult.filename);
@@ -755,21 +781,8 @@ export async function analyzeStatements(
 
     const combinedData = extractedData.join('\n\n---NEW DOCUMENT---\n\n');
 
-    console.log('\n════════════════════════════════════════════════════════════');
-    console.log('✅ PHASE 1 COMPLETE: DATA EXTRACTION');
-    console.log('════════════════════════════════════════════════════════════');
-    console.log(`📊 Extracted data length: ${combinedData.length} characters (~${estimateTokens(combinedData)} tokens)`);
-    console.log(`📦 Successfully extracted from ${extractedData.length} file(s)`);
-    console.log('🔄 Preparing for fresh analysis phase...\n');
-
-    // Small delay to ensure complete separation between extraction and analysis
-    await new Promise(resolve => setTimeout(resolve, 100));
-
-    console.log('════════════════════════════════════════════════════════════');
-    console.log('🚀 PHASE 2 STARTING: TRANSACTION ANALYSIS');
-    console.log('════════════════════════════════════════════════════════════');
-    console.log('🔍 Starting fresh AI analysis with extracted data...');
-    console.log(`📊 Data to analyze: ${combinedData.length} characters (~${estimateTokens(combinedData)} tokens)`);
+    console.log('🔍 Analyzing combined transaction data with AI...');
+    console.log(`📊 Combined data length: ${combinedData.length} characters (~${estimateTokens(combinedData)} tokens)`);
 
     // DECISION POINT: Use chunking for large datasets
     // Try to parse as JSON to count transactions
@@ -783,12 +796,12 @@ export async function analyzeStatements(
       if (Array.isArray(parsedTransactions)) {
         console.log(`📊 Detected ${parsedTransactions.length} transactions`);
 
-        // Use chunking if > 300 transactions (smaller chunks = faster parallel processing)
-        if (parsedTransactions.length > 300) {
-          console.log(`⚡ Using CHUNKED processing (${parsedTransactions.length} > 300 transactions)`);
+        // Use chunking if > 500 transactions (to ensure each chunk fits in 16K token output)
+        if (parsedTransactions.length > 500) {
+          console.log(`⚡ Using CHUNKED processing (${parsedTransactions.length} > 500 transactions)`);
           shouldUseChunking = true;
         } else {
-          console.log(`✓ Using SINGLE-REQUEST processing (${parsedTransactions.length} <= 300 transactions)`);
+          console.log(`✓ Using SINGLE-REQUEST processing (${parsedTransactions.length} <= 500 transactions)`);
         }
       }
     } catch (parseError) {
@@ -797,7 +810,7 @@ export async function analyzeStatements(
 
     // CHUNKED PROCESSING for large datasets
     if (shouldUseChunking && parsedTransactions.length > 0) {
-      const chunks = chunkTransactions(parsedTransactions, 150); // Reduced from 250 to 150 for faster parallel processing
+      const chunks = chunkTransactions(parsedTransactions, 250);
 
       console.log(`\n🚀 Processing ${chunks.length} chunks in parallel...`);
       const startTime = Date.now();
@@ -830,49 +843,13 @@ export async function analyzeStatements(
       // Clean up files
       for (const file of files) {
         try {
-          await fs.unlink(file.path);
+          if (file.path) {
+            await fs.unlink(file.path);
+          }
         } catch (error) {
           console.error(`Error deleting file ${file.path}:`, error);
         }
       }
-
-      // Calculate number of COMPLETE months from monthly breakdown for averaging
-      // We need to exclude partial months to avoid underestimating monthly income
-      const monthlyBreakdown = result.monthlyBreakdown || [];
-      const getCompleteMonths = (breakdown) => {
-        if (breakdown.length <= 1) return breakdown;
-
-        // Use transaction count as proxy for data completeness
-        const counts = breakdown.map(m => m.transactionCount || 0);
-        const avgCount = counts.reduce((a, b) => a + b, 0) / counts.length;
-        const threshold = avgCount * 0.5; // Month needs at least 50% of average transactions
-
-        let filtered = [...breakdown];
-
-        // Check first month
-        if (counts[0] < threshold) {
-          console.log(`⚠️  Excluding first month (${breakdown[0].month}) - partial data (${counts[0]} txns vs ${avgCount.toFixed(0)} avg)`);
-          filtered.shift();
-        }
-
-        // Check last month
-        const lastIdx = counts.length - 1;
-        if (filtered.length > 1 && counts[lastIdx] < threshold) {
-          console.log(`⚠️  Excluding last month (${breakdown[lastIdx].month}) - partial data (${counts[lastIdx]} txns vs ${avgCount.toFixed(0)} avg)`);
-          filtered.pop();
-        }
-
-        return filtered.length > 0 ? filtered : breakdown;
-      };
-      const completeMonths = getCompleteMonths(monthlyBreakdown);
-      const numberOfMonths = Math.max(1, completeMonths.length);
-
-      console.log(`📊 Monthly averaging: Using ${numberOfMonths} complete month(s) out of ${monthlyBreakdown.length} calendar month(s)`);
-
-      // Calculate MONTHLY averages (not totals!)
-      const monthlyIncome = (result.totalIncome || 0) / numberOfMonths;
-      const monthlyExpenses = (result.totalExpenses || 0) / numberOfMonths;
-      const monthlyNet = (result.netCashFlow || 0) / numberOfMonths;
 
       return {
         totalIncome: result.totalIncome || 0,
@@ -884,11 +861,6 @@ export async function analyzeStatements(
         flaggedTransactions,
         duplicateTransactions,
         confidence: result.confidence || 0.7,
-        // MONTHLY AVERAGES (critical for simulation accuracy!)
-        monthlyDeposits: monthlyIncome,
-        monthlyExpenses: monthlyExpenses,
-        monthlyLeftover: monthlyNet,
-        depositFrequency: result.depositFrequency || 'monthly',
       };
     }
 
@@ -918,238 +890,43 @@ ${dataToAnalyze}
 
 Your task is to CATEGORIZE and ANALYZE the above transactions:
 
-⚠️ CRITICAL - PATTERN DETECTION ACROSS ALL MONTHS:
-   - You are analyzing data from MULTIPLE MONTHS of bank statements
-   - Before categorizing ANY transaction, SCAN ALL TRANSACTIONS to detect repeating patterns
-   - Look for the SAME merchant/description appearing 2+ times across ANY months
-   - If you see "Cape & Coast Pre" in Oct + Nov + Dec → That's recurring income (3 times)
-   - If you see "SHARE DRAFT FROM CASH" 5+ times → That's recurring income
-   - This is how self-employed people receive income - through repeating client deposits!
-
 1. **PRESERVE & CATEGORIZE EVERY TRANSACTION**:
    - The data is already extracted - keep ALL transactions in your output
    - Use the EXACT date, description, and amount from the input
    - DO NOT drop transactions, modify dates, or change amounts
    - DO NOT hallucinate new transactions or dates
 
-   CATEGORIZATION RULES - APPLY IN THIS EXACT ORDER:
+   CATEGORIZATION RULES:
+   - "income": Deposits, paychecks, Zelle/transfers IN (positive amounts or credits)
+   - "expense": Regular recurring expenses like utilities, bills, subscriptions, groceries
+   - "housing": Rent or mortgage payments (around $${currentHousingPayment})
+   - "one-time": Irregular purchases, large transfers, one-time payments
 
-   ⚠️ CRITICAL: You MUST be 100% consistent. Same transaction = same category every time.
+2. **FLAG ANOMALIES FOR REVIEW**:
+   Flag transactions that are:
+   - **Luxury items**: High-end dining, designer purchases, jewelry, luxury travel
+   - **Unusually large**: 2x or more above typical spending in that category
+   - **One-time purchases**: Major purchases, large cash withdrawals, wire transfers
+   - **Irregular deposits**: Large one-time deposits, refunds, bonuses
+   - **Non-essential**: Entertainment, hobbies, discretionary spending above normal patterns
 
-   SUMMARY OF CATEGORIES:
-   - "income" = ALL recurring deposits (paychecks, business income, rental income, repeating client payments)
-   - "one-time" = Truly irregular deposits/expenses appearing ONCE (tax refunds, large one-time purchases, etc.)
-   - "housing" = Mortgage/rent payments matching the expected amount
-   - "expense" = All other regular recurring expenses
-
-   NOTE: Both one-time income AND one-time expenses use category "one-time" and are EXCLUDED from totals.
-
-   ⚠️ BE LIBERAL WITH INCOME: If a deposit source repeats 2+ times = "income", NOT "one-time"!
-
-   STEP 1 - Check if REGULAR INCOME (be LIBERAL - detect ALL recurring deposits):
-
-   ⚠️ CRITICAL: Be MORE LIBERAL about income detection! Many people have self-employment, rental, or business income.
-
-   A deposit should be considered REGULAR income if it matches ANY of these patterns:
-
-   A. Traditional Employment:
-   - Contains keywords: "PAYROLL", "SALARY", "DIRECT DEP", "PAYCHECK", "PAY CHECK", "WAGES"
-
-   B. Self-Employment & Business Income (⭐ IMPORTANT):
-   - EFT/ACH deposits from business names appearing 2+ times across ALL months
-   - "SHARE DRAFT FROM CASH/CHECKS RECEIVED" - regular check deposits (common for self-employed)
-   - Property management companies (e.g., "Cape & Coast", "Property Management", "Mgmt")
-   - Rental income (e.g., "Witts End", "Indian Pass LLC", property names)
-   - Client payments appearing multiple times (same client name depositing 2+ times)
-   - Business platforms (Stripe, Square, PayPal Business if appearing regularly)
-   - 1099 contract work (if same payer appears 2+ times)
-
-   C. Investment Income (⭐ NEW - if recurring):
-   - Dividends appearing 2+ times (look for: "DIVIDEND", "DIV", "DIVIDEND EARNED")
-   - ETF distributions appearing 2+ times (look for: "ETF", "DISTRIBUTION", "DISTRIB")
-   - Share income appearing 2+ times (look for: "SHARE", "SHARES", "SHARE EARNED")
-   - Interest income appearing 2+ times (look for: "INTEREST", "INT EARNED")
-   - Investment account transfers if recurring (Vanguard, Fidelity, Schwab if 2+ times)
-   - Brokerage distributions if recurring
-
-   D. Recurring Deposit Patterns:
-   - The SAME merchant/description depositing 2+ times (even if months apart)
-   - Deposits of similar amounts (within 30%) appearing monthly or bi-monthly
-   - Any positive deposit that repeats from the same source = income
-
-   ⚠️ BE VERY LIBERAL: If you see ANY repeating deposit pattern from the same source (2+ times total),
-   categorize it as "income" UNLESS it's clearly a transfer, refund, or Venmo/Zelle between friends.
-
-   Examples of income to INCLUDE:
-   - "Cape & Coast Pre" $1,335 + $1,105 = INCOME (property management)
-   - "SHARE DRAFT FROM CASH RECEIVED" appearing 5 times = INCOME (business deposits)
-   - "Natural Retreats" $950 + $770 = INCOME (rental/business)
-   - "Witts End Prop" $370 = INCOME (rental property)
-   - "Capital Management" $1,500 appearing 2x = INCOME
-   - "DIVIDEND EARNED" appearing monthly = INCOME (investment dividends)
-   - "ETF DISTRIBUTION" appearing quarterly = INCOME (investment income)
-   - "INTEREST" appearing monthly = INCOME (savings/investment interest)
-
-   Do NOT categorize as regular income:
-   - Zelle, Venmo, Cash App (one-time only - likely friend payments/reimbursements)
-   - Wire transfers IN (unless from same source 2+ times)
-   - Tax refunds (one-time)
-   - Refunds from merchants
-   - Transfers between own accounts (if detected)
-
-   → Category: "income" (for all recurring deposits from business/employment sources)
-
-   STEP 1B - Check if ONE-TIME INCOME (irregular deposits):
-   If it's a positive amount (deposit/credit) but NOT regular income (didn't match Step 1), check if it's irregular:
-
-   ⚠️ IMPORTANT: Only categorize as "one-time" if it appears ONCE or is clearly irregular.
-
-   One-Time Income Rules (must appear ONLY ONCE or be clearly irregular):
-   - Zelle, Venmo, Cash App transfers appearing ONCE only (if appearing 3+ times, it's income!)
-   - Wire transfers IN from unique sources (one-time only)
-   - Tax refunds (look for: "IRS", "TAX REFUND", "FEDERAL TAX", "STATE TAX")
-   - Large irregular deposits that don't repeat (>$5000 single occurrence)
-   - Refunds and reimbursements (look for: "REFUND", "REIMBURSEMENT", "REBATE")
-   - Bonuses appearing once (look for: "BONUS", "COMMISSION" - if one-time)
-   - Gifts, inheritance, settlements (one-time large amounts)
-
-   ⚠️ If Venmo/Zelle appears 3+ times: Treat as "income" in Step 1 (likely business payments)
-   ⚠️ If check deposits repeat 2+ times: Treat as "income" in Step 1 (self-employment)
-
-   → Category: "one-time" + SET flagged=true + flagReason: "One-Time Income: [reason]"
-
-   Examples of flag reasons:
-   - "One-Time Income: Single Zelle transfer - likely reimbursement"
-   - "One-Time Income: Tax refund"
-   - "One-Time Income: Large irregular deposit"
-   - "One-Time Income: Wire transfer in"
-
-   STEP 2 - Check if RECURRING PATTERN (if not income or one-time income):
-   ⚠️ CRITICAL: Before checking one-time, detect RECURRING patterns across months
-
-   If you see the SAME EXACT AMOUNT appearing 2+ times (especially monthly):
-   - Check if the description contains housing keywords: "MORTGAGE", "RENT", "CHASE", "JPMORGAN", "WELLS FARGO", "LOAN", "PROPERTY"
-   - If YES and amount is significant (>$500) → Category: "housing"
-   - If NO housing keywords but recurring → Category: "expense" (skip one-time check)
-
-   Example: "$5,308 on 10/1, 11/3, 12/1 from JPMORGAN CHASE" = housing (recurring mortgage)
-   Example: "$150 on 10/5, 11/5, 12/5 from UTILITY CO" = expense (recurring utility)
-
-   STEP 2B - Check if HOUSING by expected amount (if not recurring):
-   - Housing payment MUST be within $50 OR 2% of ${currentHousingPayment} (whichever is larger)
-   - Example: If housing = $2000, accept $1960-$2040 OR $1900-$2100 (use wider range)
-   - Look for descriptions containing: "MORTGAGE", "RENT", "PROPERTY MGMT", "LANDLORD", "HOUSING"
-   - If amount matches AND description suggests housing → Category: "housing"
-   - If only description matches but amount is far off → NOT housing, continue to next step
-   → Category: "housing"
-
-   STEP 3 - Check if ONE-TIME EXPENSE (if not income or housing):
-   Apply ALL of these rules - if ANY rule matches, categorize as "one-time":
-
-   Rule A - Large irregular purchases (>$500 for single transaction):
-   - Large retail purchases (>$500 at Target, Walmart, Amazon, etc.)
-   - Electronics purchases (Apple, Best Buy, electronics stores)
-   - Furniture/home improvement (Home Depot, Lowe's, IKEA, furniture stores)
-   - Medical bills, dental bills, veterinary bills
-   - Car repairs, maintenance >$500
-   - Moving expenses, storage fees
-   → flagReason: "One-Time Expense: Large purchase >$500"
-
-   Rule B - Financial movements:
-   - Wire transfers OUT (look for: "WIRE", "WIRE TRF", "OUTGOING WIRE")
-   - Large transfers OUT to external accounts (>$1000)
-   - Cash withdrawals >$500
-   - Check deposits >$1000
-   - Loan payments (student loans, car loans, personal loans)
-   - Investment/brokerage transfers (Vanguard, Fidelity, Schwab, etc.)
-   → flagReason: "One-Time Expense: Wire transfer/financial movement"
-
-   ⚠️ IMPORTANT: Credit card payments are RECURRING EXPENSES (see Step 4), NOT one-time!
-
-   Rule C - Irregular/Annual expenses:
-   - Insurance payments (auto, life, umbrella - but NOT monthly health insurance)
-   - Property tax payments
-   - HOA special assessments (NOT regular HOA fees)
-   - Annual subscriptions/memberships (if >$200)
-   - Vacation/travel expenses (hotels, flights, vacation rentals)
-   - Tuition, education expenses
-   - Holiday spending (if unusually large)
-   - Gifts, donations >$200
-   - Legal fees, tax preparation
-   → flagReason: "One-Time Expense: Annual/irregular payment"
-
-   Rule D - Luxury & discretionary:
-   - High-end dining (>$150 per meal)
-   - Designer purchases (luxury brands, jewelry stores)
-   - Entertainment >$200 (concerts, sports events, shows)
-   - Spa, salon services >$150
-   → flagReason: "One-Time Expense: Luxury/discretionary purchase"
-
-   → Category: "one-time" + SET flagged=true with appropriate flagReason from above
-
-   STEP 4 - Otherwise, RECURRING EXPENSE (everything else):
-   - Utilities (electric, gas, water, trash, sewer)
-   - Internet, cable, phone bills
-   - Subscriptions (Netflix, Spotify, Amazon Prime, etc. - if <$200/year)
-   - Groceries (supermarkets, grocery stores)
-   - Regular dining (<$150 per meal)
-   - Gas stations, fuel
-   - Regular retail (<$500)
-   - Monthly HOA fees
-   - Monthly health insurance premiums
-   - Gym memberships, childcare (if monthly)
-   - Regular transportation (Uber, Lyft, public transit)
-   - Pet supplies, pet care (routine, <$500)
-   - Credit card payments (payments TO credit cards - these are recurring monthly expenses)
-     * ⚠️ CRITICAL: Credit card payments are ALWAYS "expense", NEVER "one-time"!
-     * Payment patterns to detect: "Payment To", "Payment", "PMT", "MOBILE PMT", "Card Ending", "ACH", "PPD"
-     * Major credit card issuers (match ANY of these names):
-       - American Express: "Amex", "AMEX", "American Express", "AMERICAN EXPRESS"
-       - Chase: "Chase", "CHASE", "JPMorgan Chase", "JPMORGAN CHASE", "JP MORGAN", "Chase Bank", "CHASE BANK"
-       - Capital One: "Capital One", "CAPITAL ONE", "CAPITALONE"
-       - Citibank: "Citi", "CITI", "Citibank", "CITIBANK"
-       - Discover: "Discover", "DISCOVER"
-       - Bank of America: "BofA", "BOFA", "Bank of America", "BANK OF AMERICA"
-       - Wells Fargo: "Wells Fargo", "WELLS FARGO", "WELLSFARGO"
-       - U.S. Bank: "US Bank", "USBANK", "U.S. BANK"
-       - Barclays: "Barclays", "BARCLAYS"
-       - Synchrony: "Synchrony", "SYNCHRONY"
-     * If description contains ANY credit card issuer name + payment keyword → Category: "expense"
-   → Category: "expense"
-
-2. **FLAGGING - Apply to transactions that need review**:
-   - ALL "one-time" transactions (both income AND expenses) must have flagged=true with specific flagReason
-   - Also flag any income transactions >$10,000 with flagReason: "Large deposit - verify source"
-   - Use clear flag reasons that cite the specific rule:
-
-     Examples for ONE-TIME INCOME:
-     * "One-Time Income: Zelle transfer - likely reimbursement"
-     * "One-Time Income: Tax refund"
-     * "One-Time Income: Wire transfer in"
-     * "One-Time Income: Large irregular deposit"
-     * "One-Time Income: Refund/reimbursement"
-
-     Examples for ONE-TIME EXPENSES:
-     * "One-Time Expense: Large retail purchase >$500"
-     * "One-Time Expense: Wire transfer out"
-     * "One-Time Expense: Annual insurance payment"
-     * "One-Time Expense: Vacation/travel expense"
-     * "One-Time Expense: Luxury dining >$150"
+   Provide specific flag reasons like:
+   - "One-time: Wire transfer"
+   - "Unusually large payment"
+   - "Luxury: High-end purchase"
+   - "Irregular: Large deposit"
 
 3. **MONTHLY BREAKDOWN**:
    Group by month (YYYY-MM format) and calculate:
-   - Total income per month (sum of all "income" category only - EXCLUDE "one-time" deposits)
-   - Total expenses per month (sum of ONLY "expense" category - EXCLUDE "housing" and "one-time")
-   - Net cash flow per month (income - expenses)
-   - Transaction count per month (all transactions)
+   - Total income per month (sum of income category)
+   - Total expenses per month (sum of expense category, EXCLUDING housing and flagged items)
+   - Net cash flow per month
+   - Transaction count per month
 
 4. **CALCULATE TOTALS**:
-   - totalIncome: SUM of ONLY "income" category transactions (EXCLUDE "one-time" deposits)
-   - totalExpenses: SUM of ONLY "expense" category transactions (EXCLUDE "housing" and "one-time")
-   - netCashFlow: totalIncome - totalExpenses
-
-   ⚠️ CRITICAL: Only "income" and "expense" categories are included in totals!
-   ⚠️ EXCLUDED from totals: "housing", "one-time" (whether income or expense)
+   - SUM of ALL income transactions across entire period
+   - SUM of ALL expense transactions (EXCLUDING housing and flagged one-time items)
+   - Net cash flow (total income - total expenses)
 
 5. **CONFIDENCE SCORE**: Your confidence in categorization accuracy (0-1 scale)
 
@@ -1177,53 +954,27 @@ Return COMPACT JSON (minimize whitespace, omit empty flagReason for unflagged it
   "confidence": 0.85
 }
 
-⚠️ CRITICAL OUTPUT REQUIREMENTS:
-1. Use ULTRA-COMPACT formatting - no whitespace, no line breaks
-2. OMIT "flagReason" entirely when flagged=false
-3. OMIT "monthYear" - we don't need it
-4. Use shortest possible descriptions (max 50 chars)
-5. Round amounts to 2 decimals only
-6. If response would exceed 35000 characters, prioritize recent transactions and summarize older ones
-
-EXAMPLE COMPACT FORMAT:
-{"transactions":[{"date":"2024-08-01","description":"Paycheck","amount":5000,"category":"income","flagged":false}],"monthlyBreakdown":[{"month":"2024-08","income":5000,"expenses":2500,"netCashFlow":2500,"transactionCount":45}],"totalIncome":5000,"totalExpenses":2500,"netCashFlow":2500,"confidence":0.85}`;
+⚠️ IMPORTANT: Use compact formatting. Omit "flagReason" key entirely when flagged=false to save tokens.`;
 
     // Create a timeout promise for the main analysis call
-    const ANALYSIS_TIMEOUT_MS = 150000; // 150 seconds (2.5 minutes) for complex analysis with many transactions
-    const analysisStartTime = Date.now();
-
-    // Track elapsed time during analysis
-    const progressInterval = setInterval(() => {
-      const elapsed = ((Date.now() - analysisStartTime) / 1000).toFixed(1);
-      console.log(`⏳ Analysis in progress... ${elapsed}s elapsed (timeout at ${ANALYSIS_TIMEOUT_MS / 1000}s)`);
-    }, 10000); // Log every 10 seconds
-
+    const ANALYSIS_TIMEOUT_MS = 120000; // 120 seconds
     const analysisTimeoutPromise = new Promise<never>((_, reject) => {
       setTimeout(() => {
-        clearInterval(progressInterval);
-        const actualElapsed = ((Date.now() - analysisStartTime) / 1000).toFixed(2);
-        console.error(`⏱️  TIMEOUT: Analysis exceeded ${ANALYSIS_TIMEOUT_MS / 1000}s limit (actual: ${actualElapsed}s)`);
-        console.error(`❌ Server-side timeout triggered - OpenRouter may still be processing`);
+        console.error(`⏱️  Timeout reached for main analysis (${ANALYSIS_TIMEOUT_MS / 1000}s)`);
         reject(new Error(`Transaction analysis timed out after ${ANALYSIS_TIMEOUT_MS / 1000} seconds`));
       }, ANALYSIS_TIMEOUT_MS);
     });
 
-    // Use OpenRouter (Gemini 2.5 Flash) for final text analysis
+    // Use OpenAI Direct (GPT-4o) for final text analysis
     // This analyzes the extracted transaction text (from CSV or vision extraction)
-    console.log(`🧠 Using OpenRouter (${TEXT_MODEL}) for transaction analysis...`);
+    console.log(`🧠 Using OpenAI Direct (${TEXT_MODEL}) for transaction analysis...`);
     console.log(`🔒 Deterministic mode: temperature=0, top_p=1, seed=42 for consistent results`);
-    console.log(`📊 Request details:`);
-    console.log(`   - Prompt length: ${prompt.length} chars (~${Math.ceil(prompt.length / 4)} tokens)`);
-    console.log(`   - Max output tokens: 16384`);
-    console.log(`   - Timeout configured: ${ANALYSIS_TIMEOUT_MS / 1000}s`);
-    console.log(`⏱️  API call starting at: ${new Date().toISOString()}`);
-
-    const analysisApiCallPromise = openRouter.chat.completions.create({
+    const analysisApiCallPromise = openaiDirect.chat.completions.create({
       model: TEXT_MODEL,
       messages: [
         {
           role: 'system',
-          content: 'You are a financial analyst specialized in cash flow analysis. You must be consistent and deterministic. Always respond with valid JSON. Extract the same transactions from the same data every time.\n\nCRITICAL: Return ONLY pure JSON. Do NOT wrap your response in markdown code blocks (```json). Do NOT include any text before or after the JSON object. Start your response with { and end with }.',
+          content: 'You are a financial analyst specialized in cash flow analysis. You must be consistent and deterministic. Always respond with valid JSON. Extract the same transactions from the same data every time.',
         },
         {
           role: 'user',
@@ -1234,30 +985,15 @@ EXAMPLE COMPACT FORMAT:
       temperature: 0, // Fully deterministic for consistent JSON formatting
       top_p: 1, // Disable nucleus sampling for maximum determinism
       seed: 42, // Fixed seed for reproducible results across identical inputs
-      max_tokens: 32000, // Increased to handle large transaction sets without truncation
+      max_tokens: 16384, // GPT-4o's maximum output token limit
     }, {
       timeout: ANALYSIS_TIMEOUT_MS,
-    }).then(response => {
-      clearInterval(progressInterval);
-      const elapsedTime = ((Date.now() - analysisStartTime) / 1000).toFixed(2);
-      console.log(`✅ API response received after ${elapsedTime}s`);
-      return response;
-    }).catch(error => {
-      clearInterval(progressInterval);
-      const elapsedTime = ((Date.now() - analysisStartTime) / 1000).toFixed(2);
-      console.error(`❌ API call failed after ${elapsedTime}s`);
-      console.error(`🔍 Error type: ${error.name || 'Unknown'}`);
-      console.error(`🔍 Error message: ${error.message || 'No message'}`);
-      if (error.code) console.error(`🔍 Error code: ${error.code}`);
-      if (error.status) console.error(`🔍 HTTP status: ${error.status}`);
-      throw error;
     });
 
     console.log(`🏁 Racing main analysis against ${ANALYSIS_TIMEOUT_MS / 1000}s timeout...`);
     // Race the API call against the timeout
     const response = await Promise.race([analysisApiCallPromise, analysisTimeoutPromise]);
-    const totalElapsed = ((Date.now() - analysisStartTime) / 1000).toFixed(2);
-    console.log(`✅ AI analysis completed successfully in ${totalElapsed}s`);
+    console.log('✅ AI analysis completed successfully');
 
     // Log system fingerprint for reproducibility verification
     if (response.system_fingerprint) {
@@ -1268,53 +1004,23 @@ EXAMPLE COMPACT FORMAT:
     const rawContent = response.choices[0]?.message?.content || '{}';
     console.log(`📝 Raw response length: ${rawContent.length} chars`);
 
-    // Check if response was truncated (finish_reason should be 'stop', not 'length')
-    const finishReason = response.choices[0]?.finish_reason;
-    if (finishReason === 'length') {
-      console.error('⚠️  WARNING: Response was truncated due to max_tokens limit!');
-      console.error('💡 This may result in incomplete JSON. Consider reducing transaction count or increasing max_tokens.');
-    }
-    console.log(`🏁 Finish reason: ${finishReason}`);
-
     let result;
     try {
       result = JSON.parse(rawContent);
-      console.log('✅ JSON parsed successfully on first attempt');
     } catch (parseError) {
-      console.warn('⚠️  Initial JSON parse failed - response may be wrapped in markdown');
-      console.log('🔍 Attempting to extract JSON from markdown code blocks...');
+      console.error('❌ JSON Parse Error:', parseError);
+      console.log('🔍 Attempting to extract JSON from response...');
 
-      // Try to find JSON in markdown code blocks with improved regex
+      // Try to find JSON in markdown code blocks
       const jsonMatch = rawContent.match(/```(?:json)?\s*(\{[\s\S]*\})\s*```/);
       if (jsonMatch) {
-        console.log('✅ Successfully extracted JSON from markdown code block');
-        try {
-          result = JSON.parse(jsonMatch[1]);
-        } catch (innerParseError) {
-          console.error('❌ Failed to parse extracted JSON:', innerParseError);
-          console.error('Extracted content (first 500 chars):', jsonMatch[1].substring(0, 500));
-          throw innerParseError;
-        }
+        console.log('✓ Found JSON in markdown code block, retrying parse...');
+        result = JSON.parse(jsonMatch[1]);
       } else {
-        // Final attempt: try to find JSON object without code blocks
-        const jsonObjectMatch = rawContent.match(/\{[\s\S]*\}/);
-        if (jsonObjectMatch) {
-          console.log('🔍 Found JSON-like content, attempting to parse...');
-          try {
-            result = JSON.parse(jsonObjectMatch[0]);
-            console.log('✅ Successfully parsed JSON after extraction');
-          } catch (finalParseError) {
-            console.error('❌ All parsing attempts failed');
-            console.error('First 500 chars:', rawContent.substring(0, 500));
-            console.error('Last 500 chars:', rawContent.substring(rawContent.length - 500));
-            throw parseError;
-          }
-        } else {
-          console.error('❌ No JSON content found in response');
-          console.error('First 500 chars:', rawContent.substring(0, 500));
-          console.error('Last 500 chars:', rawContent.substring(rawContent.length - 500));
-          throw parseError;
-        }
+        // Log first and last 500 chars for debugging
+        console.error('First 500 chars:', rawContent.substring(0, 500));
+        console.error('Last 500 chars:', rawContent.substring(rawContent.length - 500));
+        throw parseError;
       }
     }
 
@@ -1336,39 +1042,6 @@ EXAMPLE COMPACT FORMAT:
     // Deduplicate transactions across files
     const { uniqueTransactions, duplicateTransactions } = deduplicateTransactions(result.transactions || []);
 
-    // Calculate dynamic confidence score based on data quality
-    const calculateDynamicConfidence = (): number => {
-      let confidenceScore = result.confidence || 0.7; // Start with AI's confidence
-
-      // Factor 1: Transaction count (more transactions = higher confidence)
-      const transactionCountScore = Math.min(uniqueTransactions.length / 100, 1.0); // Cap at 100 transactions
-
-      // Factor 2: Flagged transaction ratio (fewer flagged = higher confidence)
-      const flaggedRatio = flaggedTransactions.length / Math.max(uniqueTransactions.length, 1);
-      const flaggedScore = 1.0 - Math.min(flaggedRatio * 0.5, 0.3); // Reduce confidence if >60% flagged
-
-      // Factor 3: Data completeness (multiple months = higher confidence)
-      const monthCount = result.monthlyBreakdown?.length || 1;
-      const monthScore = Math.min(monthCount / 3, 1.0); // Cap at 3 months
-
-      // Factor 4: Income consistency (regular income transactions = higher confidence)
-      const incomeTransactions = uniqueTransactions.filter(t => t.category === 'income');
-      const incomeConsistencyScore = incomeTransactions.length >= monthCount ? 1.0 : 0.7;
-
-      // Weighted average (AI confidence weighted most heavily)
-      const finalConfidence = (
-        confidenceScore * 0.4 +           // 40% AI confidence
-        transactionCountScore * 0.2 +     // 20% transaction count
-        flaggedScore * 0.2 +               // 20% flagged ratio
-        monthScore * 0.1 +                 // 10% month count
-        incomeConsistencyScore * 0.1       // 10% income consistency
-      );
-
-      return Math.min(Math.max(finalConfidence, 0.3), 0.99); // Clamp between 30% and 99%
-    };
-
-    const dynamicConfidence = calculateDynamicConfidence();
-
     console.log('📈 Analysis Results:');
     console.log(`  ✓ Total transactions: ${result.transactions?.length || 0}`);
     console.log(`  ✓ Unique transactions: ${uniqueTransactions.length}`);
@@ -1377,74 +1050,229 @@ EXAMPLE COMPACT FORMAT:
     console.log(`  ✓ Monthly deposits: $${result.totalIncome || 0}`);
     console.log(`  ✓ Monthly expenses: $${result.totalExpenses || 0}`);
     console.log(`  ✓ Net cash flow: $${result.netCashFlow || 0}`);
-    console.log(`  ✓ Confidence: ${(dynamicConfidence * 100).toFixed(0)}% (AI: ${((result.confidence || 0) * 100).toFixed(0)}%)`);
-
-    console.log('\n════════════════════════════════════════════════════════════');
-    console.log('✅ PHASE 2 COMPLETE: TRANSACTION ANALYSIS');
-    console.log('════════════════════════════════════════════════════════════');
-    console.log('🎉 All phases completed successfully!\n');
-
-    // Calculate number of COMPLETE months from monthly breakdown for averaging
-    // Exclude partial months (first/last month if they have significantly fewer transactions)
-    const monthlyBreakdown = result.monthlyBreakdown || [];
-
-    // Helper function to detect partial months
-    const getCompleteMonths = (breakdown: any[]) => {
-      if (breakdown.length <= 1) return breakdown; // If only 1 month, use it
-
-      // Get transaction counts for each month
-      const counts = breakdown.map(m => m.transactionCount || 0);
-      const avgCount = counts.reduce((a, b) => a + b, 0) / counts.length;
-
-      // A month is "partial" if it has <50% of the average transaction count
-      const threshold = avgCount * 0.5;
-
-      // Filter out first month if partial
-      let filteredBreakdown = [...breakdown];
-      if (counts[0] < threshold) {
-        console.log(`⚠️  Excluding first month (${breakdown[0].month}) - partial data (${counts[0]} txns vs ${avgCount.toFixed(0)} avg)`);
-        filteredBreakdown.shift();
-      }
-
-      // Filter out last month if partial
-      const lastIdx = counts.length - 1;
-      if (filteredBreakdown.length > 1 && counts[lastIdx] < threshold) {
-        const lastMonth = filteredBreakdown[filteredBreakdown.length - 1];
-        console.log(`⚠️  Excluding last month (${lastMonth.month}) - partial data (${counts[lastIdx]} txns vs ${avgCount.toFixed(0)} avg)`);
-        filteredBreakdown.pop();
-      }
-
-      return filteredBreakdown.length > 0 ? filteredBreakdown : breakdown; // Fallback to original if all filtered
-    };
-
-    const completeMonths = getCompleteMonths(monthlyBreakdown);
-    const numberOfMonths = Math.max(1, completeMonths.length);
-
-    console.log(`📊 Monthly averaging: Using ${numberOfMonths} complete month(s) out of ${monthlyBreakdown.length} calendar month(s)`);
-
-    // Calculate MONTHLY averages based on COMPLETE months only
-    const monthlyIncome = (result.totalIncome || 0) / numberOfMonths;
-    const monthlyExpenses = (result.totalExpenses || 0) / numberOfMonths;
-    const monthlyNet = (result.netCashFlow || 0) / numberOfMonths;
+    console.log(`  ✓ Confidence: ${((result.confidence || 0) * 100).toFixed(0)}%`);
 
     return {
-      totalIncome: result.totalIncome || 0,           // Sum of all income (for reference)
-      totalExpenses: result.totalExpenses || 0,       // Sum of all expenses (for reference)
-      netCashFlow: result.netCashFlow || 0,           // Total net (for reference)
+      totalIncome: result.totalIncome || 0,           // Sum of all income (frontend divides by months)
+      totalExpenses: result.totalExpenses || 0,       // Sum of all expenses (frontend divides by months)
+      netCashFlow: result.netCashFlow || 0,           // Total net (frontend divides by months)
       averageMonthlyBalance,
       transactions: uniqueTransactions,
       monthlyBreakdown: result.monthlyBreakdown || [],
       flaggedTransactions,
       duplicateTransactions,
-      confidence: dynamicConfidence,
-      // MONTHLY AVERAGES (critical for simulation accuracy!)
-      monthlyDeposits: monthlyIncome,
-      monthlyExpenses: monthlyExpenses,
-      monthlyLeftover: monthlyNet,
-      depositFrequency: result.depositFrequency || 'monthly',
+      confidence: result.confidence || 0.7,
     };
   } catch (error) {
     console.error('Error in analyzeStatements:', error);
     throw new Error(`Failed to analyze bank statements: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+}
+
+/**
+ * NEW ARCHITECTURE: Extract transactions from files (Step 1 of 2)
+ * Just does extraction, returns raw transaction data without categorization
+ */
+export async function extractTransactions(
+  files: Express.Multer.File[]
+): Promise<any[]> {
+  try {
+    console.log(`📄 Extracting transactions from ${files.length} file(s)...`);
+
+    // Process ALL files in PARALLEL for maximum performance
+    const filePromises = files.map(async (file) => {
+      console.log(`📄 Starting: ${file.originalname}`);
+      try {
+        const content = await processFile(file);
+        console.log(`✓ Completed: ${file.originalname}`);
+        return { success: true, content, filename: file.originalname };
+      } catch (error) {
+        console.error(`✗ Failed: ${file.originalname}:`, error instanceof Error ? error.message : error);
+        return { success: false, error, filename: file.originalname };
+      }
+    });
+
+    // Wait for all files to process (or fail) in parallel
+    const fileResults = await Promise.allSettled(filePromises);
+
+    // Extract successful results and failed files
+    const extractedData: string[] = [];
+    const failedFiles: string[] = [];
+
+    fileResults.forEach((result) => {
+      if (result.status === 'fulfilled') {
+        const fileResult = result.value;
+        if (fileResult.success && 'content' in fileResult) {
+          // @ts-ignore - content is checked above
+          extractedData.push(fileResult.content);
+        } else if (!fileResult.success) {
+          failedFiles.push(fileResult.filename);
+        }
+      } else {
+        failedFiles.push('unknown file');
+      }
+    });
+
+    console.log(`⚡ Extraction complete: ${extractedData.length} successful, ${failedFiles.length} failed`);
+
+    if (extractedData.length === 0) {
+      throw new Error(`Failed to extract data from any files. ${failedFiles.length} file(s) failed: ${failedFiles.join(', ')}`);
+    }
+
+    if (failedFiles.length > 0) {
+      console.log(`⚠️  Warning: ${failedFiles.length} file(s) failed to process: ${failedFiles.join(', ')}`);
+      console.log(`✓ Successfully extracted from ${extractedData.length} file(s), continuing...`);
+    }
+
+    // Combine all extracted data
+    const combinedData = extractedData.join('\n\n---NEW DOCUMENT---\n\n');
+
+    // Parse into transaction array
+    let transactions: any[] = [];
+    try {
+      // Try to parse as JSON array
+      transactions = JSON.parse(combinedData);
+      if (!Array.isArray(transactions)) {
+        // If it's not an array, try to parse each line as a transaction
+        const lines = combinedData.split('\n').filter(line => line.trim() && line.includes('|'));
+        transactions = lines.map(line => {
+          const parts = line.split('|').map(p => p.trim());
+          if (parts.length >= 3) {
+            return {
+              date: parts[0],
+              description: parts[1],
+              amount: parseFloat(parts[2].replace(/[^0-9.-]/g, ''))
+            };
+          }
+          return null;
+        }).filter(t => t !== null);
+      }
+    } catch (parseError) {
+      // If parsing fails, try line-by-line parsing
+      const lines = combinedData.split('\n').filter(line => line.trim() && line.includes('|'));
+      transactions = lines.map(line => {
+        const parts = line.split('|').map(p => p.trim());
+        if (parts.length >= 3) {
+          return {
+            date: parts[0],
+            description: parts[1],
+            amount: parseFloat(parts[2].replace(/[^0-9.-]/g, ''))
+          };
+        }
+        return null;
+      }).filter(t => t !== null);
+    }
+
+    console.log(`✅ Extracted ${transactions.length} raw transactions`);
+
+    // Clean up files
+    for (const file of files) {
+      try {
+        await fs.unlink(file.path);
+      } catch (error) {
+        console.error(`Error deleting file ${file.path}:`, error);
+      }
+    }
+
+    return transactions;
+  } catch (error) {
+    console.error('Error in extractTransactions:', error);
+    throw new Error(`Failed to extract transactions: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+}
+
+/**
+ * NEW ARCHITECTURE: Categorize a chunk of transactions (Step 2 of 2)
+ * Takes raw transaction data and categorizes it using AI
+ */
+export async function categorizeTransactions(
+  transactions: any[],
+  currentHousingPayment: number,
+  chunkNumber: number,
+  totalChunks: number
+): Promise<OpenAIAnalysisResult> {
+  try {
+    console.log(`\n🔄 Categorizing chunk ${chunkNumber}/${totalChunks} (${transactions.length} transactions)...`);
+
+    const chunkDataStr = JSON.stringify(transactions);
+    console.log(`   📊 Chunk size: ${chunkDataStr.length} characters (~${estimateTokens(chunkDataStr)} tokens)`);
+
+    const prompt = `You are a financial analysis expert analyzing a CHUNK of transactions from bank statements.
+
+⚠️ CRITICAL: This is CHUNK ${chunkNumber} of ${totalChunks}. Analyze ONLY these transactions independently.
+⚠️ The data is ALREADY EXTRACTED as JSON. Your job: Categorize and analyze these transactions.
+⚠️ PRESERVE ALL TRANSACTIONS: Include EVERY transaction in your output.
+
+Current housing payment (to exclude from expenses): $${currentHousingPayment}
+
+Transaction Data for Chunk ${chunkNumber}:
+${chunkDataStr}
+
+Your task: CATEGORIZE and ANALYZE these transactions:
+
+CATEGORIZATION RULES:
+- "income": Deposits, paychecks, Zelle/transfers IN (positive amounts or credits)
+- "expense": Regular recurring expenses like utilities, bills, subscriptions, groceries
+- "housing": Rent or mortgage payments (around $${currentHousingPayment})
+- "one-time": Irregular purchases, large transfers, one-time payments
+
+FLAG ANOMALIES:
+- Luxury items, unusually large purchases, one-time events, irregular deposits
+- Provide specific flag reasons when flagged=true
+
+CRITICAL RULES:
+✓ PRESERVE EVERY TRANSACTION - Output count must match input count (${transactions.length} transactions)
+✓ USE EXACT DATES/AMOUNTS/DESCRIPTIONS from input
+✓ DETERMINISTIC - Same input = same output
+✓ NO SAMPLING - Include 100% of transactions
+
+Return COMPACT JSON (omit flagReason when flagged=false):
+{
+  "transactions": [
+    {"date": "YYYY-MM-DD", "description": "Description", "amount": 1234.56, "category": "income", "flagged": false, "monthYear": "2024-08"}
+  ],
+  "totalIncome": 5000.00,
+  "totalExpenses": 2500.00,
+  "confidence": 0.85
+}`;
+
+    const CHUNK_TIMEOUT_MS = 30000; // 30 seconds per chunk (fast categorization)
+
+    const response = await openaiDirect.chat.completions.create({
+      model: TEXT_MODEL,
+      messages: [
+        {
+          role: 'system',
+          content: 'You are a financial analyst specialized in cash flow analysis. Always respond with valid JSON. Be consistent and deterministic.',
+        },
+        {
+          role: 'user',
+          content: prompt,
+        },
+      ],
+      response_format: { type: 'json_object' },
+      temperature: 0,
+      top_p: 1,
+      seed: 42,
+      max_tokens: 16384,
+    }, {
+      timeout: CHUNK_TIMEOUT_MS,
+    });
+
+    const rawContent = response.choices[0]?.message?.content || '{}';
+    const result = JSON.parse(rawContent);
+
+    console.log(`✅ Chunk ${chunkNumber}/${totalChunks} completed:`);
+    console.log(`   📊 Transactions returned: ${result.transactions?.length || 0}/${transactions.length}`);
+    console.log(`   💰 Income: $${result.totalIncome?.toFixed(2) || 0}, Expenses: $${result.totalExpenses?.toFixed(2) || 0}`);
+
+    if (result.transactions?.length !== transactions.length) {
+      console.warn(`⚠️  Chunk ${chunkNumber} transaction count mismatch! Expected ${transactions.length}, got ${result.transactions?.length || 0}`);
+    }
+
+    return result;
+  } catch (error) {
+    console.error(`❌ Chunk ${chunkNumber}/${totalChunks} failed:`, error);
+    throw error;
   }
 }

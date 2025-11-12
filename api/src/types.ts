@@ -1,19 +1,13 @@
-// Product types for comparison
-export type TraditionalProductType =
-  | '15-year-fixed'
-  | '20-year-fixed'
-  | '25-year-fixed'
-  | '30-year-fixed';
-
 // Mortgage and loan types
 export interface MortgageDetails {
   currentBalance: number;
-  interestRate: number;
+  interestRate: number; // Traditional mortgage rate
+  aioInterestRate: number; // All-In-One loan rate
   monthlyPayment: number;
   remainingTermMonths: number;
   propertyValue: number;
   currentHousingPayment: number;
-  productType?: TraditionalProductType; // Type of traditional mortgage to compare against
+  loanBalance?: number; // Alias for currentBalance (for backwards compatibility)
 }
 
 export interface Transaction {
@@ -22,16 +16,12 @@ export interface Transaction {
   amount: number;
   category: 'income' | 'expense' | 'housing' | 'one-time' | 'recurring';
   excluded?: boolean;
-  flagged?: boolean; // AI flagged as potentially irregular
-  flagReason?: string; // Why it was flagged (luxury, one-time, unusually large, etc.)
-  monthYear?: string; // Month/Year for grouping (e.g., "2024-08")
-  sourceFile?: string; // Which file this transaction came from
-  isDuplicate?: boolean; // Marked as duplicate of another transaction
-  duplicateOf?: string; // Transaction ID (date+amount+description hash) this is a duplicate of
+  flagged?: boolean;
+  flagReason?: string;
 }
 
 export interface MonthlyBreakdown {
-  month: string; // "2024-08"
+  month: string;
   income: number;
   expenses: number;
   netCashFlow: number;
@@ -44,15 +34,14 @@ export interface CashFlowAnalysis {
   netCashFlow: number;
   averageMonthlyBalance: number;
   transactions: Transaction[];
-  monthlyBreakdown: MonthlyBreakdown[];
-  flaggedTransactions: Transaction[];
-  duplicateTransactions?: Transaction[]; // Transactions excluded as duplicates
+  flaggedTransactions?: Transaction[];
+  duplicateTransactions?: Transaction[];
+  monthlyBreakdown?: MonthlyBreakdown[];
+  depositFrequency?: 'monthly' | 'biweekly' | 'weekly';
+  monthlyDeposits?: number;
+  monthlyExpenses?: number;
+  monthlyLeftover?: number;
   confidence: number;
-  // NEW: Detailed breakdown for AIO calculation
-  monthlyDeposits?: number;        // Total monthly income/deposits
-  monthlyExpenses?: number;        // Total monthly expenses (including housing)
-  monthlyLeftover?: number;        // Net leftover (deposits - expenses)
-  depositFrequency?: 'weekly' | 'biweekly' | 'semi-monthly' | 'monthly' | 'quarterly' | 'semi-annual' | 'annual';
 }
 
 export interface EligibilityResult {
@@ -66,7 +55,6 @@ export interface EligibilityResult {
 
 export interface LoanProjection {
   type: 'traditional' | 'all-in-one';
-  productName?: string; // Display name (e.g., "15-Year Fixed", "All-In-One")
   monthlyPayment: number;
   totalInterestPaid: number;
   payoffDate: Date;
@@ -83,12 +71,22 @@ export interface SimulationResult {
     timeSavedMonths: number;
     percentageSavings: number;
   };
+  minimumCashFlowInfo?: {
+    minimumMonthlyCashFlow: number;
+    currentMonthlyCashFlow: number;
+    additionalNeeded: number;
+    targetPayoffMonths: number;
+  };
 }
 
 // OpenAI analysis types
 export interface OpenAIAnalysisResult {
   transactions: Transaction[];
   monthlyBreakdown: MonthlyBreakdown[];
+  depositFrequency: string;
+  monthlyDeposits: number;
+  monthlyExpenses: number;
+  monthlyLeftover: number;
   totalIncome: number;
   totalExpenses: number;
   netCashFlow: number;

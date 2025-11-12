@@ -4,10 +4,8 @@ import path from 'path';
 import { existsSync, mkdirSync } from 'fs';
 import { analyzeStatements } from '../services/openai-service.js';
 import { calculateEligibility } from '../services/eligibility-checker.js';
-import { simulateLoan } from '../services/loan-calculator-v3.js';
+import { simulateLoan } from '../services/loan-calculator.js';
 import type { MortgageDetails, CashFlowAnalysis } from '../types.js';
-import { nanoid } from 'nanoid';
-import { kv } from '@vercel/kv';
 
 const router = express.Router();
 
@@ -55,76 +53,8 @@ router.get('/health', (req, res) => {
   res.json({ status: 'ok', message: 'API is running' });
 });
 
-// Test AI connectivity (OpenRouter or OpenAI direct)
-router.get('/test-ai', async (req, res) => {
-  try {
-    const USE_OPENROUTER = process.env.USE_OPENROUTER === 'true';
-    console.log(`🧪 Testing AI connectivity (${USE_OPENROUTER ? 'OpenRouter' : 'OpenAI Direct'})...`);
-
-    const { default: OpenAI } = await import('openai');
-
-    const openai = USE_OPENROUTER
-      ? new OpenAI({
-          apiKey: process.env.OPENROUTER_API_KEY,
-          baseURL: 'https://openrouter.ai/api/v1',
-          defaultHeaders: {
-            'HTTP-Referer': process.env.YOUR_SITE_URL || 'https://aio-simulator.cmgfinancial.ai',
-            'X-Title': 'All-In-One Look Back Simulator',
-          },
-        })
-      : new OpenAI({
-          apiKey: process.env.OPENAI_API_KEY,
-        });
-
-    const MODEL = USE_OPENROUTER ? 'google/gemini-2.0-flash-001' : 'gpt-4o';
-
-    console.log('   📡 Endpoint:', openai.baseURL || 'https://api.openai.com/v1');
-    console.log('   🔑 API Key configured:', USE_OPENROUTER ? !!process.env.OPENROUTER_API_KEY : !!process.env.OPENAI_API_KEY);
-    console.log(`   🚀 Sending test request to ${MODEL}...`);
-
-    const startTime = Date.now();
-    const response = await openai.chat.completions.create({
-      model: MODEL,
-      messages: [
-        {
-          role: 'user',
-          content: 'Say "Hello" in exactly one word.',
-        },
-      ],
-      max_tokens: 10, // GPT-4o uses max_tokens
-    }, {
-      timeout: 30000, // 30 second timeout for test
-    });
-
-    const elapsedTime = Date.now() - startTime;
-    const result = response.choices[0]?.message?.content || '';
-
-    console.log(`   ✅ Response received in ${(elapsedTime / 1000).toFixed(2)}s`);
-    console.log(`   📝 Result: "${result}"`);
-
-    res.json({
-      status: 'success',
-      message: `AI is responding (${USE_OPENROUTER ? 'OpenRouter/Claude' : 'OpenAI/GPT-4o Direct'})`,
-      responseTime: `${(elapsedTime / 1000).toFixed(2)}s`,
-      result: result,
-      endpoint: openai.baseURL || 'https://api.openai.com/v1',
-      model: MODEL,
-      provider: USE_OPENROUTER ? 'OpenRouter' : 'OpenAI Direct',
-    });
-  } catch (error: any) {
-    console.error('❌ AI test failed:', error);
-    res.status(500).json({
-      status: 'error',
-      message: 'AI connectivity test failed',
-      error: error.message || 'Unknown error',
-      details: error.toString(),
-    });
-  }
-});
-
-// Analyze bank statements - BATCH PROCESSING
-// This endpoint processes files in batches to avoid Vercel's 180s timeout
-router.post('/analyze-statements-batch', upload.array('files', 4), async (req, res) => {
+// NEW ARCHITECTURE: Extract transactions from files (Step 1)
+router.post('/extract-transactions', upload.array('files', 20), async (req, res) => {
   try {
     if (!req.files || req.files.length === 0) {
       return res.status(400).json({
@@ -134,160 +64,71 @@ router.post('/analyze-statements-batch', upload.array('files', 4), async (req, r
     }
 
     const files = req.files as Express.Multer.File[];
-    const currentHousingPayment = parseFloat(req.body.currentHousingPayment) || 0;
-    const batchId = req.body.batchId || nanoid(10);
-    const batchNumber = parseInt(req.body.batchNumber) || 1;
-    const totalBatches = parseInt(req.body.totalBatches) || 1;
+    console.log(`📄 Extracting transactions from ${files.length} file(s)...`);
 
-    console.log(`📦 Processing batch ${batchNumber}/${totalBatches} (ID: ${batchId})`);
-    console.log(`📁 Files in this batch: ${files.length}`);
-    console.log(`💰 Current housing payment: $${currentHousingPayment}`);
+    // Import extraction function
+    const { extractTransactions } = await import('../services/openai-service.js');
 
-    // Analyze this batch of files
-    const cashFlow = await analyzeStatements(files, currentHousingPayment);
-
-    // Store batch result in KV with 1-hour expiration
-    const batchKey = `batch:${batchId}:${batchNumber}`;
-    await kv.set(batchKey, {
-      batchNumber,
-      cashFlow,
-      fileCount: files.length,
-      processedAt: new Date().toISOString(),
-    }, { ex: 3600 }); // 1 hour expiration
-
-    // Update batch progress
-    const progressKey = `batch:${batchId}:progress`;
-    await kv.set(progressKey, {
-      completed: batchNumber,
-      total: totalBatches,
-      lastUpdate: new Date().toISOString(),
-    }, { ex: 3600 });
-
-    console.log(`✅ Batch ${batchNumber}/${totalBatches} completed`);
+    // Extract raw transaction text from all files
+    const extractedData = await extractTransactions(files);
 
     res.json({
-      success: true,
-      batchId,
-      batchNumber,
-      totalBatches,
-      cashFlow, // Return this batch's results
-      message: `Batch ${batchNumber}/${totalBatches} processed successfully`,
+      transactions: extractedData,
+      totalTransactions: extractedData.length,
+      message: `Extracted ${extractedData.length} transactions from ${files.length} file(s)`,
     });
   } catch (error: any) {
-    console.error(`❌ Error analyzing batch:`, error);
+    console.error('Error extracting transactions:', error);
     res.status(500).json({
-      error: 'Batch analysis failed',
-      message: error.message || 'Failed to analyze batch',
+      error: 'Extraction failed',
+      message: error.message || 'Failed to extract transactions',
     });
   }
 });
 
-// Get batch processing status
-router.get('/batch-status/:batchId', async (req, res) => {
+// NEW ARCHITECTURE: Categorize a chunk of transactions (Step 2)
+router.post('/categorize-chunk', async (req, res) => {
   try {
-    const { batchId } = req.params;
-    const progressKey = `batch:${batchId}:progress`;
-    const progress = await kv.get(progressKey);
+    const { transactions, currentHousingPayment, chunkNumber, totalChunks } = req.body;
 
-    if (!progress) {
-      return res.status(404).json({
-        error: 'Batch not found',
-        message: 'No batch found with this ID',
+    if (!transactions || !Array.isArray(transactions)) {
+      return res.status(400).json({
+        error: 'Invalid data',
+        message: 'Please provide an array of transactions',
       });
     }
 
+    console.log(`🔄 Categorizing chunk ${chunkNumber}/${totalChunks} (${transactions.length} transactions)...`);
+
+    // Import categorization function
+    const { categorizeTransactions } = await import('../services/openai-service.js');
+
+    // Categorize this chunk of transactions
+    const categorized = await categorizeTransactions(
+      transactions,
+      parseFloat(currentHousingPayment) || 0,
+      chunkNumber,
+      totalChunks
+    );
+
     res.json({
-      success: true,
-      progress,
+      transactions: categorized.transactions,
+      totalIncome: categorized.totalIncome,
+      totalExpenses: categorized.totalExpenses,
+      confidence: categorized.confidence,
+      message: `Categorized chunk ${chunkNumber}/${totalChunks} successfully`,
     });
   } catch (error: any) {
-    console.error('Error getting batch status:', error);
+    console.error('Error categorizing chunk:', error);
     res.status(500).json({
-      error: 'Status check failed',
-      message: error.message,
+      error: 'Categorization failed',
+      message: error.message || 'Failed to categorize transactions',
     });
   }
 });
 
-// Combine all batch results into final cash flow analysis
-router.post('/batch-complete/:batchId', async (req, res) => {
-  try {
-    const { batchId } = req.params;
-    const { totalBatches, currentHousingPayment } = req.body;
-
-    console.log(`🎯 Combining results for batch ID: ${batchId}`);
-
-    // Retrieve all batch results
-    const batchResults = [];
-    for (let i = 1; i <= totalBatches; i++) {
-      const batchKey = `batch:${batchId}:${i}`;
-      const batchData: any = await kv.get(batchKey);
-      if (batchData) {
-        batchResults.push(batchData.cashFlow);
-      }
-    }
-
-    if (batchResults.length === 0) {
-      return res.status(404).json({
-        error: 'No batch results found',
-        message: 'Could not find any batch results to combine',
-      });
-    }
-
-    // Combine all transactions from all batches
-    const allTransactions = batchResults.flatMap(cf => cf.transactions || []);
-
-    // Calculate combined totals
-    const totalIncome = allTransactions
-      .filter(t => ['income', 'salary', 'deposit'].includes(t.category?.toLowerCase()) && !t.excluded)
-      .reduce((sum, t) => sum + Math.abs(t.amount), 0);
-
-    const totalExpenses = allTransactions
-      .filter(t => ['expense', 'recurring', 'payment'].includes(t.category?.toLowerCase()) && !t.excluded)
-      .reduce((sum, t) => sum + Math.abs(t.amount), 0);
-
-    const monthlyDeposits = batchResults[0].monthlyDeposits || 0;
-    const monthlyExpenses = batchResults[0].monthlyExpenses || 0;
-    const netCashFlow = monthlyDeposits - monthlyExpenses - currentHousingPayment;
-
-    // Use first batch's deposit frequency
-    const depositFrequency = batchResults[0].depositFrequency || 'monthly';
-
-    const combinedCashFlow = {
-      transactions: allTransactions,
-      totalIncome,
-      totalExpenses,
-      monthlyDeposits,
-      monthlyExpenses,
-      netCashFlow,
-      depositFrequency,
-      monthlyLeftover: netCashFlow,
-      currentHousingPayment,
-    };
-
-    // Clean up batch data from KV
-    for (let i = 1; i <= totalBatches; i++) {
-      await kv.del(`batch:${batchId}:${i}`);
-    }
-    await kv.del(`batch:${batchId}:progress`);
-
-    console.log(`✅ Combined ${batchResults.length} batches with ${allTransactions.length} total transactions`);
-
-    res.json({
-      success: true,
-      cashFlow: combinedCashFlow,
-      message: 'All batches combined successfully',
-    });
-  } catch (error: any) {
-    console.error('Error combining batches:', error);
-    res.status(500).json({
-      error: 'Batch combination failed',
-      message: error.message,
-    });
-  }
-});
-
-// Analyze bank statements - LEGACY (single request, may timeout with many files)
+// LEGACY: Analyze bank statements (kept for backward compatibility)
+// Consider using /extract-transactions + /categorize-chunk for better performance
 router.post('/analyze-statements', upload.array('files', 20), async (req, res) => {
   try {
     if (!req.files || req.files.length === 0) {
@@ -379,49 +220,19 @@ router.post('/simulate-loan', async (req, res) => {
   }
 });
 
-// Generate PDF Proposal (server-side using Puppeteer)
-router.post('/generate-pdf', async (req, res) => {
+// Generate PDF report (placeholder - to be implemented)
+router.post('/generate-report', async (req, res) => {
   try {
-    const { simulation, mortgageDetails, clientName, loanOfficerName, loanOfficerEmail, aiPitch, components } = req.body;
-
-    if (!simulation || !mortgageDetails || !components) {
-      return res.status(400).json({
-        error: 'Missing required data',
-        message: 'Please provide simulation, mortgageDetails, and components',
-      });
-    }
-
-    console.log('📄 Generating PDF proposal...');
-
-    const { generateProposalPDF } = await import('../services/pdf-generator.js');
-
-    const pdfBuffer = await generateProposalPDF({
-      simulation,
-      mortgageDetails,
-      clientName,
-      loanOfficerName,
-      loanOfficerEmail,
-      aiPitch,
-      components,
+    // TODO: Implement PDF generation
+    res.status(501).json({
+      error: 'Not implemented',
+      message: 'PDF report generation coming soon',
     });
-
-    // Generate filename
-    const dateStr = new Date().toISOString().split('T')[0];
-    const safeClientName = (clientName || 'Client').replace(/[^a-zA-Z0-9]/g, '-');
-    const filename = `${safeClientName}-AIO-Proposal-${dateStr}.pdf`;
-
-    // Set headers for file download
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-    res.setHeader('Content-Length', pdfBuffer.length);
-
-    // Send the PDF
-    res.send(pdfBuffer);
   } catch (error: any) {
-    console.error('Error generating PDF:', error);
+    console.error('Error generating report:', error);
     res.status(500).json({
-      error: 'PDF generation failed',
-      message: error.message || 'Failed to generate PDF proposal',
+      error: 'Report generation failed',
+      message: error.message || 'Failed to generate report',
     });
   }
 });
@@ -612,177 +423,113 @@ Be conversational, professional, and persuasive. Focus on the "why" not just the
   }
 });
 
-// Generate AI Sales Pitch for Proposal
+// Generate AI pitch for proposal
 router.post('/generate-pitch', async (req, res) => {
   try {
     const { simulation, mortgageDetails, clientName, options } = req.body;
 
-    // Default options if not provided
-    const pitchOptions = options || {
-      tone: 'neutral',
-      length: 'standard',
-      technicalLevel: 'moderate',
-      focus: 'balanced',
-      urgency: 'moderate',
-      style: 'balanced',
-      cta: 'moderate'
-    };
-
     if (!simulation || !mortgageDetails) {
       return res.status(400).json({
         error: 'Missing required data',
-        message: 'Please provide simulation results and mortgage details',
+        message: 'Please provide simulation and mortgage details',
       });
     }
 
-    const USE_OPENROUTER = process.env.USE_OPENROUTER === 'true';
-    const { default: OpenAI } = await import('openai');
+    const { OpenAI } = await import('openai');
+    const openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    });
 
-    const openai = USE_OPENROUTER
-      ? new OpenAI({
-          apiKey: process.env.OPENROUTER_API_KEY,
-          baseURL: 'https://openrouter.ai/api/v1',
-          defaultHeaders: {
-            'HTTP-Referer': process.env.YOUR_SITE_URL || 'https://aio-simulator.cmgfinancial.ai',
-            'X-Title': 'All-In-One Look Back Simulator',
-          },
-        })
-      : new OpenAI({
-          apiKey: process.env.OPENAI_API_KEY,
-        });
+    // Build prompt based on options with proper type checking
+    const toneGuide: Record<string, string> = {
+      casual: 'Use a friendly, conversational tone like talking to a friend. Use contractions and approachable language.',
+      professional: 'Use formal, professional language appropriate for a financial proposal. Maintain authority and expertise.',
+      neutral: 'Use clear, straightforward language that is neither too casual nor overly formal.',
+    };
 
-    const MODEL = USE_OPENROUTER ? 'google/gemini-2.0-flash-001' : 'gpt-4o';
+    const lengthGuide: Record<string, string> = {
+      shorter: 'Keep it concise - 2-3 short paragraphs maximum (150-200 words).',
+      standard: 'Write 3-4 well-developed paragraphs (250-350 words).',
+      longer: 'Provide comprehensive detail in 4-5 substantial paragraphs (400-500 words).',
+    };
 
-    // Build context for the AI
-    const formatCurrency = (amount: number) =>
-      new Intl.NumberFormat('en-US', {
+    const technicalGuide: Record<string, string> = {
+      simple: 'Avoid jargon. Explain everything in simple terms anyone can understand.',
+      moderate: 'Use some financial terminology but explain complex concepts clearly.',
+      technical: 'Use precise financial terminology and assume the reader has mortgage knowledge.',
+    };
+
+    const focusGuide: Record<string, string> = {
+      savings: 'Emphasize the dollar amount saved and interest reduction.',
+      flexibility: 'Emphasize the access to funds and financial flexibility.',
+      security: 'Emphasize the stability, safety, and long-term financial security.',
+      balanced: 'Provide balanced coverage of savings, flexibility, and security.',
+    };
+
+    const urgencyGuide: Record<string, string> = {
+      low: 'Maintain a calm, informative tone without creating pressure.',
+      moderate: 'Gently suggest this is a valuable opportunity worth acting on.',
+      high: 'Create urgency about the benefits of acting now and potential opportunity cost.',
+    };
+
+    const styleGuide: Record<string, string> = {
+      'data-driven': 'Lead with numbers, statistics, and concrete facts. Be analytical.',
+      balanced: 'Mix data points with relatable explanations and real-world context.',
+      'story-based': 'Use narrative, relatable scenarios, and paint a picture of their future.',
+    };
+
+    const ctaGuide: Record<string, string> = {
+      soft: 'End with an open invitation to learn more or ask questions.',
+      moderate: 'End with a clear next step like scheduling a follow-up conversation.',
+      strong: 'End with a compelling call to action that encourages immediate response.',
+    };
+
+    const formatCurrency = (amount: number) => {
+      return new Intl.NumberFormat('en-US', {
         style: 'currency',
         currency: 'USD',
         minimumFractionDigits: 0,
         maximumFractionDigits: 0,
       }).format(amount);
-
-    const yearsMonths = (months: number) => {
-      const years = Math.floor(months / 12);
-      const mos = months % 12;
-      return years > 0 ? `${years} year${years > 1 ? 's' : ''}${mos > 0 ? ` ${mos} months` : ''}` : `${mos} months`;
     };
 
-    const interestSavings = formatCurrency(simulation.comparison.interestSavings);
-    const timeSaved = yearsMonths(simulation.comparison.timeSavedMonths);
-    const loanBalance = formatCurrency(mortgageDetails.currentBalance);
-    const percentageSavings = simulation.comparison.percentageSavings.toFixed(1);
-
-    // Build prompt based on options
-    const toneMap = {
-      casual: 'friendly and conversational, like talking to a friend',
-      neutral: 'professional yet warm and conversational',
-      professional: 'highly professional and business-focused'
+    const formatMonths = (totalMonths: number) => {
+      const years = Math.floor(totalMonths / 12);
+      const months = totalMonths % 12;
+      return `${years} year${years !== 1 ? 's' : ''} and ${months} month${months !== 1 ? 's' : ''}`;
     };
 
-    const lengthMap = {
-      shorter: '1-2 concise paragraphs (100-150 words)',
-      standard: '2-3 well-structured paragraphs (175-225 words)',
-      longer: '3-4 detailed paragraphs (250-325 words)'
-    };
+    const prompt = `You are an expert loan officer creating a personalized sales pitch for the All-In-One loan.
 
-    const technicalMap = {
-      simple: 'Use simple, everyday language. Avoid financial jargon. Explain concepts like you would to a friend.',
-      moderate: 'Use some technical terms but explain them clearly. Balance between simple and expert.',
-      technical: 'Use industry terminology and detailed financial concepts. Assume financial sophistication.'
-    };
+CLIENT: ${clientName || 'this client'}
 
-    const focusMap = {
-      savings: 'Focus heavily on the dollar savings and interest reduction',
-      flexibility: 'Emphasize the liquidity and access to funds advantages',
-      security: 'Highlight the financial freedom and control benefits',
-      balanced: 'Balance savings, flexibility, and security equally'
-    };
+KEY NUMBERS:
+- Total Interest Savings: ${formatCurrency(simulation.comparison.interestSavings)}
+- Time Saved: ${formatMonths(simulation.comparison.timeSavedMonths)}
+- Interest Reduction: ${simulation.comparison.percentageSavings.toFixed(1)}%
+- Current Loan Balance: ${formatCurrency(mortgageDetails.loanBalance)}
+- Traditional Total Interest: ${formatCurrency(simulation.traditionalLoan.totalInterestPaid)}
+- AIO Total Interest: ${formatCurrency(simulation.allInOneLoan.totalInterestPaid)}
 
-    const urgencyMap = {
-      low: 'Take a consultative, educational approach with no time pressure',
-      moderate: 'Suggest the benefits warrant consideration without being pushy',
-      high: 'Emphasize the opportunity cost of waiting and recommend prompt action'
-    };
+CUSTOMIZATION PREFERENCES:
+- Tone: ${toneGuide[options?.tone] || toneGuide['neutral']}
+- Length: ${lengthGuide[options?.length] || lengthGuide['standard']}
+- Technical Level: ${technicalGuide[options?.technicalLevel] || technicalGuide['moderate']}
+- Focus: ${focusGuide[options?.focus] || focusGuide['balanced']}
+- Urgency: ${urgencyGuide[options?.urgency] || urgencyGuide['moderate']}
+- Style: ${styleGuide[options?.style] || styleGuide['balanced']}
+- Call to Action: ${ctaGuide[options?.cta] || ctaGuide['moderate']}
 
-    const styleMap = {
-      'data-driven': 'Lead with numbers, statistics, and concrete savings figures',
-      balanced: 'Balance data with storytelling and real-world scenarios',
-      'story-based': 'Use narrative and paint a picture of their future financial freedom'
-    };
+Write a compelling sales pitch that will appear at the top of the proposal. Focus on why the All-In-One loan is right for this client based on their specific numbers.
 
-    const ctaMap = {
-      soft: 'End with an open-ended invitation to learn more',
-      moderate: 'End with a forward-looking statement about their financial future',
-      strong: 'End with a clear call to action and next steps'
-    };
-
-    const prompt = `You are a professional mortgage loan officer at CMG Financial. Write a compelling, personalized sales pitch for ${clientName} about the All-In-One loan product based on their specific financial situation.
-
-CLIENT'S SPECIFIC SAVINGS:
-- Total Interest Savings: ${interestSavings} (${percentageSavings}% reduction)
-- Payoff Acceleration: ${timeSaved} faster than traditional mortgage
-- Current Loan Balance: ${loanBalance}
-
-ALL-IN-ONE LOAN PRODUCT ADVANTAGES (weave these naturally into the pitch):
-
-1. DAILY INTEREST CALCULATION ADVANTAGE
-   - Interest calculated on (Balance - Available Cash) EVERY DAY
-   - Traditional mortgages calculate monthly on full balance
-   - Every deposit immediately reduces interest-bearing balance
-   - Your paycheck works for you 24/7, not just on payment day
-
-2. FINANCIAL FLEXIBILITY & LIQUIDITY
-   - Works as your primary checking account (debit card, checks, online banking)
-   - All funds remain 100% accessible - withdraw anytime
-   - Unlike extra principal payments that lock funds away forever
-   - True financial freedom while accelerating payoff
-
-3. CASH FLOW OPTIMIZATION
-   - Deposits reduce interest the moment they hit the account
-   - Keep your money working for you between expenses
-   - No need to choose between liquidity and savings
-   - Smart money management built into the loan structure
-
-4. ZERO RESTRICTIONS & PENALTIES
-   - No prepayment penalties ever
-   - No minimum payment above interest
-   - No restrictions on deposits or withdrawals
-   - Complete control of your financial strategy
-
-5. PROVEN SAVINGS MODEL
-   - Typical clients save 30-40% on total interest
-   - Average 5-10 years faster payoff
-   - Based on their ACTUAL cash flow patterns
-   - Real results, not projections
-
-PITCH REQUIREMENTS:
-- Tone: ${toneMap[pitchOptions.tone]}
-- Length: ${lengthMap[pitchOptions.length]}
-- Technical Level: ${technicalMap[pitchOptions.technicalLevel]}
-- Focus: ${focusMap[pitchOptions.focus]}
-- Urgency: ${urgencyMap[pitchOptions.urgency]}
-- Style: ${styleMap[pitchOptions.style]}
-- Call to Action: ${ctaMap[pitchOptions.cta]}
-- Address ${clientName} directly and personally
-- Emphasize how DAILY interest calculation is revolutionary
-
-CRITICAL FORMATTING INSTRUCTIONS:
-- DO NOT include a subject line
-- DO NOT include "Subject:" or any header
-- DO NOT write "I wanted to reach out..." or "I'd like to share..."
-- Start IMMEDIATELY with the pitch content
-- Jump straight into the value proposition
-
-Write a pitch that makes ${clientName} excited about saving ${interestSavings} and becoming mortgage-free ${timeSaved} earlier.`;
+DO NOT use a greeting or signature. Start directly with the pitch content. Do not use markdown formatting.`;
 
     const completion = await openai.chat.completions.create({
-      model: MODEL,
+      model: 'gpt-4',
       messages: [
         {
           role: 'system',
-          content:
-            'You are an expert loan officer specializing in All-In-One mortgages. Write compelling, personalized sales pitches that help clients understand the transformational benefits of this product. IMPORTANT: Start directly with the pitch content - no subject lines, no headers, no preamble like "I wanted to reach out". Jump straight into the value proposition.',
+          content: 'You are an expert loan officer who creates compelling, personalized sales pitches for the All-In-One loan product.',
         },
         {
           role: 'user',
@@ -790,253 +537,179 @@ Write a pitch that makes ${clientName} excited about saving ${interestSavings} a
         },
       ],
       temperature: 0.7,
-      max_tokens: 500,
+      max_tokens: 600,
     });
 
     const pitch = completion.choices[0]?.message?.content || 'Unable to generate pitch. Please try again.';
 
     res.json({
       pitch,
-      message: 'Sales pitch generated successfully',
+      message: 'Pitch generated successfully',
     });
   } catch (error: any) {
     console.error('Error generating pitch:', error);
     res.status(500).json({
       error: 'Pitch generation failed',
-      message: error.message || 'Failed to generate sales pitch',
+      message: error.message || 'Failed to generate pitch',
     });
   }
 });
 
-// Get current mortgage rate from FRED API
-router.get('/current-mortgage-rate', async (req, res) => {
-  try {
-    const { getCurrentMortgageRate } = await import('../services/fred-api-service.js');
-    const rateData = await getCurrentMortgageRate();
+// ===== SIGNATURE MANAGEMENT ENDPOINTS =====
 
-    res.json({
-      success: true,
-      data: rateData,
-      message: 'Current mortgage rate fetched successfully',
-    });
-  } catch (error: any) {
-    console.error('Error fetching current mortgage rate:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Rate fetch failed',
-      message: error.message || 'Failed to fetch current mortgage rate',
-    });
-  }
-});
-
-// Save a proposal and generate a shareable link
-router.post('/save-proposal', async (req, res) => {
-  try {
-    const proposalData = req.body;
-
-    if (!proposalData.simulation || !proposalData.mortgageDetails) {
-      return res.status(400).json({
-        error: 'Missing required data',
-        message: 'Please provide simulation and mortgage details',
-      });
-    }
-
-    // Extract loan officer email and client name
-    const loanOfficerEmail = proposalData.loanOfficerEmail;
-    const clientName = proposalData.clientName || 'Unnamed Client';
-
-    if (!loanOfficerEmail) {
-      return res.status(400).json({
-        error: 'Missing loan officer email',
-        message: 'Loan officer email is required to save proposals',
-      });
-    }
-
-    // Generate unique ID for the proposal (10 characters, URL-safe)
-    const proposalId = nanoid(10);
-
-    // Create proposal metadata
-    const proposalMetadata = {
-      id: proposalId,
-      clientName,
-      loanOfficerEmail,
-      createdAt: new Date().toISOString(),
-      expiresAt: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(),
-    };
-
-    // Store the full proposal data in Vercel KV with 90-day expiration
-    await kv.set(`proposal:${proposalId}`, {
-      ...proposalData,
-      metadata: proposalMetadata,
-    }, {
-      ex: 90 * 24 * 60 * 60, // 90 days in seconds
-    });
-
-    // Add this proposal to the loan officer's list
-    const userProposalsKey = `user:proposals:${loanOfficerEmail}`;
-    const existingProposals = (await kv.get(userProposalsKey)) as any[] || [];
-
-    // Add new proposal to the beginning of the array
-    const updatedProposals = [proposalMetadata, ...existingProposals];
-
-    // Store updated list (no expiration on user list)
-    await kv.set(userProposalsKey, updatedProposals);
-
-    // Generate the shareable URL
-    const baseUrl = process.env.CLIENT_URL || 'http://localhost:5173';
-    const shareableUrl = `${baseUrl}/proposal/${proposalId}`;
-
-    console.log(`📎 Proposal saved: ${proposalId} for ${loanOfficerEmail}`);
-
-    res.json({
-      success: true,
-      proposalId,
-      shareableUrl,
-      expiresIn: '90 days',
-      message: 'Proposal saved successfully',
-    });
-  } catch (error: any) {
-    console.error('Error saving proposal:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Save failed',
-      message: error.message || 'Failed to save proposal',
-    });
-  }
-});
-
-// Retrieve a proposal by ID (public endpoint)
-router.get('/proposals/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    if (!id || id.length !== 10) {
-      return res.status(400).json({
-        error: 'Invalid proposal ID',
-        message: 'Proposal ID must be 10 characters',
-      });
-    }
-
-    // Retrieve the proposal from Vercel KV
-    const proposalData = await kv.get(`proposal:${id}`);
-
-    if (!proposalData) {
-      return res.status(404).json({
-        error: 'Proposal not found',
-        message: 'This proposal does not exist or has expired',
-      });
-    }
-
-    console.log(`📖 Proposal retrieved: ${id}`);
-
-    res.json({
-      success: true,
-      proposal: proposalData,
-      message: 'Proposal retrieved successfully',
-    });
-  } catch (error: any) {
-    console.error('Error retrieving proposal:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Retrieval failed',
-      message: error.message || 'Failed to retrieve proposal',
-    });
-  }
-});
-
-// Get all proposals for a loan officer by email
-router.get('/my-proposals/:email', async (req, res) => {
+// Check if signature exists for email
+router.get('/signature/exists/:email', async (req, res) => {
   try {
     const { email } = req.params;
 
-    if (!email) {
+    if (!email || !email.includes('@')) {
       return res.status(400).json({
-        error: 'Missing email',
-        message: 'Email is required',
+        error: 'Invalid email',
+        message: 'Please provide a valid email address',
       });
     }
 
-    // Retrieve the user's proposals list
-    const userProposalsKey = `user:proposals:${email}`;
-    const proposals = (await kv.get(userProposalsKey)) as any[] || [];
-
-    console.log(`📋 Retrieved ${proposals.length} proposals for ${email}`);
+    const { signatureExists } = await import('../services/redis-service.js');
+    const exists = await signatureExists(email);
 
     res.json({
-      success: true,
-      proposals,
-      count: proposals.length,
-      message: 'Proposals retrieved successfully',
+      exists,
+      email,
+      message: exists ? 'Signature found' : 'No signature found for this email',
     });
   } catch (error: any) {
-    console.error('Error retrieving user proposals:', error);
+    console.error('Error checking signature:', error);
     res.status(500).json({
-      success: false,
-      error: 'Retrieval failed',
-      message: error.message || 'Failed to retrieve proposals',
+      error: 'Check failed',
+      message: error.message || 'Failed to check signature',
     });
   }
 });
 
-// Delete a proposal
-router.delete('/proposals/:id', async (req, res) => {
+// Get signature by email
+router.get('/signature/:email', async (req, res) => {
   try {
-    const { id } = req.params;
-    const { email } = req.body;
+    const { email } = req.params;
 
-    if (!id || id.length !== 10) {
+    if (!email || !email.includes('@')) {
       return res.status(400).json({
-        error: 'Invalid proposal ID',
-        message: 'Proposal ID must be 10 characters',
+        error: 'Invalid email',
+        message: 'Please provide a valid email address',
       });
     }
 
-    if (!email) {
-      return res.status(400).json({
-        error: 'Missing email',
-        message: 'Loan officer email is required',
-      });
-    }
+    const { getSignature } = await import('../services/redis-service.js');
+    const signature = await getSignature(email);
 
-    // Get the proposal to verify ownership
-    const proposalData = await kv.get(`proposal:${id}`) as any;
-
-    if (!proposalData) {
+    if (!signature) {
       return res.status(404).json({
-        error: 'Proposal not found',
-        message: 'This proposal does not exist or has expired',
+        error: 'Not found',
+        message: 'No signature found for this email',
       });
     }
 
-    // Verify ownership
-    if (proposalData.loanOfficerEmail !== email && proposalData.metadata?.loanOfficerEmail !== email) {
-      return res.status(403).json({
-        error: 'Unauthorized',
-        message: 'You can only delete your own proposals',
+    res.json({
+      signature,
+      message: 'Signature retrieved successfully',
+    });
+  } catch (error: any) {
+    console.error('Error getting signature:', error);
+    res.status(500).json({
+      error: 'Retrieval failed',
+      message: error.message || 'Failed to retrieve signature',
+    });
+  }
+});
+
+// Save or update signature
+router.post('/signature', async (req, res) => {
+  try {
+    const { email, name, title, phone, nmls, officeAddress, photoUrl } = req.body;
+
+    // Validate required fields
+    if (!email || !email.includes('@')) {
+      return res.status(400).json({
+        error: 'Invalid email',
+        message: 'Please provide a valid email address',
       });
     }
 
-    // Delete the proposal from KV
-    await kv.del(`proposal:${id}`);
+    if (!name || name.trim().length === 0) {
+      return res.status(400).json({
+        error: 'Invalid name',
+        message: 'Please provide a name',
+      });
+    }
 
-    // Remove from user's proposal list
-    const userProposalsKey = `user:proposals:${email}`;
-    const existingProposals = (await kv.get(userProposalsKey)) as any[] || [];
-    const updatedProposals = existingProposals.filter((p: any) => p.id !== id);
-    await kv.set(userProposalsKey, updatedProposals);
+    if (!phone || phone.trim().length === 0) {
+      return res.status(400).json({
+        error: 'Invalid phone',
+        message: 'Please provide a phone number',
+      });
+    }
 
-    console.log(`🗑️ Proposal deleted: ${id} by ${email}`);
+    const { saveSignature } = await import('../services/redis-service.js');
+    const success = await saveSignature({
+      email,
+      name,
+      title: title || '',
+      phone,
+      nmls: nmls || undefined,
+      officeAddress: officeAddress || undefined,
+      photoUrl: photoUrl || undefined,
+    });
+
+    if (!success) {
+      return res.status(500).json({
+        error: 'Save failed',
+        message: 'Redis is not configured or save operation failed',
+      });
+    }
 
     res.json({
       success: true,
-      message: 'Proposal deleted successfully',
+      message: 'Signature saved successfully',
     });
   } catch (error: any) {
-    console.error('Error deleting proposal:', error);
+    console.error('Error saving signature:', error);
     res.status(500).json({
-      success: false,
-      error: 'Deletion failed',
-      message: error.message || 'Failed to delete proposal',
+      error: 'Save failed',
+      message: error.message || 'Failed to save signature',
+    });
+  }
+});
+
+// Delete signature
+router.delete('/signature/:email', async (req, res) => {
+  try {
+    const { email } = req.params;
+
+    if (!email || !email.includes('@')) {
+      return res.status(400).json({
+        error: 'Invalid email',
+        message: 'Please provide a valid email address',
+      });
+    }
+
+    const { deleteSignature } = await import('../services/redis-service.js');
+    const success = await deleteSignature(email);
+
+    if (!success) {
+      return res.status(500).json({
+        error: 'Delete failed',
+        message: 'Redis is not configured or delete operation failed',
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Signature deleted successfully',
+    });
+  } catch (error: any) {
+    console.error('Error deleting signature:', error);
+    res.status(500).json({
+      error: 'Delete failed',
+      message: error.message || 'Failed to delete signature',
     });
   }
 });
