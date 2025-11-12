@@ -1,7 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import type { CashFlowAnalysis, Transaction, MortgageDetails } from '../types';
 import { ComposedChart, Area, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import PageNavigation from './PageNavigation';
 import './CashFlowReview.css';
 import CashFlowSummaryCards from './CashFlowSummaryCards';
 import AIExtractionModal from './AIExtractionModal';
