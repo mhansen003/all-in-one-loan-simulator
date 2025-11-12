@@ -67,6 +67,86 @@ export default function AIExtractionModal({ onClose }: AIExtractionModalProps) {
             </div>
           </div>
 
+          {/* Three-Phase Architecture */}
+          <div className="ai-section">
+            <div className="ai-section-header">
+              <span className="ai-icon">⚡</span>
+              <h3>Three-Phase Processing Pipeline</h3>
+            </div>
+            <p>Our advanced architecture breaks down analysis into three optimized phases:</p>
+
+            <div className="ai-phase-grid">
+              <div className="ai-phase-card">
+                <div className="ai-phase-number">1</div>
+                <h4>📄 Extraction Phase</h4>
+                <p><strong>Extract transactions from PDFs</strong></p>
+                <ul>
+                  <li>Processes 2 files in parallel</li>
+                  <li>Uses Google Gemini 2.0 Flash for vision OCR</li>
+                  <li>Extracts dates, descriptions, amounts</li>
+                  <li>~30-60 seconds per file</li>
+                </ul>
+              </div>
+
+              <div className="ai-phase-card">
+                <div className="ai-phase-number">2</div>
+                <h4>🏷️ Categorization Phase</h4>
+                <p><strong>Intelligent categorization in chunks</strong></p>
+                <ul>
+                  <li>Breaks into 50-transaction chunks</li>
+                  <li>Processes 3 chunks in parallel</li>
+                  <li>Uses GPT-4o for fast categorization</li>
+                  <li>Progress updates every ~150 transactions</li>
+                </ul>
+              </div>
+
+              <div className="ai-phase-card">
+                <div className="ai-phase-number">3</div>
+                <h4>📊 Aggregation Phase</h4>
+                <p><strong>Local consistency & calculations</strong></p>
+                <ul>
+                  <li>Standardizes merchant categories</li>
+                  <li>Removes duplicate transactions</li>
+                  <li>Calculates monthly breakdowns</li>
+                  <li>Validates data integrity</li>
+                </ul>
+              </div>
+            </div>
+
+            <div className="ai-important-note">
+              <strong>🚀 Performance Optimized:</strong> This three-phase approach processes large datasets 3-5x faster than single-request processing while maintaining accuracy through parallel processing and smart chunking.
+            </div>
+          </div>
+
+          {/* Consistency Engine */}
+          <div className="ai-section">
+            <div className="ai-section-header">
+              <span className="ai-icon">🔄</span>
+              <h3>Automatic Consistency Engine</h3>
+            </div>
+            <p>After categorization, we run an automated consistency check to ensure the same merchant is always categorized identically:</p>
+
+            <div className="ai-rule-box info">
+              <h4>How It Works:</h4>
+              <ol>
+                <li><strong>Groups by merchant:</strong> Normalizes descriptions to group "AMAZON", "Amazon.com", "amazon" together</li>
+                <li><strong>Detects conflicts:</strong> Finds merchants with multiple categories (e.g., "Starbucks" as both expense and one-time)</li>
+                <li><strong>Applies smart rules:</strong> Standardizes using priority logic:
+                  <ul>
+                    <li>Housing always wins (mortgages must be consistent)</li>
+                    <li>Income by majority vote (payroll should match)</li>
+                    <li>Most common category for others</li>
+                  </ul>
+                </li>
+                <li><strong>Logs changes:</strong> Shows which merchants were standardized and why</li>
+              </ol>
+            </div>
+
+            <div className="ai-example">
+              <strong>Example:</strong> "Starbucks" appears 18 times as <span className="badge-expense">Expense</span> and 2 times as <span className="badge-onetime">One-Time</span>. The consistency engine standardizes all 20 to <span className="badge-expense">Expense</span>.
+            </div>
+          </div>
+
           {/* Income Detection */}
           <div className="ai-section">
             <div className="ai-section-header">

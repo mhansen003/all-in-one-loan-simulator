@@ -71,6 +71,14 @@ export function simulateLoan(
   // CRITICAL: cashFlow contains the correct MONTHLY values (monthlyDeposits/monthlyExpenses)
   // DO NOT use totalIncome/totalExpenses as those are TOTALS across all statement months!
   const depositFreq = (cashFlow.depositFrequency as any) || 'monthly';
+
+  console.log(`[loan-calculator-v3] ========== CASHFLOW RECEIVED ==========`);
+  console.log(`[loan-calculator-v3] cashFlow.monthlyDeposits: ${cashFlow.monthlyDeposits}`);
+  console.log(`[loan-calculator-v3] cashFlow.monthlyExpenses: ${cashFlow.monthlyExpenses}`);
+  console.log(`[loan-calculator-v3] cashFlow.totalIncome: ${cashFlow.totalIncome}`);
+  console.log(`[loan-calculator-v3] cashFlow.totalExpenses: ${cashFlow.totalExpenses}`);
+  console.log(`[loan-calculator-v3] cashFlow.netCashFlow: ${cashFlow.netCashFlow}`);
+
   const monthlyIncome = cashFlow.monthlyDeposits || cashFlow.totalIncome || 0;
   const monthlyExpenses = cashFlow.monthlyExpenses || cashFlow.totalExpenses || 0;
   const netCashFlow = monthlyIncome - monthlyExpenses;
@@ -79,9 +87,9 @@ export function simulateLoan(
   console.log(`[loan-calculator-v3] Starting Balance: $${loanBalance.toFixed(2)}`);
   console.log(`[loan-calculator-v3] Interest Rate: ${(aioRate * 100).toFixed(3)}%`);
   console.log(`[loan-calculator-v3] Deposit Frequency: ${depositFreq}`);
-  console.log(`[loan-calculator-v3] Monthly Income: $${monthlyIncome.toFixed(2)}`);
-  console.log(`[loan-calculator-v3] Monthly Expenses: $${monthlyExpenses.toFixed(2)}`);
-  console.log(`[loan-calculator-v3] Net Cash Flow: $${netCashFlow.toFixed(2)}`);
+  console.log(`[loan-calculator-v3] Monthly Income (using): $${monthlyIncome.toFixed(2)}`);
+  console.log(`[loan-calculator-v3] Monthly Expenses (using): $${monthlyExpenses.toFixed(2)}`);
+  console.log(`[loan-calculator-v3] Net Cash Flow (calculated): $${netCashFlow.toFixed(2)}`);
 
   const accurateInput: AccurateCalculationInput = {
     startingBalance: loanBalance,
@@ -98,7 +106,8 @@ export function simulateLoan(
 
   console.log(`[loan-calculator-v3] ========== SIMULATION RESULT ==========`);
   console.log(`[loan-calculator-v3] Total Interest Paid: $${accurateResult.summary.totalInterestPaid.toFixed(2)}`);
-  console.log(`[loan-calculator-v3] Months to Payoff: ${accurateResult.summary.monthsToPayoff}`);
+  console.log(`[loan-calculator-v3] Months to Payoff (from accurate): ${accurateResult.summary.monthsToPayoff}`);
+  console.log(`[loan-calculator-v3] Payoff Day Index: ${accurateResult.summary.payoffDayIndex}`);
   console.log(`[loan-calculator-v3] Payoff Date: ${accurateResult.summary.payoffDate?.toISOString()}`);
   console.log(`[loan-calculator-v3] Final Balance: $${accurateResult.summary.finalBalance.toFixed(2)}`);
   console.log(`[loan-calculator-v3] =======================================`);
@@ -107,6 +116,12 @@ export function simulateLoan(
   const aioPayoffMonths = accurateResult.summary.monthsToPayoff || remainingMonths;
   const aioPayoffDate = accurateResult.summary.payoffDate || traditionalPayoffDate;
   const aioTotalInterest = accurateResult.summary.totalInterestPaid;
+
+  console.log(`[loan-calculator-v3] ========== FINAL VALUES USED ==========`);
+  console.log(`[loan-calculator-v3] aioPayoffMonths (final): ${aioPayoffMonths}`);
+  console.log(`[loan-calculator-v3] remainingMonths (fallback): ${remainingMonths}`);
+  console.log(`[loan-calculator-v3] Used fallback?: ${!accurateResult.summary.monthsToPayoff}`);
+  console.log(`[loan-calculator-v3] =======================================`);
 
   const allInOneLoan: LoanProjection = {
     type: 'all-in-one',

@@ -133,7 +133,7 @@ export const analyzeStatements = async (
   // ===== PHASE 2: CATEGORIZATION =====
   console.log(`\n🏷️  PHASE 2: Categorizing ${allTransactions.length} transactions...`);
 
-  const CATEGORIZATION_CHUNK_SIZE = 15; // Small chunks for fast, reliable categorization
+  const CATEGORIZATION_CHUNK_SIZE = 50; // Larger chunks for faster processing
   const chunks: any[][] = [];
 
   for (let i = 0; i < allTransactions.length; i += CATEGORIZATION_CHUNK_SIZE) {
@@ -151,8 +151,8 @@ export const analyzeStatements = async (
     });
   }
 
-  // Process chunks with controlled concurrency (10 at a time for fast processing)
-  const CONCURRENT_CHUNKS = 10;
+  // Process chunks with controlled concurrency (3 at a time for frequent progress updates)
+  const CONCURRENT_CHUNKS = 3;
   const categorizedChunks: any[] = [];
   let transactionsProcessed = 0;
 
@@ -246,14 +246,14 @@ export const analyzeStatements = async (
   // Combine all categorized transactions
   const allCategorizedTransactions = categorizedChunks.flatMap(chunk => chunk.transactions || []);
 
-  // Calculate totals
-  const totalIncome = categorizedChunks.reduce((sum, chunk) => sum + (chunk.totalIncome || 0), 0);
-  const totalExpenses = categorizedChunks.reduce((sum, chunk) => sum + (chunk.totalExpenses || 0), 0);
+  // Run consistency check to standardize categories across all transactions
+  const { standardizedTransactions, changesLog } = standardizeCategories(allCategorizedTransactions);
+
   const avgConfidence = categorizedChunks.reduce((sum, chunk) => sum + (chunk.confidence || 0.8), 0) / categorizedChunks.length;
 
-  // Calculate monthly breakdown
+  // Calculate monthly breakdown (using standardized transactions)
   const monthlyMap = new Map<string, any>();
-  allCategorizedTransactions.forEach(t => {
+  standardizedTransactions.forEach(t => {
     const month = t.monthYear || t.date?.substring(0, 7); // YYYY-MM
     if (!month) return;
 
@@ -289,28 +289,35 @@ export const analyzeStatements = async (
   const monthlyBreakdown = Array.from(monthlyMap.values()).sort((a, b) => a.month.localeCompare(b.month));
 
   // Extract flagged transactions
-  const flaggedTransactions = allCategorizedTransactions.filter(t => t.flagged === true);
+  const flaggedTransactions = standardizedTransactions.filter(t => t.flagged === true);
 
   // Deduplicate transactions
-  const { uniqueTransactions, duplicateTransactions } = deduplicateTransactions(allCategorizedTransactions);
+  const { uniqueTransactions, duplicateTransactions } = deduplicateTransactions(standardizedTransactions);
+
+  // Calculate totals FROM MONTHLY BREAKDOWN (not from AI chunk totals)
+  // This ensures consistency between monthly breakdown and totals
+  const totalIncome = monthlyBreakdown.reduce((sum, month) => sum + month.income, 0);
+  const totalExpenses = monthlyBreakdown.reduce((sum, month) => sum + month.expenses, 0);
 
   // Calculate monthly averages
   const monthsAnalyzed = monthlyBreakdown.length || 1;
   const monthlyDeposits = totalIncome / monthsAnalyzed;
   const monthlyExpenses = totalExpenses / monthsAnalyzed;
-  // Note: monthlyExpenses now includes housing, one-time, and regular expenses
-  // Don't subtract currentHousingPayment again to avoid double-counting
+  // Note: monthlyExpenses includes housing and recurring expenses, excludes one-time and excluded transactions
   const monthlyLeftover = monthlyDeposits - monthlyExpenses;
   const averageMonthlyBalance = Math.max(0, monthlyLeftover);
 
   console.log(`\n📈 FINAL RESULTS:`);
   console.log(`   ✓ Total transactions: ${uniqueTransactions.length}`);
   console.log(`   ✓ Duplicates removed: ${duplicateTransactions.length}`);
+  console.log(`   ✓ Consistency fixes: ${changesLog.length} merchants standardized`);
   console.log(`   ✓ Flagged for review: ${flaggedTransactions.length}`);
   console.log(`   ✓ Months analyzed: ${monthsAnalyzed}`);
-  console.log(`   ✓ Monthly income: $${monthlyDeposits.toFixed(2)}`);
-  console.log(`   ✓ Monthly expenses: $${monthlyExpenses.toFixed(2)}`);
-  console.log(`   ✓ Monthly leftover: $${monthlyLeftover.toFixed(2)}`);
+  console.log(`   ✓ TOTAL income (all months): $${totalIncome.toFixed(2)}`);
+  console.log(`   ✓ TOTAL expenses (all months): $${totalExpenses.toFixed(2)}`);
+  console.log(`   ✓ Monthly income (average): $${monthlyDeposits.toFixed(2)}`);
+  console.log(`   ✓ Monthly expenses (average): $${monthlyExpenses.toFixed(2)}`);
+  console.log(`   ✓ Monthly leftover (net cash flow): $${monthlyLeftover.toFixed(2)}`);
   console.log(`   ✓ Confidence: ${(avgConfidence * 100).toFixed(0)}%`);
 
   return {
@@ -329,6 +336,111 @@ export const analyzeStatements = async (
     confidence: avgConfidence,
   };
 };
+
+/**
+ * Normalize merchant/description for consistency matching
+ */
+function normalizeMerchantName(description: string): string {
+  return (description || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, '') // Remove special characters
+    .replace(/\s+/g, ' ') // Normalize whitespace
+    .trim()
+    .substring(0, 30); // Use first 30 chars for grouping
+}
+
+/**
+ * Standardize transaction categories for consistency
+ * Groups transactions by merchant and ensures the same merchant has consistent categorization
+ */
+function standardizeCategories(transactions: any[]): {
+  standardizedTransactions: any[];
+  changesLog: Array<{ merchant: string; from: string[]; to: string; count: number }>;
+} {
+  console.log(`\n🔄 Running consistency check on ${transactions.length} transactions...`);
+
+  // Group transactions by normalized merchant name
+  const merchantGroups = new Map<string, any[]>();
+
+  transactions.forEach(t => {
+    const normalizedMerchant = normalizeMerchantName(t.description);
+    if (!merchantGroups.has(normalizedMerchant)) {
+      merchantGroups.set(normalizedMerchant, []);
+    }
+    merchantGroups.get(normalizedMerchant)!.push(t);
+  });
+
+  console.log(`   📊 Found ${merchantGroups.size} unique merchants`);
+
+  const changesLog: Array<{ merchant: string; from: string[]; to: string; count: number }> = [];
+
+  // Check each merchant group for inconsistencies
+  merchantGroups.forEach((group) => {
+    if (group.length < 2) return; // Skip single transactions
+
+    // Count category occurrences
+    const categoryCounts = new Map<string, number>();
+    group.forEach(t => {
+      const cat = t.category || 'unknown';
+      categoryCounts.set(cat, (categoryCounts.get(cat) || 0) + 1);
+    });
+
+    // If multiple categories exist, standardize
+    if (categoryCounts.size > 1) {
+      // Determine the "correct" category using priority rules
+      let standardCategory: string;
+
+      // Priority 1: If housing exists, use it (rent/mortgage should be consistent)
+      if (categoryCounts.has('housing')) {
+        standardCategory = 'housing';
+      }
+      // Priority 2: If income exists and is majority, use it
+      else if (categoryCounts.has('income') && (categoryCounts.get('income')! / group.length) > 0.5) {
+        standardCategory = 'income';
+      }
+      // Priority 3: Use the most common category
+      else {
+        standardCategory = Array.from(categoryCounts.entries())
+          .sort((a, b) => b[1] - a[1])[0][0];
+      }
+
+      // Get original categories for logging
+      const originalCategories = Array.from(categoryCounts.keys());
+
+      // Standardize all transactions in this group
+      let changedCount = 0;
+      group.forEach(t => {
+        if (t.category !== standardCategory) {
+          t.category = standardCategory;
+          changedCount++;
+        }
+      });
+
+      if (changedCount > 0) {
+        changesLog.push({
+          merchant: group[0].description.substring(0, 50), // Original description
+          from: originalCategories,
+          to: standardCategory,
+          count: changedCount
+        });
+      }
+    }
+  });
+
+  if (changesLog.length > 0) {
+    console.log(`\n✅ Standardized ${changesLog.length} merchants for consistency:`);
+    changesLog.forEach(change => {
+      console.log(`   • "${change.merchant}" → ${change.to} (changed ${change.count} transactions from ${change.from.join('/')})`);
+    });
+  } else {
+    console.log(`   ✓ No inconsistencies found - all merchants have consistent categories`);
+  }
+
+  return {
+    standardizedTransactions: transactions,
+    changesLog
+  };
+}
 
 /**
  * Deduplicate transactions based on date, amount, and description similarity

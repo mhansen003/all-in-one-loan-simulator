@@ -193,14 +193,17 @@ function calculateAllInOneLoan(
   const { currentBalance, interestRate } = mortgage;
   const { totalIncome, totalExpenses, monthlyBreakdown } = cashFlow;
 
-  // ⚠️ CRITICAL FIX: Calculate MONTHLY averages from totals
-  // The cashFlow object has TOTALS across all months of data
-  // We need MONTHLY averages for the simulation
+  // 🔧 CRITICAL FIX: Use PRE-CALCULATED monthly values from client
+  // The client already calculated correct monthly averages after chunking aggregation
+  // DO NOT recalculate from totals as chunking can cause aggregation issues
   const monthsOfData = monthlyBreakdown?.length || 1;
-  const monthlyIncome = totalIncome / monthsOfData;
-  const monthlyExpenses = totalExpenses / monthsOfData;
+
+  // Try to use pre-calculated values first (these are CORRECT after chunking)
+  const monthlyIncome = cashFlow.monthlyDeposits ?? (totalIncome / monthsOfData);
+  const monthlyExpenses = cashFlow.monthlyExpenses ?? (totalExpenses / monthsOfData);
 
   console.log(`\n🧮 [AIO CALC] Cash Flow Analysis:`);
+  console.log(`   📊 Data Source: ${cashFlow.monthlyDeposits !== undefined ? 'PRE-CALCULATED (correct)' : 'RECALCULATED (may be incorrect)'}`);
   console.log(`   Total Income (${monthsOfData} months): $${totalIncome.toFixed(2)}`);
   console.log(`   Total Expenses (${monthsOfData} months): $${totalExpenses.toFixed(2)}`);
   console.log(`   MONTHLY Income: $${monthlyIncome.toFixed(2)}`);

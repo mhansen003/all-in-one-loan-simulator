@@ -202,6 +202,36 @@ router.post('/simulate-loan', async (req, res) => {
       });
     }
 
+    // 🔍 DATA VALIDATION: Check for consistency issues
+    console.log(`\n🔍 [VALIDATION] Checking cash flow data consistency...`);
+
+    if (cashFlow.monthlyDeposits && cashFlow.totalIncome && cashFlow.monthlyBreakdown) {
+      const calculatedMonthly = cashFlow.totalIncome / cashFlow.monthlyBreakdown.length;
+      const diff = Math.abs(cashFlow.monthlyDeposits - calculatedMonthly);
+
+      if (diff > 100) {  // More than $100 difference
+        console.warn(`⚠️  DATA INCONSISTENCY DETECTED:`);
+        console.warn(`   Pre-calculated monthlyDeposits: $${cashFlow.monthlyDeposits.toFixed(2)}`);
+        console.warn(`   Recalculated (totalIncome / months): $${calculatedMonthly.toFixed(2)}`);
+        console.warn(`   Difference: $${diff.toFixed(2)}`);
+        console.warn(`   This suggests chunking aggregation issues!`);
+      } else {
+        console.log(`   ✓ Monthly deposits consistent (diff: $${diff.toFixed(2)})`);
+      }
+
+      const calculatedExpenses = cashFlow.totalExpenses / cashFlow.monthlyBreakdown.length;
+      const expenseDiff = Math.abs((cashFlow.monthlyExpenses || 0) - calculatedExpenses);
+
+      if (expenseDiff > 100 && cashFlow.monthlyExpenses) {
+        console.warn(`⚠️  EXPENSE INCONSISTENCY:`);
+        console.warn(`   Pre-calculated monthlyExpenses: $${cashFlow.monthlyExpenses.toFixed(2)}`);
+        console.warn(`   Recalculated (totalExpenses / months): $${calculatedExpenses.toFixed(2)}`);
+        console.warn(`   Difference: $${expenseDiff.toFixed(2)}`);
+      } else {
+        console.log(`   ✓ Monthly expenses consistent (diff: $${expenseDiff.toFixed(2)})`);
+      }
+    }
+
     const simulation = simulateLoan(
       mortgageDetails as MortgageDetails,
       cashFlow as CashFlowAnalysis

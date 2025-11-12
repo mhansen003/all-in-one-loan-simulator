@@ -6,31 +6,43 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 2000;
   padding: 1rem;
-  backdrop-filter: blur(4px);
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .ai-modal-content {
-  background: white;
-  border-radius: 16px;
+  background: linear-gradient(135deg, #2b3e50 0%, #1a252f 100%);
+  border-radius: 24px;
   max-width: 900px;
   width: 100%;
   max-height: 90vh;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-  animation: slideUp 0.3s ease-out;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+  animation: slideUp 0.4s ease;
+  position: relative;
+  overflow: hidden;
 }
 
 @keyframes slideUp {
   from {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translateY(50px);
   }
   to {
     opacity: 1;
@@ -38,15 +50,37 @@
   }
 }
 
+/* Animated Background Effect */
+.ai-modal-content::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.05) 0%, transparent 70%);
+  animation: rotate 20s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .ai-modal-header {
-  padding: 1.5rem 2rem;
-  border-bottom: 2px solid #e2e8f0;
+  padding: 2rem 2.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  background: linear-gradient(135deg, #2b3e50 0%, #1a252f 100%);
   color: white;
-  border-radius: 16px 16px 0 0;
+  position: relative;
+  z-index: 1;
 }
 
 .ai-modal-header h2 {
@@ -83,18 +117,21 @@
 }
 
 .ai-modal-body {
-  padding: 2rem;
+  padding: 2rem 2.5rem;
   overflow-y: auto;
   flex: 1;
+  position: relative;
+  z-index: 1;
+  color: rgba(255, 255, 255, 0.95);
 }
 
 .ai-modal-footer {
-  padding: 1.5rem 2rem;
-  border-top: 2px solid #e2e8f0;
+  padding: 1.5rem 2.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
   display: flex;
   justify-content: center;
-  background: #f7fafc;
-  border-radius: 0 0 16px 16px;
+  position: relative;
+  z-index: 1;
 }
 
 .ai-modal-button {
@@ -124,25 +161,27 @@
   align-items: center;
   gap: 0.75rem;
   margin-bottom: 1rem;
-  padding-bottom: 0.5rem;
-  border-bottom: 2px solid #e2e8f0;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 .ai-icon {
-  font-size: 1.5rem;
+  font-size: 1.75rem;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
 }
 
 .ai-section-header h3 {
   margin: 0;
-  font-size: 1.25rem;
+  font-size: 1.3rem;
   font-weight: 700;
-  color: #1a202c;
+  color: white;
 }
 
 .ai-section p {
-  color: #4a5568;
-  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.85);
+  line-height: 1.7;
   margin: 0 0 1rem 0;
+  font-size: 0.975rem;
 }
 
 /* Category Grid */
@@ -156,28 +195,102 @@
 .ai-category-card {
   padding: 1.25rem;
   border-radius: 12px;
-  border: 2px solid;
+  border: 1px solid;
   text-align: center;
+  backdrop-filter: blur(10px);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.ai-category-card:hover {
+  transform: translateY(-2px);
 }
 
 .ai-category-card.income {
-  background: #f0fdf4;
-  border-color: #22c55e;
+  background: rgba(34, 197, 94, 0.15);
+  border-color: rgba(34, 197, 94, 0.4);
+  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.2);
 }
 
 .ai-category-card.expense {
-  background: #fff7ed;
-  border-color: #f97316;
+  background: rgba(249, 115, 22, 0.15);
+  border-color: rgba(249, 115, 22, 0.4);
+  box-shadow: 0 4px 12px rgba(249, 115, 22, 0.2);
 }
 
 .ai-category-card.housing {
-  background: #f5f3ff;
-  border-color: #a78bfa;
+  background: rgba(167, 139, 250, 0.15);
+  border-color: rgba(167, 139, 250, 0.4);
+  box-shadow: 0 4px 12px rgba(167, 139, 250, 0.2);
 }
 
 .ai-category-card.one-time {
-  background: #fef2f2;
-  border-color: #ef4444;
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.4);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+}
+
+/* Phase Grid */
+.ai-phase-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.ai-phase-card {
+  position: relative;
+  padding: 1.5rem;
+  padding-top: 3rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px;
+  color: white;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.ai-phase-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 12px rgba(0, 0, 0, 0.15);
+}
+
+.ai-phase-number {
+  position: absolute;
+  top: 0.75rem;
+  left: 0.75rem;
+  width: 40px;
+  height: 40px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  font-weight: bold;
+  backdrop-filter: blur(10px);
+}
+
+.ai-phase-card h4 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.1rem;
+  color: white;
+}
+
+.ai-phase-card p {
+  margin: 0.5rem 0;
+  font-size: 0.95rem;
+  opacity: 0.95;
+}
+
+.ai-phase-card ul {
+  margin: 0.75rem 0 0 0;
+  padding-left: 1.25rem;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  opacity: 0.9;
+}
+
+.ai-phase-card li {
+  margin: 0.25rem 0;
 }
 
 .ai-category-badge {
@@ -187,79 +300,85 @@
   font-size: 0.875rem;
   font-weight: 700;
   margin-bottom: 0.5rem;
-  background: white;
+  background: rgba(255, 255, 255, 0.25);
+  color: white;
+  backdrop-filter: blur(10px);
 }
 
 .ai-category-card p {
   margin: 0.5rem 0;
   font-size: 0.9rem;
-  color: #1a202c;
+  color: rgba(255, 255, 255, 0.95);
 }
 
 .ai-note {
   font-size: 0.8rem !important;
-  color: #718096 !important;
+  color: rgba(255, 255, 255, 0.7) !important;
   font-style: italic;
 }
 
 /* Rule Boxes */
 .ai-rule-box {
-  padding: 1.25rem;
+  padding: 1.25rem 1.5rem;
   border-radius: 12px;
   margin: 1rem 0;
   border-left: 4px solid;
+  backdrop-filter: blur(10px);
 }
 
 .ai-rule-box.success {
-  background: #f0fdf4;
-  border-color: #22c55e;
+  background: rgba(34, 197, 94, 0.12);
+  border-color: rgba(34, 197, 94, 0.5);
 }
 
 .ai-rule-box.warning {
-  background: #fef2f2;
-  border-color: #ef4444;
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.5);
 }
 
 .ai-rule-box.info {
-  background: #eff6ff;
-  border-color: #3b82f6;
+  background: rgba(59, 130, 246, 0.12);
+  border-color: rgba(59, 130, 246, 0.5);
 }
 
 .ai-rule-box h4 {
   margin: 0 0 0.75rem 0;
-  font-size: 1rem;
+  font-size: 1.05rem;
   font-weight: 700;
-  color: #1a202c;
+  color: white;
 }
 
-.ai-rule-box ul {
+.ai-rule-box ul,
+.ai-rule-box ol {
   margin: 0;
   padding-left: 1.5rem;
 }
 
 .ai-rule-box li {
   margin: 0.5rem 0;
-  color: #4a5568;
-  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.85);
+  line-height: 1.6;
 }
 
 .ai-rule-box li strong {
-  color: #1a202c;
+  color: white;
 }
 
 /* Examples */
 .ai-example {
-  background: #fef3c7;
-  border-left: 4px solid #f59e0b;
+  background: rgba(245, 158, 11, 0.12);
+  border-left: 4px solid rgba(245, 158, 11, 0.5);
   padding: 1rem 1.25rem;
   border-radius: 8px;
   margin: 1rem 0;
-  font-size: 0.9rem;
-  color: #78350f;
+  font-size: 0.925rem;
+  color: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
 }
 
 .ai-example strong {
-  color: #92400e;
+  color: white;
+  font-weight: 700;
 }
 
 .badge-income {
@@ -298,17 +417,17 @@
 }
 
 .ai-expense-category {
-  background: #f7fafc;
+  background: rgba(255, 255, 255, 0.05);
   padding: 1.25rem;
   border-radius: 12px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .ai-expense-category h4 {
   margin: 0 0 0.75rem 0;
   font-size: 1rem;
   font-weight: 700;
-  color: #1a202c;
+  color: white;
 }
 
 .ai-expense-category ul {
@@ -318,7 +437,7 @@
 
 .ai-expense-category li {
   margin: 0.4rem 0;
-  color: #4a5568;
+  color: rgba(255, 255, 255, 0.85);
   font-size: 0.875rem;
   line-height: 1.4;
 }
@@ -332,17 +451,17 @@
 }
 
 .ai-onetime-card {
-  background: #fef2f2;
+  background: rgba(239, 68, 68, 0.12);
   padding: 1.25rem;
   border-radius: 12px;
-  border: 2px solid #fecaca;
+  border: 1px solid rgba(239, 68, 68, 0.3);
 }
 
 .ai-onetime-card h4 {
   margin: 0 0 0.75rem 0;
   font-size: 0.95rem;
   font-weight: 700;
-  color: #991b1b;
+  color: white;
 }
 
 .ai-onetime-card ul {
@@ -358,19 +477,23 @@
 }
 
 .ai-important-note {
-  background: linear-gradient(135deg, #2b3e50 0%, #1a252f 100%);
-  color: white;
-  padding: 1.25rem;
+  background: rgba(155, 197, 61, 0.15);
+  color: rgba(255, 255, 255, 0.95);
+  padding: 1.5rem;
   border-radius: 12px;
   margin-top: 1.5rem;
   font-size: 0.95rem;
-  line-height: 1.6;
+  line-height: 1.7;
+  border: 1px solid rgba(155, 197, 61, 0.3);
+  box-shadow: 0 4px 16px rgba(155, 197, 61, 0.15);
+  backdrop-filter: blur(10px);
 }
 
 .ai-important-note strong {
   display: block;
   margin-bottom: 0.5rem;
   font-size: 1.1rem;
+  color: #9bc53d;
 }
 
 /* Special Rules */
@@ -383,7 +506,7 @@
   gap: 1rem;
   margin-bottom: 1.5rem;
   padding: 1.25rem;
-  background: #f7fafc;
+  background: rgba(255, 255, 255, 0.05);
   border-radius: 12px;
   border-left: 4px solid #9bc53d;
 }
@@ -406,12 +529,12 @@
   margin: 0 0 0.5rem 0;
   font-size: 1rem;
   font-weight: 700;
-  color: #1a202c;
+  color: white;
 }
 
 .ai-rule-content p {
   margin: 0;
-  color: #4a5568;
+  color: rgba(255, 255, 255, 0.85);
   line-height: 1.6;
   font-size: 0.9rem;
 }
@@ -427,7 +550,7 @@
   gap: 1rem;
   margin-bottom: 1rem;
   padding: 1rem;
-  background: #f7fafc;
+  background: rgba(255, 255, 255, 0.05);
   border-radius: 8px;
 }
 
@@ -448,30 +571,30 @@
 .ai-confidence-item strong {
   display: block;
   margin-bottom: 0.25rem;
-  color: #1a202c;
+  color: white;
   font-size: 0.95rem;
 }
 
 .ai-confidence-item p {
   margin: 0;
-  color: #718096;
+  color: rgba(255, 255, 255, 0.7);
   font-size: 0.85rem;
   line-height: 1.4;
 }
 
 .ai-confidence-guide {
   margin-top: 1.5rem;
-  background: #f7fafc;
+  background: rgba(255, 255, 255, 0.05);
   padding: 1.5rem;
   border-radius: 12px;
-  border: 2px solid #e2e8f0;
+  border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 .ai-confidence-guide h4 {
   margin: 0 0 1rem 0;
   font-size: 1.05rem;
   font-weight: 700;
-  color: #1a202c;
+  color: white;
 }
 
 .ai-confidence-scale {
@@ -555,6 +678,7 @@
   }
 
   .ai-category-grid,
+  .ai-phase-grid,
   .ai-expense-grid,
   .ai-onetime-grid {
     grid-template-columns: 1fr;
