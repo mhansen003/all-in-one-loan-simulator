@@ -479,9 +479,8 @@
 
 /* Abort Button */
 .abort-button {
-  position: absolute;
-  bottom: 1.5rem;
-  right: 1.5rem;
+  display: block;
+  margin: 1.5rem auto 0;
   padding: 0.65rem 1.25rem;
   background: rgba(239, 68, 68, 0.15);
   border: 2px solid rgba(239, 68, 68, 0.5);
@@ -520,7 +519,7 @@
 
 /* Tips Carousel */
 .tips-carousel {
-  margin: 2rem 0 4.5rem;
+  margin: 2rem 0 1.5rem;
   padding: 1.5rem;
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.08) 100%);
   border: 2px solid rgba(255, 255, 255, 0.2);
