@@ -48,8 +48,8 @@ export const analyzeStatements = async (
     });
   }
 
-  // Process files in batches of 2 for extraction (to avoid overwhelming the API)
-  const EXTRACTION_BATCH_SIZE = 2;
+  // Process files one at a time for extraction (to stay under Vercel's 4.5MB body limit)
+  const EXTRACTION_BATCH_SIZE = 1;
   const extractionBatches: File[][] = [];
 
   for (let i = 0; i < files.length; i += EXTRACTION_BATCH_SIZE) {
