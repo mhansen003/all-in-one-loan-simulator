@@ -28,7 +28,7 @@
   background: linear-gradient(135deg, #2b3e50 0%, #1a252f 100%);
   border-radius: 24px;
   padding: 3rem;
-  max-width: 500px;
+  max-width: 700px;
   width: 90%;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
   animation: slideUp 0.4s ease;
@@ -294,7 +294,7 @@
 
 .batch-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 0.75rem;
 }
 
