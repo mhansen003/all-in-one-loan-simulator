@@ -417,12 +417,23 @@ Your task: CATEGORIZE and ANALYZE these transactions:
 
 CATEGORIZATION RULES:
 - "income": Deposits, paychecks, Zelle/transfers IN (positive amounts or credits)
-- "expense": Regular recurring expenses like utilities, bills, subscriptions, groceries
+- "expense": Regular recurring expenses including:
+  * Utilities, bills, subscriptions, groceries, restaurants, gas, shopping
+  * Credit card purchases (POS PURCHASE, DEBIT PURCHASE, etc.)
+  * Everyday spending on food, transportation, entertainment
+  * IMPORTANT: Most credit card transactions are EXPENSES, not one-time
 - "housing": Rent or mortgage payments (around $${currentHousingPayment})
-- "one-time": Irregular purchases, large transfers, one-time payments
+- "one-time": ONLY truly irregular items:
+  * Large transfers (>$1000)
+  * Major purchases (appliances, furniture, electronics >$500)
+  * Wire transfers, checks, large cash withdrawals
+  * Medical bills, insurance premiums (annual/semi-annual)
+  * DO NOT categorize regular credit card purchases as one-time
 
 FLAG ANOMALIES:
-- Luxury items, unusually large purchases, one-time events, irregular deposits
+- Luxury items (luxury shopping, fine dining >$200, designer brands)
+- Unusually large purchases (2x+ typical spending)
+- Large irregular deposits (bonuses, refunds, transfers)
 - Provide specific flag reasons when flagged=true
 
 MONTHLY BREAKDOWN:
@@ -1212,12 +1223,23 @@ Your task: CATEGORIZE and ANALYZE these transactions:
 
 CATEGORIZATION RULES:
 - "income": Deposits, paychecks, Zelle/transfers IN (positive amounts or credits)
-- "expense": Regular recurring expenses like utilities, bills, subscriptions, groceries
+- "expense": Regular recurring expenses including:
+  * Utilities, bills, subscriptions, groceries, restaurants, gas, shopping
+  * Credit card purchases (POS PURCHASE, DEBIT PURCHASE, etc.)
+  * Everyday spending on food, transportation, entertainment
+  * IMPORTANT: Most credit card transactions are EXPENSES, not one-time
 - "housing": Rent or mortgage payments (around $${currentHousingPayment})
-- "one-time": Irregular purchases, large transfers, one-time payments
+- "one-time": ONLY truly irregular items:
+  * Large transfers (>$1000)
+  * Major purchases (appliances, furniture, electronics >$500)
+  * Wire transfers, checks, large cash withdrawals
+  * Medical bills, insurance premiums (annual/semi-annual)
+  * DO NOT categorize regular credit card purchases as one-time
 
 FLAG ANOMALIES:
-- Luxury items, unusually large purchases, one-time events, irregular deposits
+- Luxury items (luxury shopping, fine dining >$200, designer brands)
+- Unusually large purchases (2x+ typical spending)
+- Large irregular deposits (bonuses, refunds, transfers)
 - Provide specific flag reasons when flagged=true
 
 CRITICAL RULES:
