@@ -475,54 +475,6 @@ function App() {
         </div>
       </main>
 
-      <footer className="app-footer">
-        <div className="footer-content">
-          <div className="footer-section">
-            <div className="footer-logo">
-              <span className="logo-cmg">CMG</span>
-              <span className="logo-financial">FINANCIAL</span>
-            </div>
-            <p style={{ fontSize: '0.7rem', lineHeight: '1.4', marginTop: '0.25rem' }}>
-              All-In-One Look Back Simulator
-              <br />
-              Powered by AI
-            </p>
-          </div>
-
-          <div className="footer-section">
-            <h4>Resources</h4>
-            <ul>
-              <li><a href="https://www.cmgfi.com/all-in-one" target="_blank" rel="noopener noreferrer">All-In-One Product</a></li>
-              <li><a href="https://www.cmgfi.com" target="_blank" rel="noopener noreferrer">CMG Financial</a></li>
-              <li><a href="https://www.cmgfi.com/about" target="_blank" rel="noopener noreferrer">About Us</a></li>
-            </ul>
-          </div>
-
-          <div className="footer-section">
-            <h4>Support</h4>
-            <ul>
-              <li><a href="#" onClick={(e) => { e.preventDefault(); handleReset(); }}>New Simulation</a></li>
-              <li><a href="https://www.cmgfi.com/contact" target="_blank" rel="noopener noreferrer">Contact Us</a></li>
-            </ul>
-          </div>
-
-          <div className="footer-section">
-            <h4>Technology</h4>
-            <ul>
-              <li><a href="https://openai.com" target="_blank" rel="noopener noreferrer">Powered by OpenAI GPT-4</a></li>
-              <li><a href="https://vercel.com" target="_blank" rel="noopener noreferrer">Hosted on Vercel</a></li>
-            </ul>
-          </div>
-        </div>
-
-        <div className="footer-bottom">
-          <p>© {new Date().getFullYear()} CMG Financial. All rights reserved. | NMLS# 1820</p>
-          <p style={{ marginTop: '0.2rem' }}>
-            AI-powered All-In-One Look Back Simulator
-          </p>
-        </div>
-      </footer>
-
       {/* FAQ Slideout */}
       <FAQSlideout isOpen={isFAQOpen} onClose={() => setIsFAQOpen(false)} />
 

@@ -37,16 +37,19 @@
 
 @keyframes cardJump {
   0%, 100% {
-    transform: translateY(0) scale(1);
+    transform: translateY(0) scale(1) rotateY(0deg);
   }
-  30% {
-    transform: translateY(-8px) scale(1.02);
+  20% {
+    transform: translateY(-4px) scale(1.01) rotateY(-3deg);
   }
-  50% {
-    transform: translateY(-12px) scale(1.03);
+  40% {
+    transform: translateY(-10px) scale(1.025) rotateY(5deg);
   }
-  70% {
-    transform: translateY(-4px) scale(1.01);
+  60% {
+    transform: translateY(-12px) scale(1.03) rotateY(-2deg);
+  }
+  80% {
+    transform: translateY(-4px) scale(1.01) rotateY(1deg);
   }
 }
 
@@ -95,7 +98,7 @@
 
 /* Larger padding for modal version */
 .flip-card-modal .flip-card-back {
-  padding: 2rem 2.5rem 5rem 2.5rem; /* Extra bottom padding for hint */
+  padding: 1.5rem 2.5rem 5rem 2.5rem; /* Extra bottom padding for hint */
   position: static; /* Reset from absolute positioning - it's the only face in modal */
   scroll-behavior: smooth;
   -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
@@ -152,18 +155,18 @@
 
 /* Back Card Content Styling */
 .flip-card-back h3 {
-  margin: 0 0 1.5rem 0;
+  margin: 0 0 1rem 0;
   font-size: 1.5rem;
   font-weight: 700;
   border-bottom: 2px solid rgba(255, 255, 255, 0.3);
-  padding-bottom: 1rem;
+  padding-bottom: 0.75rem;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
   flex-shrink: 0; /* Prevent heading from shrinking */
 }
 
 .flip-card-back .detail-section {
-  margin-bottom: 1.25rem;
-  padding: 1.25rem;
+  margin-bottom: 1rem;
+  padding: 1rem;
   background: rgba(255, 255, 255, 0.1);
   border-radius: 8px;
   backdrop-filter: blur(4px);
@@ -289,11 +292,14 @@
 
 @keyframes modalZoomIn {
   from {
-    transform: translate(-50%, -50%) scale(0.7);
+    transform: translate(-50%, -50%) scale(0.7) rotateY(-180deg);
     opacity: 0;
   }
+  50% {
+    transform: translate(-50%, -50%) scale(0.85) rotateY(-90deg);
+  }
   to {
-    transform: translate(-50%, -50%) scale(1);
+    transform: translate(-50%, -50%) scale(1) rotateY(0deg);
     opacity: 1;
   }
 }
@@ -308,8 +314,12 @@
     transform: rotateY(0deg) scale(1);
     opacity: 1;
   }
+  50% {
+    transform: rotateY(90deg) scale(0.85);
+    opacity: 0.5;
+  }
   100% {
-    transform: rotateY(90deg) scale(0.8);
+    transform: rotateY(180deg) scale(0.7);
     opacity: 0;
   }
 }
@@ -342,11 +352,13 @@
   }
 
   .flip-card-back {
-    padding: 1.5rem;
+    padding: 1rem;
   }
 
   .flip-card-back h3 {
     font-size: 1.25rem;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.5rem;
   }
 
   .flip-card-back .detail-value {

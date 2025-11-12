@@ -1,0 +1,585 @@
+/* AI Extraction Modal Styles */
+
+.ai-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: 1rem;
+  backdrop-filter: blur(4px);
+}
+
+.ai-modal-content {
+  background: white;
+  border-radius: 16px;
+  max-width: 900px;
+  width: 100%;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.ai-modal-header {
+  padding: 1.5rem 2rem;
+  border-bottom: 2px solid #e2e8f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 16px 16px 0 0;
+}
+
+.ai-modal-header h2 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.75rem;
+  font-weight: 700;
+}
+
+.ai-modal-header p {
+  margin: 0;
+  font-size: 0.95rem;
+  opacity: 0.9;
+}
+
+.ai-modal-close {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: white;
+  font-size: 1.5rem;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+  flex-shrink: 0;
+  margin-left: 1rem;
+}
+
+.ai-modal-close:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.ai-modal-body {
+  padding: 2rem;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.ai-modal-footer {
+  padding: 1.5rem 2rem;
+  border-top: 2px solid #e2e8f0;
+  display: flex;
+  justify-content: center;
+  background: #f7fafc;
+  border-radius: 0 0 16px 16px;
+}
+
+.ai-modal-button {
+  padding: 0.75rem 2rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.ai-modal-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+}
+
+/* Section Styles */
+.ai-section {
+  margin-bottom: 2.5rem;
+}
+
+.ai-section-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.ai-icon {
+  font-size: 1.5rem;
+}
+
+.ai-section-header h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1a202c;
+}
+
+.ai-section p {
+  color: #4a5568;
+  line-height: 1.6;
+  margin: 0 0 1rem 0;
+}
+
+/* Category Grid */
+.ai-category-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.ai-category-card {
+  padding: 1.25rem;
+  border-radius: 12px;
+  border: 2px solid;
+  text-align: center;
+}
+
+.ai-category-card.income {
+  background: #f0fdf4;
+  border-color: #22c55e;
+}
+
+.ai-category-card.expense {
+  background: #fff7ed;
+  border-color: #f97316;
+}
+
+.ai-category-card.housing {
+  background: #f5f3ff;
+  border-color: #a78bfa;
+}
+
+.ai-category-card.one-time {
+  background: #fef2f2;
+  border-color: #ef4444;
+}
+
+.ai-category-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  background: white;
+}
+
+.ai-category-card p {
+  margin: 0.5rem 0;
+  font-size: 0.9rem;
+  color: #1a202c;
+}
+
+.ai-note {
+  font-size: 0.8rem !important;
+  color: #718096 !important;
+  font-style: italic;
+}
+
+/* Rule Boxes */
+.ai-rule-box {
+  padding: 1.25rem;
+  border-radius: 12px;
+  margin: 1rem 0;
+  border-left: 4px solid;
+}
+
+.ai-rule-box.success {
+  background: #f0fdf4;
+  border-color: #22c55e;
+}
+
+.ai-rule-box.warning {
+  background: #fef2f2;
+  border-color: #ef4444;
+}
+
+.ai-rule-box.info {
+  background: #eff6ff;
+  border-color: #3b82f6;
+}
+
+.ai-rule-box h4 {
+  margin: 0 0 0.75rem 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1a202c;
+}
+
+.ai-rule-box ul {
+  margin: 0;
+  padding-left: 1.5rem;
+}
+
+.ai-rule-box li {
+  margin: 0.5rem 0;
+  color: #4a5568;
+  line-height: 1.5;
+}
+
+.ai-rule-box li strong {
+  color: #1a202c;
+}
+
+/* Examples */
+.ai-example {
+  background: #fef3c7;
+  border-left: 4px solid #f59e0b;
+  padding: 1rem 1.25rem;
+  border-radius: 8px;
+  margin: 1rem 0;
+  font-size: 0.9rem;
+  color: #78350f;
+}
+
+.ai-example strong {
+  color: #92400e;
+}
+
+.badge-income {
+  background: #22c55e;
+  color: white;
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.badge-expense {
+  background: #f97316;
+  color: white;
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.badge-housing {
+  background: #a78bfa;
+  color: white;
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+/* Expense Grid */
+.ai-expense-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.ai-expense-category {
+  background: #f7fafc;
+  padding: 1.25rem;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+.ai-expense-category h4 {
+  margin: 0 0 0.75rem 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1a202c;
+}
+
+.ai-expense-category ul {
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
+.ai-expense-category li {
+  margin: 0.4rem 0;
+  color: #4a5568;
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+
+/* One-Time Grid */
+.ai-onetime-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.ai-onetime-card {
+  background: #fef2f2;
+  padding: 1.25rem;
+  border-radius: 12px;
+  border: 2px solid #fecaca;
+}
+
+.ai-onetime-card h4 {
+  margin: 0 0 0.75rem 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #991b1b;
+}
+
+.ai-onetime-card ul {
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
+.ai-onetime-card li {
+  margin: 0.4rem 0;
+  color: #7f1d1d;
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+.ai-important-note {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 1.25rem;
+  border-radius: 12px;
+  margin-top: 1.5rem;
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+.ai-important-note strong {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-size: 1.1rem;
+}
+
+/* Special Rules */
+.ai-special-rules {
+  margin-top: 1rem;
+}
+
+.ai-rule-item {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding: 1.25rem;
+  background: #f7fafc;
+  border-radius: 12px;
+  border-left: 4px solid #9bc53d;
+}
+
+.ai-rule-number {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.ai-rule-content h4 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1a202c;
+}
+
+.ai-rule-content p {
+  margin: 0;
+  color: #4a5568;
+  line-height: 1.6;
+  font-size: 0.9rem;
+}
+
+/* Confidence Score */
+.ai-confidence-factors {
+  margin-top: 1rem;
+}
+
+.ai-confidence-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  padding: 1rem;
+  background: #f7fafc;
+  border-radius: 8px;
+}
+
+.ai-confidence-weight {
+  flex-shrink: 0;
+  width: 50px;
+  height: 50px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.ai-confidence-item strong {
+  display: block;
+  margin-bottom: 0.25rem;
+  color: #1a202c;
+  font-size: 0.95rem;
+}
+
+.ai-confidence-item p {
+  margin: 0;
+  color: #718096;
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+.ai-confidence-guide {
+  margin-top: 1.5rem;
+  background: #f7fafc;
+  padding: 1.5rem;
+  border-radius: 12px;
+  border: 2px solid #e2e8f0;
+}
+
+.ai-confidence-guide h4 {
+  margin: 0 0 1rem 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #1a202c;
+}
+
+.ai-confidence-scale {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.ai-confidence-range {
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  color: white;
+  font-weight: 600;
+}
+
+.ai-confidence-range.excellent {
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+}
+
+.ai-confidence-range.good {
+  background: linear-gradient(135deg, #84cc16 0%, #65a30d 100%);
+}
+
+.ai-confidence-range.fair {
+  background: linear-gradient(135deg, #eab308 0%, #ca8a04 100%);
+}
+
+.ai-confidence-range.low {
+  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+}
+
+.ai-confidence-range.poor {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+}
+
+.ai-confidence-range strong {
+  display: inline-block;
+  min-width: 80px;
+}
+
+/* Final Note */
+.ai-final-note {
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  padding: 1.5rem;
+  border-radius: 12px;
+  border: 2px solid #93c5fd;
+}
+
+.ai-final-note ul {
+  margin: 0.75rem 0 0 0;
+  padding-left: 1.5rem;
+}
+
+.ai-final-note li {
+  margin: 0.5rem 0;
+  color: #1e40af;
+  line-height: 1.5;
+}
+
+.ai-final-note li strong {
+  color: #1e3a8a;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .ai-modal-content {
+    max-height: 95vh;
+  }
+
+  .ai-modal-header {
+    padding: 1rem 1.5rem;
+  }
+
+  .ai-modal-header h2 {
+    font-size: 1.5rem;
+  }
+
+  .ai-modal-body {
+    padding: 1.5rem;
+  }
+
+  .ai-category-grid,
+  .ai-expense-grid,
+  .ai-onetime-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ai-rule-item {
+    flex-direction: column;
+  }
+}
+
+/* Scrollbar styling */
+.ai-modal-body::-webkit-scrollbar {
+  width: 8px;
+}
+
+.ai-modal-body::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+.ai-modal-body::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 10px;
+}
+
+.ai-modal-body::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #5568d3 0%, #63357d 100%);
+}

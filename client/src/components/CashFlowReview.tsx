@@ -4,6 +4,7 @@ import { ComposedChart, Area, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, Leg
 import PageNavigation from './PageNavigation';
 import './CashFlowReview.css';
 import CashFlowSummaryCards from './CashFlowSummaryCards';
+import AIExtractionModal from './AIExtractionModal';
 
 interface CashFlowReviewProps {
   cashFlow: CashFlowAnalysis;
@@ -39,6 +40,7 @@ export default function CashFlowReview({
   const aiRecommendedFrequency = (cashFlow.depositFrequency as 'weekly' | 'biweekly' | 'semi-monthly' | 'monthly') || 'monthly';
   const [chartCollapsed, setChartCollapsed] = useState(false);
   const [searchFilter, setSearchFilter] = useState('');
+  const [showAIModal, setShowAIModal] = useState(false);
 
   // Manual transaction entry states
   const [showAddTransaction, setShowAddTransaction] = useState(false);
@@ -578,15 +580,114 @@ export default function CashFlowReview({
               <p>Review the AI-generated analysis of your bank statements</p>
             </div>
 
-            {/* Top Navigation */}
-            <PageNavigation
-              onBack={onBack}
-              showBack={!!onBack}
-              onNext={onContinue}
-              nextLabel="Continue to Simulation"
-              showNext={true}
-              nextDisabled={displayNetCashFlow <= 300}
-            />
+            {/* Top Navigation with AI Link */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '1rem',
+              marginBottom: '1rem'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                {onBack && (
+                  <button
+                    onClick={onBack}
+                    style={{
+                      padding: '0.75rem 1.5rem',
+                      background: 'white',
+                      border: '2px solid #cbd5e0',
+                      borderRadius: '8px',
+                      color: '#4a5568',
+                      fontSize: '0.95rem',
+                      fontWeight: '600',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.borderColor = '#9bc53d';
+                      e.currentTarget.style.color = '#9bc53d';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.borderColor = '#cbd5e0';
+                      e.currentTarget.style.color = '#4a5568';
+                    }}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '20px', height: '20px' }}>
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    </svg>
+                    Back
+                  </button>
+                )}
+                <button
+                  onClick={() => setShowAIModal(true)}
+                  style={{
+                    padding: '0.75rem 1.5rem',
+                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    border: 'none',
+                    borderRadius: '8px',
+                    color: 'white',
+                    fontSize: '0.9rem',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    boxShadow: '0 2px 8px rgba(102, 126, 234, 0.3)'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.4)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = '0 2px 8px rgba(102, 126, 234, 0.3)';
+                  }}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '20px', height: '20px' }}>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  How did AI do the data extraction?
+                </button>
+              </div>
+              <button
+                onClick={onContinue}
+                disabled={displayNetCashFlow <= 300}
+                style={{
+                  padding: '0.75rem 2rem',
+                  background: displayNetCashFlow <= 300 ? '#cbd5e0' : '#9bc53d',
+                  border: 'none',
+                  borderRadius: '8px',
+                  color: 'white',
+                  fontSize: '0.95rem',
+                  fontWeight: '600',
+                  cursor: displayNetCashFlow <= 300 ? 'not-allowed' : 'pointer',
+                  transition: 'all 0.2s',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  opacity: displayNetCashFlow <= 300 ? 0.6 : 1
+                }}
+                onMouseEnter={(e) => {
+                  if (displayNetCashFlow > 300) {
+                    e.currentTarget.style.background = '#8ab52e';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (displayNetCashFlow > 300) {
+                    e.currentTarget.style.background = '#9bc53d';
+                  }
+                }}
+              >
+                Continue to Simulation
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ width: '20px', height: '20px' }}>
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            </div>
 
           {/* Four Column Layout: Compact Summary Cards */}
           <CashFlowSummaryCards
@@ -1569,6 +1670,11 @@ export default function CashFlowReview({
             </div>
           </div>
         </div>
+      )}
+
+      {/* AI Extraction Modal */}
+      {showAIModal && (
+        <AIExtractionModal onClose={() => setShowAIModal(false)} />
       )}
     </div>
   );
