@@ -53,7 +53,82 @@ router.get('/health', (req, res) => {
   res.json({ status: 'ok', message: 'API is running' });
 });
 
-// Analyze bank statements
+// NEW ARCHITECTURE: Extract transactions from files (Step 1)
+router.post('/extract-transactions', upload.array('files', 20), async (req, res) => {
+  try {
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({
+        error: 'No files uploaded',
+        message: 'Please upload at least one bank statement',
+      });
+    }
+
+    const files = req.files as Express.Multer.File[];
+    console.log(`📄 Extracting transactions from ${files.length} file(s)...`);
+
+    // Import extraction function
+    const { extractTransactions } = await import('../services/openai-service.js');
+
+    // Extract raw transaction text from all files
+    const extractedData = await extractTransactions(files);
+
+    res.json({
+      transactions: extractedData,
+      totalTransactions: extractedData.length,
+      message: `Extracted ${extractedData.length} transactions from ${files.length} file(s)`,
+    });
+  } catch (error: any) {
+    console.error('Error extracting transactions:', error);
+    res.status(500).json({
+      error: 'Extraction failed',
+      message: error.message || 'Failed to extract transactions',
+    });
+  }
+});
+
+// NEW ARCHITECTURE: Categorize a chunk of transactions (Step 2)
+router.post('/categorize-chunk', async (req, res) => {
+  try {
+    const { transactions, currentHousingPayment, chunkNumber, totalChunks } = req.body;
+
+    if (!transactions || !Array.isArray(transactions)) {
+      return res.status(400).json({
+        error: 'Invalid data',
+        message: 'Please provide an array of transactions',
+      });
+    }
+
+    console.log(`🔄 Categorizing chunk ${chunkNumber}/${totalChunks} (${transactions.length} transactions)...`);
+
+    // Import categorization function
+    const { categorizeTransactions } = await import('../services/openai-service.js');
+
+    // Categorize this chunk of transactions
+    const categorized = await categorizeTransactions(
+      transactions,
+      parseFloat(currentHousingPayment) || 0,
+      chunkNumber,
+      totalChunks
+    );
+
+    res.json({
+      transactions: categorized.transactions,
+      totalIncome: categorized.totalIncome,
+      totalExpenses: categorized.totalExpenses,
+      confidence: categorized.confidence,
+      message: `Categorized chunk ${chunkNumber}/${totalChunks} successfully`,
+    });
+  } catch (error: any) {
+    console.error('Error categorizing chunk:', error);
+    res.status(500).json({
+      error: 'Categorization failed',
+      message: error.message || 'Failed to categorize transactions',
+    });
+  }
+});
+
+// LEGACY: Analyze bank statements (kept for backward compatibility)
+// Consider using /extract-transactions + /categorize-chunk for better performance
 router.post('/analyze-statements', upload.array('files', 20), async (req, res) => {
   try {
     if (!req.files || req.files.length === 0) {

@@ -57,8 +57,9 @@ async function extractDataFromSpreadsheet(filePath: string): Promise<string> {
 
     // Debug: Log first row to see column names
     if (jsonData.length > 0) {
-      console.log(`📋 CSV Column names:`, Object.keys(jsonData[0]));
-      console.log(`📋 First row sample:`, jsonData[0]);
+      const firstRow = jsonData[0] as Record<string, any>;
+      console.log(`📋 CSV Column names:`, Object.keys(firstRow));
+      console.log(`📋 First row sample:`, firstRow);
     }
 
     // Helper to convert Excel serial date to ISO date string
@@ -99,11 +100,15 @@ async function extractDataFromSpreadsheet(filePath: string): Promise<string> {
     // Sample first few dates to verify parsing
     if (compressedData.length > 0) {
       const sample = compressedData.slice(0, 3);
-      console.log(`📅 Sample dates from CSV:`, sample.map(r => ({
-        raw: r.date,
-        parsed: new Date(r.date).toISOString(),
-        valid: !isNaN(new Date(r.date).getTime())
-      })));
+      console.log(`📅 Sample dates from CSV:`, sample.map(r => {
+        const rawDate = r.date;
+        if (!rawDate) return { raw: null, parsed: null, valid: false };
+        return {
+          raw: rawDate,
+          parsed: new Date(rawDate).toISOString(),
+          valid: !isNaN(new Date(rawDate).getTime())
+        };
+      }));
     }
 
     // Return ALL valid transactions - no date filtering
@@ -1054,5 +1059,212 @@ Return COMPACT JSON (minimize whitespace, omit empty flagReason for unflagged it
   } catch (error) {
     console.error('Error in analyzeStatements:', error);
     throw new Error(`Failed to analyze bank statements: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+}
+
+/**
+ * NEW ARCHITECTURE: Extract transactions from files (Step 1 of 2)
+ * Just does extraction, returns raw transaction data without categorization
+ */
+export async function extractTransactions(
+  files: Express.Multer.File[]
+): Promise<any[]> {
+  try {
+    console.log(`📄 Extracting transactions from ${files.length} file(s)...`);
+
+    // Process ALL files in PARALLEL for maximum performance
+    const filePromises = files.map(async (file) => {
+      console.log(`📄 Starting: ${file.originalname}`);
+      try {
+        const content = await processFile(file);
+        console.log(`✓ Completed: ${file.originalname}`);
+        return { success: true, content, filename: file.originalname };
+      } catch (error) {
+        console.error(`✗ Failed: ${file.originalname}:`, error instanceof Error ? error.message : error);
+        return { success: false, error, filename: file.originalname };
+      }
+    });
+
+    // Wait for all files to process (or fail) in parallel
+    const fileResults = await Promise.allSettled(filePromises);
+
+    // Extract successful results and failed files
+    const extractedData: string[] = [];
+    const failedFiles: string[] = [];
+
+    fileResults.forEach((result) => {
+      if (result.status === 'fulfilled') {
+        const fileResult = result.value;
+        if (fileResult.success && 'content' in fileResult) {
+          extractedData.push(fileResult.content);
+        } else if (!fileResult.success) {
+          failedFiles.push(fileResult.filename);
+        }
+      } else {
+        failedFiles.push('unknown file');
+      }
+    });
+
+    console.log(`⚡ Extraction complete: ${extractedData.length} successful, ${failedFiles.length} failed`);
+
+    if (extractedData.length === 0) {
+      throw new Error(`Failed to extract data from any files. ${failedFiles.length} file(s) failed: ${failedFiles.join(', ')}`);
+    }
+
+    if (failedFiles.length > 0) {
+      console.log(`⚠️  Warning: ${failedFiles.length} file(s) failed to process: ${failedFiles.join(', ')}`);
+      console.log(`✓ Successfully extracted from ${extractedData.length} file(s), continuing...`);
+    }
+
+    // Combine all extracted data
+    const combinedData = extractedData.join('\n\n---NEW DOCUMENT---\n\n');
+
+    // Parse into transaction array
+    let transactions: any[] = [];
+    try {
+      // Try to parse as JSON array
+      transactions = JSON.parse(combinedData);
+      if (!Array.isArray(transactions)) {
+        // If it's not an array, try to parse each line as a transaction
+        const lines = combinedData.split('\n').filter(line => line.trim() && line.includes('|'));
+        transactions = lines.map(line => {
+          const parts = line.split('|').map(p => p.trim());
+          if (parts.length >= 3) {
+            return {
+              date: parts[0],
+              description: parts[1],
+              amount: parseFloat(parts[2].replace(/[^0-9.-]/g, ''))
+            };
+          }
+          return null;
+        }).filter(t => t !== null);
+      }
+    } catch (parseError) {
+      // If parsing fails, try line-by-line parsing
+      const lines = combinedData.split('\n').filter(line => line.trim() && line.includes('|'));
+      transactions = lines.map(line => {
+        const parts = line.split('|').map(p => p.trim());
+        if (parts.length >= 3) {
+          return {
+            date: parts[0],
+            description: parts[1],
+            amount: parseFloat(parts[2].replace(/[^0-9.-]/g, ''))
+          };
+        }
+        return null;
+      }).filter(t => t !== null);
+    }
+
+    console.log(`✅ Extracted ${transactions.length} raw transactions`);
+
+    // Clean up files
+    for (const file of files) {
+      try {
+        await fs.unlink(file.path);
+      } catch (error) {
+        console.error(`Error deleting file ${file.path}:`, error);
+      }
+    }
+
+    return transactions;
+  } catch (error) {
+    console.error('Error in extractTransactions:', error);
+    throw new Error(`Failed to extract transactions: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+}
+
+/**
+ * NEW ARCHITECTURE: Categorize a chunk of transactions (Step 2 of 2)
+ * Takes raw transaction data and categorizes it using AI
+ */
+export async function categorizeTransactions(
+  transactions: any[],
+  currentHousingPayment: number,
+  chunkNumber: number,
+  totalChunks: number
+): Promise<OpenAIAnalysisResult> {
+  try {
+    console.log(`\n🔄 Categorizing chunk ${chunkNumber}/${totalChunks} (${transactions.length} transactions)...`);
+
+    const chunkDataStr = JSON.stringify(transactions);
+    console.log(`   📊 Chunk size: ${chunkDataStr.length} characters (~${estimateTokens(chunkDataStr)} tokens)`);
+
+    const prompt = `You are a financial analysis expert analyzing a CHUNK of transactions from bank statements.
+
+⚠️ CRITICAL: This is CHUNK ${chunkNumber} of ${totalChunks}. Analyze ONLY these transactions independently.
+⚠️ The data is ALREADY EXTRACTED as JSON. Your job: Categorize and analyze these transactions.
+⚠️ PRESERVE ALL TRANSACTIONS: Include EVERY transaction in your output.
+
+Current housing payment (to exclude from expenses): $${currentHousingPayment}
+
+Transaction Data for Chunk ${chunkNumber}:
+${chunkDataStr}
+
+Your task: CATEGORIZE and ANALYZE these transactions:
+
+CATEGORIZATION RULES:
+- "income": Deposits, paychecks, Zelle/transfers IN (positive amounts or credits)
+- "expense": Regular recurring expenses like utilities, bills, subscriptions, groceries
+- "housing": Rent or mortgage payments (around $${currentHousingPayment})
+- "one-time": Irregular purchases, large transfers, one-time payments
+
+FLAG ANOMALIES:
+- Luxury items, unusually large purchases, one-time events, irregular deposits
+- Provide specific flag reasons when flagged=true
+
+CRITICAL RULES:
+✓ PRESERVE EVERY TRANSACTION - Output count must match input count (${transactions.length} transactions)
+✓ USE EXACT DATES/AMOUNTS/DESCRIPTIONS from input
+✓ DETERMINISTIC - Same input = same output
+✓ NO SAMPLING - Include 100% of transactions
+
+Return COMPACT JSON (omit flagReason when flagged=false):
+{
+  "transactions": [
+    {"date": "YYYY-MM-DD", "description": "Description", "amount": 1234.56, "category": "income", "flagged": false, "monthYear": "2024-08"}
+  ],
+  "totalIncome": 5000.00,
+  "totalExpenses": 2500.00,
+  "confidence": 0.85
+}`;
+
+    const CHUNK_TIMEOUT_MS = 30000; // 30 seconds per chunk (fast categorization)
+
+    const response = await openaiDirect.chat.completions.create({
+      model: TEXT_MODEL,
+      messages: [
+        {
+          role: 'system',
+          content: 'You are a financial analyst specialized in cash flow analysis. Always respond with valid JSON. Be consistent and deterministic.',
+        },
+        {
+          role: 'user',
+          content: prompt,
+        },
+      ],
+      response_format: { type: 'json_object' },
+      temperature: 0,
+      top_p: 1,
+      seed: 42,
+      max_tokens: 16384,
+    }, {
+      timeout: CHUNK_TIMEOUT_MS,
+    });
+
+    const rawContent = response.choices[0]?.message?.content || '{}';
+    const result = JSON.parse(rawContent);
+
+    console.log(`✅ Chunk ${chunkNumber}/${totalChunks} completed:`);
+    console.log(`   📊 Transactions returned: ${result.transactions?.length || 0}/${transactions.length}`);
+    console.log(`   💰 Income: $${result.totalIncome?.toFixed(2) || 0}, Expenses: $${result.totalExpenses?.toFixed(2) || 0}`);
+
+    if (result.transactions?.length !== transactions.length) {
+      console.warn(`⚠️  Chunk ${chunkNumber} transaction count mismatch! Expected ${transactions.length}, got ${result.transactions?.length || 0}`);
+    }
+
+    return result;
+  } catch (error) {
+    console.error(`❌ Chunk ${chunkNumber}/${totalChunks} failed:`, error);
+    throw error;
   }
 }
