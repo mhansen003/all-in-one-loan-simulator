@@ -28,10 +28,11 @@ export const analyzeStatements = async (
   currentHousingPayment: number,
   onProgress?: (progress: { current: number; total: number; message: string }) => void
 ): Promise<CashFlowAnalysis> => {
-  const BATCH_SIZE = 3; // Process 3 files at a time to stay under 3-minute timeout
+  const BATCH_SIZE = 1; // Process 1 file at a time to stay under Vercel's 4.5MB body size limit
 
-  // If 4 or fewer files, use single request (faster)
-  if (files.length <= 4) {
+  // Always use batch processing to respect Vercel's 4.5MB body size limit
+  // (Previously uploaded 4 files at once, but this could exceed limit with large PDFs)
+  if (files.length <= 1) {
     console.log(`📤 Uploading ${files.length} files in single request`);
     const formData = new FormData();
     files.forEach((file) => {
