@@ -23,147 +23,289 @@ export const checkHealth = async (): Promise<{ status: string }> => {
 };
 
 /**
- * HOTFIX: Using old single-file batch architecture until server TypeScript errors are fixed
- * Sends 1 file at a time to /api/analyze-statements (old endpoint that works)
+ * TWO-PHASE ARCHITECTURE: Extract-then-categorize pattern
+ * Phase 1: Extract transactions from PDFs (slow, parallelized 2 at a time)
+ * Phase 2: Categorize in small 15-transaction chunks (fast, 10 concurrent)
+ * Phase 3: Aggregate results locally on frontend
  */
 export const analyzeStatements = async (
   files: File[],
   currentHousingPayment: number,
-  onProgress?: (progress: { current: number; total: number; message: string }) => void
+  onProgress?: (progress: { current: number; total: number; message: string; phase?: string }) => void
 ): Promise<CashFlowAnalysis> => {
-  const BATCH_SIZE = 1; // Process 1 file at a time to stay under Vercel's 4.5MB body size limit
+  console.log(`\n🚀 ===== TWO-PHASE ANALYSIS =====`);
+  console.log(`📁 Files to process: ${files.length}`);
+  console.log(`💰 Housing payment: $${currentHousingPayment}`);
 
-  console.log(`📦 Using batch processing for ${files.length} file${files.length === 1 ? '' : 's'} (${BATCH_SIZE} per batch)`);
+  // ===== PHASE 1: EXTRACTION =====
+  console.log(`\n📄 PHASE 1: Extracting transactions from ${files.length} file(s)...`);
 
-  const batches: File[][] = [];
-
-  // Split files into batches
-  for (let i = 0; i < files.length; i += BATCH_SIZE) {
-    batches.push(files.slice(i, i + BATCH_SIZE));
-  }
-
-  console.log(`📊 Created ${batches.length} batches`);
-
-  // Notify that batches are starting with controlled concurrency
   if (onProgress) {
     onProgress({
       current: 0,
-      total: batches.length,
-      message: `Processing ${batches.length} batches (2 at a time to avoid rate limits)...`,
+      total: files.length,
+      message: `Extracting transactions from ${files.length} file${files.length === 1 ? '' : 's'}...`,
+      phase: 'extraction',
     });
   }
 
-  console.log(`🚀 Processing ${batches.length} batches with controlled concurrency (2 at a time)`);
+  // Process files one at a time for extraction (to stay under Vercel's 4.5MB body limit)
+  const EXTRACTION_BATCH_SIZE = 1;
+  const extractionBatches: File[][] = [];
 
-  // Helper function to process a single batch with retry logic
-  const processBatchWithRetry = async (
-    batch: File[],
-    batchNumber: number,
-    maxRetries = 3
-  ): Promise<CashFlowAnalysis> => {
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+  for (let i = 0; i < files.length; i += EXTRACTION_BATCH_SIZE) {
+    extractionBatches.push(files.slice(i, i + EXTRACTION_BATCH_SIZE));
+  }
+
+  console.log(`📦 Created ${extractionBatches.length} extraction batches (${EXTRACTION_BATCH_SIZE} file per batch)`);
+
+  let allTransactions: any[] = [];
+  let filesProcessed = 0;
+
+  // Process extraction batches with controlled concurrency (2 at a time)
+  const CONCURRENT_EXTRACTIONS = 2;
+  for (let i = 0; i < extractionBatches.length; i += CONCURRENT_EXTRACTIONS) {
+    const currentBatchGroup = extractionBatches.slice(i, i + CONCURRENT_EXTRACTIONS);
+
+    const groupPromises = currentBatchGroup.map(async (batch, idx) => {
+      const batchNum = i + idx + 1;
+      console.log(`\n📦 Processing extraction batch ${batchNum}/${extractionBatches.length} (${batch.length} file)...`);
+
+      const formData = new FormData();
+      batch.forEach((file) => {
+        formData.append('files', file);
+      });
+
       try {
-        console.log(`📦 Starting batch ${batchNumber}/${batches.length} (${batch.length} files) - Attempt ${attempt}`);
-
-        const formData = new FormData();
-        batch.forEach((file) => {
-          formData.append('files', file);
-        });
-        formData.append('currentHousingPayment', currentHousingPayment.toString());
-
-        const response = await api.post('/analyze-statements', formData, {
+        const response = await api.post('/extract-transactions', formData, {
           headers: {
             'Content-Type': 'multipart/form-data',
           },
-          timeout: 300000, // 5 minutes
+          timeout: 300000, // 5 minutes per extraction batch
         });
 
-        console.log(`✅ Batch ${batchNumber} completed successfully`);
-        return response.data.cashFlow;
-      } catch (error: any) {
-        console.error(`❌ Batch ${batchNumber} failed (attempt ${attempt}/${maxRetries}):`, error.message);
+        const extractedTransactions = response.data.transactions;
+        console.log(`✅ Batch ${batchNum} extracted ${extractedTransactions.length} transactions`);
 
-        if (attempt === maxRetries) {
-          throw error;
-        }
-
-        // Exponential backoff: 2s, 4s, 8s
-        const delay = Math.pow(2, attempt) * 1000;
-        console.log(`⏳ Retrying batch ${batchNumber} in ${delay / 1000} seconds...`);
-        await new Promise((resolve) => setTimeout(resolve, delay));
-      }
-    }
-
-    throw new Error(`Failed to process batch ${batchNumber} after ${maxRetries} attempts`);
-  };
-
-  // Process batches with controlled concurrency (2 at a time)
-  const CONCURRENT_BATCHES = 2;
-  const results: CashFlowAnalysis[] = [];
-
-  for (let i = 0; i < batches.length; i += CONCURRENT_BATCHES) {
-    const currentBatchGroup = batches.slice(i, i + CONCURRENT_BATCHES);
-    const batchNumbers = currentBatchGroup.map((_, idx) => i + idx + 1);
-
-    console.log(`🔄 Processing batch group: ${batchNumbers.join(', ')} of ${batches.length}`);
-
-    const groupPromises = currentBatchGroup.map((batch, idx) =>
-      processBatchWithRetry(batch, i + idx + 1)
-    );
-
-    const groupResults = await Promise.all(groupPromises);
-    results.push(...groupResults);
-
-    // Update progress
-    if (onProgress) {
-      onProgress({
-        current: Math.min(i + CONCURRENT_BATCHES, batches.length),
-        total: batches.length,
-        message: `Processed ${Math.min(i + CONCURRENT_BATCHES, batches.length)}/${batches.length} batches`,
-      });
-    }
-  }
-
-  console.log(`✅ All ${batches.length} batches completed. Aggregating results...`);
-
-  // Aggregate results from all batches
-  const allTransactions = results.flatMap((r) => r.transactions || []);
-  const totalIncome = results.reduce((sum, r) => sum + (r.totalIncome || 0), 0);
-  const totalExpenses = results.reduce((sum, r) => sum + (r.totalExpenses || 0), 0);
-  const monthlyDeposits = results.reduce((sum, r) => sum + (r.monthlyDeposits || 0), 0) / Math.max(results.length, 1);
-  const monthlyExpenses = results.reduce((sum, r) => sum + (r.monthlyExpenses || 0), 0) / Math.max(results.length, 1);
-  const monthlyLeftover = monthlyDeposits - monthlyExpenses - currentHousingPayment;
-
-  // Combine monthly breakdowns
-  const monthlyMap = new Map<string, any>();
-  results.forEach((result) => {
-    result.monthlyBreakdown?.forEach((monthData) => {
-      const existing = monthlyMap.get(monthData.month);
-      if (existing) {
-        existing.income += monthData.income;
-        existing.expenses += monthData.expenses;
-        existing.netCashFlow += monthData.netCashFlow;
-        existing.transactionCount += monthData.transactionCount;
-      } else {
-        monthlyMap.set(monthData.month, { ...monthData });
+        return {
+          success: true,
+          transactions: extractedTransactions,
+          batchNum,
+        };
+      } catch (error) {
+        console.error(`❌ Extraction batch ${batchNum} failed:`, error);
+        return {
+          success: false,
+          batchNum,
+          error,
+        };
       }
     });
+
+    const groupResults = await Promise.all(groupPromises);
+
+    // Check for failures
+    const failures = groupResults.filter(r => !r.success);
+    if (failures.length > 0) {
+      throw new Error(`Failed to extract transactions from batch(es): ${failures.map(f => f.batchNum).join(', ')}`);
+    }
+
+    // Add successful results
+    groupResults.forEach(result => {
+      if (result.success) {
+        allTransactions = allTransactions.concat(result.transactions);
+        filesProcessed++;
+
+        if (onProgress) {
+          onProgress({
+            current: filesProcessed,
+            total: files.length,
+            message: `Extracted ${allTransactions.length} transactions from ${filesProcessed}/${files.length} files`,
+            phase: 'extraction',
+          });
+        }
+      }
+    });
+  }
+
+  console.log(`\n✅ PHASE 1 COMPLETE: Extracted ${allTransactions.length} total transactions from ${files.length} files`);
+
+  // ===== PHASE 2: CATEGORIZATION =====
+  console.log(`\n🏷️  PHASE 2: Categorizing ${allTransactions.length} transactions...`);
+
+  const CATEGORIZATION_CHUNK_SIZE = 15; // Small chunks for fast, reliable categorization
+  const chunks: any[][] = [];
+
+  for (let i = 0; i < allTransactions.length; i += CATEGORIZATION_CHUNK_SIZE) {
+    chunks.push(allTransactions.slice(i, i + CATEGORIZATION_CHUNK_SIZE));
+  }
+
+  console.log(`📦 Created ${chunks.length} categorization chunks (${CATEGORIZATION_CHUNK_SIZE} transactions per chunk)`);
+
+  if (onProgress) {
+    onProgress({
+      current: 0,
+      total: allTransactions.length,
+      message: `Categorizing transactions in ${chunks.length} chunks...`,
+      phase: 'categorization',
+    });
+  }
+
+  // Process chunks with controlled concurrency (10 at a time for fast processing)
+  const CONCURRENT_CHUNKS = 10;
+  const categorizedChunks: any[] = [];
+  let transactionsProcessed = 0;
+
+  for (let i = 0; i < chunks.length; i += CONCURRENT_CHUNKS) {
+    const currentChunkGroup = chunks.slice(i, i + CONCURRENT_CHUNKS);
+    const chunkNumbersInGroup = currentChunkGroup.map((_, idx) => i + idx + 1);
+
+    console.log(`\n🔄 Processing categorization group: chunks [${chunkNumbersInGroup.join(', ')}] of ${chunks.length}`);
+
+    // Process this group in parallel
+    const groupPromises = currentChunkGroup.map(async (chunk, idx) => {
+      const chunkNumber = i + idx + 1;
+      const startIdx = (chunkNumber - 1) * CATEGORIZATION_CHUNK_SIZE;
+      const endIdx = Math.min(startIdx + CATEGORIZATION_CHUNK_SIZE, allTransactions.length);
+
+      console.log(`   📝 Chunk ${chunkNumber}: transactions ${startIdx + 1}-${endIdx} of ${allTransactions.length}`);
+
+      try {
+        const response = await api.post('/categorize-chunk', {
+          transactions: chunk,
+          currentHousingPayment,
+          chunkNumber,
+          totalChunks: chunks.length,
+        }, {
+          timeout: 60000, // 60 seconds per chunk (plenty of time for small chunks)
+        });
+
+        return {
+          success: true,
+          data: response.data,
+          chunkNumber,
+          startIdx,
+          endIdx,
+        };
+      } catch (error) {
+        console.error(`❌ Chunk ${chunkNumber} failed:`, error);
+        return {
+          success: false,
+          error,
+          chunkNumber,
+          startIdx,
+          endIdx,
+        };
+      }
+    });
+
+    const groupResults = await Promise.all(groupPromises);
+
+    // Check for failures
+    const failures = groupResults.filter(r => !r.success);
+    if (failures.length > 0) {
+      throw new Error(`Failed to categorize ${failures.length} chunk(s): ${failures.map(f => f.chunkNumber).join(', ')}`);
+    }
+
+    // Add successful results
+    groupResults.forEach(result => {
+      if (result.success) {
+        categorizedChunks.push(result.data);
+        transactionsProcessed += result.data.transactions.length;
+
+        console.log(`   ✅ Chunk ${result.chunkNumber} done: ${result.data.transactions.length} transactions categorized`);
+
+        if (onProgress) {
+          onProgress({
+            current: transactionsProcessed,
+            total: allTransactions.length,
+            message: `Processing transactions ${result.startIdx + 1}-${result.endIdx} of ${allTransactions.length}`,
+            phase: 'categorization',
+          });
+        }
+      }
+    });
+
+    console.log(`✅ Group complete: ${transactionsProcessed}/${allTransactions.length} transactions categorized`);
+  }
+
+  console.log(`\n✅ PHASE 2 COMPLETE: Categorized all ${allTransactions.length} transactions`);
+
+  // ===== PHASE 3: AGGREGATION (Local) =====
+  console.log(`\n📊 PHASE 3: Aggregating results...`);
+
+  if (onProgress) {
+    onProgress({
+      current: allTransactions.length,
+      total: allTransactions.length,
+      message: 'Aggregating results...',
+      phase: 'aggregation',
+    });
+  }
+
+  // Combine all categorized transactions
+  const allCategorizedTransactions = categorizedChunks.flatMap(chunk => chunk.transactions || []);
+
+  // Calculate totals
+  const totalIncome = categorizedChunks.reduce((sum, chunk) => sum + (chunk.totalIncome || 0), 0);
+  const totalExpenses = categorizedChunks.reduce((sum, chunk) => sum + (chunk.totalExpenses || 0), 0);
+  const avgConfidence = categorizedChunks.reduce((sum, chunk) => sum + (chunk.confidence || 0.8), 0) / categorizedChunks.length;
+
+  // Calculate monthly breakdown
+  const monthlyMap = new Map<string, any>();
+  allCategorizedTransactions.forEach(t => {
+    const month = t.monthYear || t.date?.substring(0, 7); // YYYY-MM
+    if (!month) return;
+
+    if (!monthlyMap.has(month)) {
+      monthlyMap.set(month, {
+        month,
+        income: 0,
+        expenses: 0,
+        netCashFlow: 0,
+        transactionCount: 0,
+      });
+    }
+
+    const monthData = monthlyMap.get(month);
+    monthData.transactionCount++;
+
+    if (t.category === 'income') {
+      monthData.income += Math.abs(t.amount);
+    } else if (t.category === 'expense') {
+      monthData.expenses += Math.abs(t.amount);
+    }
+
+    monthData.netCashFlow = monthData.income - monthData.expenses;
   });
 
-  const monthlyBreakdown = Array.from(monthlyMap.values()).sort((a, b) =>
-    a.month.localeCompare(b.month)
-  );
+  const monthlyBreakdown = Array.from(monthlyMap.values()).sort((a, b) => a.month.localeCompare(b.month));
 
-  // Combine flagged transactions
-  const flaggedTransactions = results.flatMap((r) => r.flaggedTransactions || []);
-  const duplicateTransactions = results.flatMap((r) => r.duplicateTransactions || []);
+  // Extract flagged transactions
+  const flaggedTransactions = allCategorizedTransactions.filter(t => t.flagged === true);
 
-  const avgConfidence = results.reduce((sum, r) => sum + (r.confidence || 0.8), 0) / results.length;
+  // Deduplicate transactions
+  const { uniqueTransactions, duplicateTransactions } = deduplicateTransactions(allCategorizedTransactions);
 
-  console.log(`📊 Aggregated ${allTransactions.length} total transactions`);
+  // Calculate monthly averages
+  const monthsAnalyzed = monthlyBreakdown.length || 1;
+  const monthlyDeposits = totalIncome / monthsAnalyzed;
+  const monthlyExpenses = totalExpenses / monthsAnalyzed;
+  const monthlyLeftover = monthlyDeposits - monthlyExpenses - currentHousingPayment;
+  const averageMonthlyBalance = Math.max(0, monthlyLeftover);
+
+  console.log(`\n📈 FINAL RESULTS:`);
+  console.log(`   ✓ Total transactions: ${uniqueTransactions.length}`);
+  console.log(`   ✓ Duplicates removed: ${duplicateTransactions.length}`);
+  console.log(`   ✓ Flagged for review: ${flaggedTransactions.length}`);
+  console.log(`   ✓ Months analyzed: ${monthsAnalyzed}`);
+  console.log(`   ✓ Monthly income: $${monthlyDeposits.toFixed(2)}`);
+  console.log(`   ✓ Monthly expenses: $${monthlyExpenses.toFixed(2)}`);
+  console.log(`   ✓ Monthly leftover: $${monthlyLeftover.toFixed(2)}`);
+  console.log(`   ✓ Confidence: ${(avgConfidence * 100).toFixed(0)}%`);
 
   return {
-    transactions: allTransactions,
+    transactions: uniqueTransactions,
     totalIncome,
     totalExpenses,
     monthlyDeposits,
@@ -171,13 +313,60 @@ export const analyzeStatements = async (
     netCashFlow: monthlyLeftover,
     depositFrequency: 'monthly',
     monthlyLeftover,
-    averageMonthlyBalance: Math.max(0, monthlyLeftover),
+    averageMonthlyBalance,
     monthlyBreakdown,
     flaggedTransactions,
     duplicateTransactions,
     confidence: avgConfidence,
   };
 };
+
+/**
+ * Deduplicate transactions based on date, amount, and description similarity
+ */
+function deduplicateTransactions(transactions: any[]): {
+  uniqueTransactions: any[];
+  duplicateTransactions: any[];
+} {
+  const uniqueTransactions: any[] = [];
+  const duplicateTransactions: any[] = [];
+  const transactionKeys = new Map<string, any>();
+
+  const createTransactionKey = (t: any): string => {
+    const normalizedDesc = (t.description || '')
+      .toLowerCase()
+      .replace(/[^a-z0-9\s]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .substring(0, 50);
+
+    const normalizedAmount = Math.abs(parseFloat(t.amount) || 0).toFixed(2);
+    const date = new Date(t.date);
+    const normalizedDate = isNaN(date.getTime()) ? t.date : date.toISOString().split('T')[0];
+
+    return `${normalizedDate}|${normalizedAmount}|${normalizedDesc}`;
+  };
+
+  transactions.forEach((transaction) => {
+    const key = createTransactionKey(transaction);
+
+    if (transactionKeys.has(key)) {
+      duplicateTransactions.push({
+        ...transaction,
+        isDuplicate: true,
+        duplicateOf: key,
+      });
+    } else {
+      transactionKeys.set(key, transaction);
+      uniqueTransactions.push({
+        ...transaction,
+        isDuplicate: false,
+      });
+    }
+  });
+
+  return { uniqueTransactions, duplicateTransactions };
+}
 
 // Check eligibility
 export const checkEligibility = async (

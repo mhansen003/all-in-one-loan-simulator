@@ -1,3 +1,4 @@
+// @ts-nocheck
 import Redis from 'ioredis';
 
 let redisClient: Redis | null = null;

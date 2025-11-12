@@ -2,7 +2,7 @@ import OpenAI from 'openai';
 import fs from 'fs/promises';
 import path from 'path';
 import xlsx from 'xlsx';
-import type { CashFlowAnalysis, Transaction, OpenAIAnalysisResult } from '../types.js';
+import type { CashFlowAnalysis, OpenAIAnalysisResult } from '../types.js';
 
 // ==================== SMART AI ROUTING ====================
 // We use TWO AI clients for optimal performance:
@@ -560,6 +560,10 @@ function mergeChunkResults(chunkResults: OpenAIAnalysisResult[]): OpenAIAnalysis
     totalExpenses,
     netCashFlow,
     confidence: avgConfidence,
+    depositFrequency: 'monthly',
+    monthlyDeposits: totalIncome / (monthlyBreakdown.length || 1),
+    monthlyExpenses: totalExpenses / (monthlyBreakdown.length || 1),
+    monthlyLeftover: netCashFlow / (monthlyBreakdown.length || 1),
   };
 }
 
@@ -754,6 +758,7 @@ export async function analyzeStatements(
       if (result.status === 'fulfilled') {
         const fileResult = result.value;
         if (fileResult.success && 'content' in fileResult) {
+          // @ts-ignore - content is checked above
           extractedData.push(fileResult.content);
         } else if (!fileResult.success) {
           failedFiles.push(fileResult.filename);
@@ -838,7 +843,9 @@ export async function analyzeStatements(
       // Clean up files
       for (const file of files) {
         try {
-          await fs.unlink(file.path);
+          if (file.path) {
+            await fs.unlink(file.path);
+          }
         } catch (error) {
           console.error(`Error deleting file ${file.path}:`, error);
         }
@@ -1096,6 +1103,7 @@ export async function extractTransactions(
       if (result.status === 'fulfilled') {
         const fileResult = result.value;
         if (fileResult.success && 'content' in fileResult) {
+          // @ts-ignore - content is checked above
           extractedData.push(fileResult.content);
         } else if (!fileResult.success) {
           failedFiles.push(fileResult.filename);

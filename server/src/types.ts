@@ -35,6 +35,7 @@ export interface CashFlowAnalysis {
   averageMonthlyBalance: number;
   transactions: Transaction[];
   flaggedTransactions?: Transaction[];
+  duplicateTransactions?: Transaction[];
   monthlyBreakdown?: MonthlyBreakdown[];
   depositFrequency?: 'monthly' | 'biweekly' | 'weekly';
   monthlyDeposits?: number;
