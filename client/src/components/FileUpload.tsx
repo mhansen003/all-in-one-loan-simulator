@@ -134,10 +134,43 @@ export default function FileUpload({
       try {
         setIsProcessingPdf(true);
 
+        // CLIENT-SIDE FILE SIZE VALIDATION
+        // Vercel has a 4.5MB body size limit, so we reject files over 4MB to be safe
+        const MAX_FILE_SIZE = 4 * 1024 * 1024; // 4MB (leaving 0.5MB for form data overhead)
+        const oversizedFiles: { name: string; size: string }[] = [];
+        const validFiles: File[] = [];
+
+        acceptedFiles.forEach(file => {
+          if (file.size > MAX_FILE_SIZE) {
+            oversizedFiles.push({
+              name: file.name,
+              size: formatFileSize(file.size)
+            });
+          } else {
+            validFiles.push(file);
+          }
+        });
+
+        // Show error for oversized files
+        if (oversizedFiles.length > 0) {
+          const fileList = oversizedFiles.map(f => `• ${f.name} (${f.size})`).join('\n');
+          alert(
+            `❌ The following ${oversizedFiles.length === 1 ? 'file is' : 'files are'} too large:\n\n${fileList}\n\n` +
+            `Maximum file size: 4MB\n\n` +
+            `Tip: Try compressing the PDF or splitting it into smaller files.`
+          );
+        }
+
+        // If no valid files, abort
+        if (validFiles.length === 0) {
+          setIsProcessingPdf(false);
+          return;
+        }
+
         // Parse CSV files immediately on client side
         const processedFiles: FileWithData[] = [];
 
-        for (const file of acceptedFiles) {
+        for (const file of validFiles) {
           const ext = file.name.toLowerCase().split('.').pop();
 
           if (ext === 'csv') {
@@ -184,7 +217,7 @@ export default function FileUpload({
       'application/vnd.ms-excel': ['.xls'],
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
     },
-    maxSize: 10 * 1024 * 1024, // 10MB
+    maxSize: 4 * 1024 * 1024, // 4MB (Vercel body size limit is 4.5MB, leave room for overhead)
   });
 
   const removeFile = (index: number) => {
@@ -377,7 +410,7 @@ export default function FileUpload({
             {!isProcessingPdf && (
               <>
                 <p className="dropzone-subtext">or click to browse</p>
-                <p className="dropzone-formats">PDF, JPG, PNG, CSV, XLSX (max 10MB each)</p>
+                <p className="dropzone-formats">PDF, JPG, PNG, CSV, XLSX (max 4MB each)</p>
               </>
             )}
           </div>
