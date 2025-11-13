@@ -183,7 +183,9 @@ export default function CashFlowReview({
     .filter(t => t.category !== 'income' && (t.category !== 'one-time' || t.amount < 0))
     .reduce((sum, t) => sum + Math.abs(t.amount), 0) / actualMonths;
 
-  const displayNetCashFlow = displayTotalIncome - displayTotalExpenses;
+  // Calculate base net cash flow and apply slider percentage
+  const baseNetCashFlow = displayTotalIncome - displayTotalExpenses;
+  const displayNetCashFlow = baseNetCashFlow * (cashFlowPercentage / 100);
 
   // Prepare unified chart data - group by MONTH and calculate incoming/outgoing
   const { chartData, oneTimeIncomeData, oneTimeExpenseData, yAxisMax } = useMemo(() => {
@@ -1380,18 +1382,40 @@ export default function CashFlowReview({
             background: 'white',
             border: '2px solid #3b82f6',
             borderRadius: '8px',
-            minWidth: '280px'
+            minWidth: '300px',
+            position: 'relative'
           }}>
-            <label style={{
-              fontSize: '0.7rem',
-              fontWeight: '600',
-              color: '#3b82f6',
-              whiteSpace: 'nowrap',
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px'
-            }}>
-              💼 Cash Flow
-            </label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+              <label style={{
+                fontSize: '0.7rem',
+                fontWeight: '600',
+                color: '#3b82f6',
+                whiteSpace: 'nowrap',
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px'
+              }}>
+                💼 Cash Flow
+              </label>
+              <div
+                style={{
+                  width: '16px',
+                  height: '16px',
+                  borderRadius: '50%',
+                  border: '1.5px solid #3b82f6',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '10px',
+                  fontWeight: '700',
+                  color: '#3b82f6',
+                  cursor: 'help',
+                  flexShrink: 0
+                }}
+                title="Adjust what percentage of the calculated net cash flow to use in the AIO loan simulation. Use this to be conservative or account for seasonal variations. Resets to 100% when you toggle transactions."
+              >
+                i
+              </div>
+            </div>
             <input
               type="range"
               min="0"
@@ -1407,7 +1431,7 @@ export default function CashFlowReview({
                 cursor: 'pointer',
                 WebkitAppearance: 'none',
               }}
-              title={`Adjust cash flow to ${cashFlowPercentage}%`}
+              title={`Using ${cashFlowPercentage}% of net cash flow`}
             />
             <span style={{
               fontSize: '0.8rem',
