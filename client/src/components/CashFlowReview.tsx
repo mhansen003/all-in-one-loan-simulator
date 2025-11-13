@@ -41,8 +41,10 @@ export default function CashFlowReview({
   const [searchFilter, setSearchFilter] = useState('');
   const [showAIModal, setShowAIModal] = useState(false);
 
-  // Cash flow adjustment slider (starts at 100%)
-  const [cashFlowPercentage, setCashFlowPercentage] = useState(100);
+  // Cash flow adjustment slider - initialize from cashFlow prop or default to 100%
+  const [cashFlowPercentage, setCashFlowPercentage] = useState(
+    cashFlow.cashFlowAdjustmentPercentage ?? 100
+  );
 
   // Manual transaction entry states
   const [showAddTransaction, setShowAddTransaction] = useState(false);
@@ -97,7 +99,8 @@ export default function CashFlowReview({
       monthlyDeposits: totalIncome,
       monthlyExpenses: totalExpenses,
       monthlyLeftover: adjustedNetCashFlow,
-      depositFrequency
+      depositFrequency,
+      cashFlowAdjustmentPercentage: cashFlowPercentage
     };
 
     console.log('[CashFlowReview] Cash flow recalculated:', {

@@ -61,6 +61,7 @@ export interface CashFlowAnalysis {
   monthlyExpenses?: number;        // Total monthly expenses (including housing)
   monthlyLeftover?: number;        // Net leftover (deposits - expenses)
   depositFrequency?: 'weekly' | 'biweekly' | 'semi-monthly' | 'monthly' | 'quarterly' | 'semi-annual' | 'annual';
+  cashFlowAdjustmentPercentage?: number; // LO adjustment slider (0-100), defaults to 100
 }
 
 export interface EligibilityResult {
