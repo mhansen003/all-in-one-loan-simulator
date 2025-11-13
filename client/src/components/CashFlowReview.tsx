@@ -87,8 +87,11 @@ export default function CashFlowReview({
     // Calculate base net cash flow
     const baseNetCashFlow = totalIncome - totalExpenses;
 
-    // Apply percentage adjustment to net cash flow
+    // Apply percentage adjustment to ALL cash flow values
+    // This ensures the backend calculator uses the adjusted amounts
     const adjustedNetCashFlow = baseNetCashFlow * (cashFlowPercentage / 100);
+    const adjustedMonthlyDeposits = totalIncome * (cashFlowPercentage / 100);
+    const adjustedMonthlyExpenses = totalExpenses * (cashFlowPercentage / 100);
 
     const updatedCashFlow: CashFlowAnalysis = {
       ...cashFlow,
@@ -96,8 +99,8 @@ export default function CashFlowReview({
       totalIncome,
       totalExpenses,
       netCashFlow: adjustedNetCashFlow,
-      monthlyDeposits: totalIncome,
-      monthlyExpenses: totalExpenses,
+      monthlyDeposits: adjustedMonthlyDeposits,  // NOW ADJUSTED!
+      monthlyExpenses: adjustedMonthlyExpenses,  // NOW ADJUSTED!
       monthlyLeftover: adjustedNetCashFlow,
       depositFrequency,
       cashFlowAdjustmentPercentage: cashFlowPercentage
