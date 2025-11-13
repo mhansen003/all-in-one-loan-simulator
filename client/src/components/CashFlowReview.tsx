@@ -709,8 +709,6 @@ export default function CashFlowReview({
             displayTotalIncome={displayTotalIncome}
             displayTotalExpenses={displayTotalExpenses}
             displayNetCashFlow={displayNetCashFlow}
-            cashFlowPercentage={cashFlowPercentage}
-            onCashFlowPercentageChange={setCashFlowPercentage}
             confidenceLabel={confidenceLabel}
             confidenceColor={confidenceColor}
             temperatureRating={temperatureRating}
@@ -1371,6 +1369,55 @@ export default function CashFlowReview({
                 </svg>
               </button>
             )}
+          </div>
+
+          {/* Cash Flow Adjustment Slider */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.75rem',
+            padding: '0.5rem 1rem',
+            background: 'white',
+            border: '2px solid #3b82f6',
+            borderRadius: '8px',
+            minWidth: '280px'
+          }}>
+            <label style={{
+              fontSize: '0.7rem',
+              fontWeight: '600',
+              color: '#3b82f6',
+              whiteSpace: 'nowrap',
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px'
+            }}>
+              💼 Cash Flow
+            </label>
+            <input
+              type="range"
+              min="0"
+              max="100"
+              value={cashFlowPercentage}
+              onChange={(e) => setCashFlowPercentage(Number(e.target.value))}
+              style={{
+                flex: 1,
+                height: '6px',
+                borderRadius: '3px',
+                background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${cashFlowPercentage}%, #e2e8f0 ${cashFlowPercentage}%, #e2e8f0 100%)`,
+                outline: 'none',
+                cursor: 'pointer',
+                WebkitAppearance: 'none',
+              }}
+              title={`Adjust cash flow to ${cashFlowPercentage}%`}
+            />
+            <span style={{
+              fontSize: '0.8rem',
+              fontWeight: '700',
+              color: '#1e40af',
+              minWidth: '45px',
+              textAlign: 'right'
+            }}>
+              {cashFlowPercentage}%
+            </span>
           </div>
 
           {/* Add Transaction Button */}
